@@ -83,7 +83,7 @@ for child in root:
 		        if u'Ид'== elem.tag:
 		            outf.write(u'\n\n-- ###################################################\n')
 		            outf.write(elem2str(u'-- bx_buyer:', elem.tag, elem.text))
-		            buyer = elem.text.split("#") #0-id, 1-logname, 2-name
+		            buyer = elem.text.split("#") #0-id, 1-bx_logname, 2-bx_name
 		            sb_id = buyer[0]
 		            buyer[1] = buyer[1].strip(u' ')
 		            buyer[2] = buyer[2].strip(u' ')
@@ -92,16 +92,16 @@ for child in root:
 		            #print 'sb_id_key=', (int(sb_id), )
 		            #print db_buyers
 		            if (int(sb_id), ) in db_buyers:
-		                outf.write(u"-- UPDATE bx_buyer SET logname='" + buyer[1] + u"', name='" + buyer[2] + u"'\n")
+		                outf.write(u"-- UPDATE bx_buyer SET bx_logname='" + buyer[1] + u"', bx_name='" + buyer[2] + u"'\n")
 		                outf.write(u"-- WHERE bx_buyer_id=" + buyer[0] +";\n")
 		            else:
 		                db_buyers.append( (int(sb_id), ) )
 		                #print "after append db_buyers=", db_buyers
-		                outf.write(u'INSERT INTO bx_buyer(bx_buyer_id,logname,name)\n')
+		                outf.write(u'INSERT INTO bx_buyer(bx_buyer_id,bx_logname,bx_name)\n')
 		                outf.write(u"VALUES (\'" + u'\', \''.join(buyer) + "\');\n")
 		            if 1 == cnt:
 		                createf.write(u"-- DROP TABLE bx_buyer CASCADE;\n")
-		                createf.write(u"CREATE TABLE bx_buyer(id serial,bx_buyer_id integer,logname varchar,name varchar);\n\n")
+		                createf.write(u"CREATE TABLE bx_buyer(bx_buyer_id integer,dt_insert timestamp without time zone DEFAULT now(), bx_logname varchar,bx_name varchar);\n\n")
                  
 
     if 1 == cnt:
