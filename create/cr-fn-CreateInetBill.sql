@@ -34,6 +34,8 @@ CreateResult := 3; -- пустой состав заказа
 FOR oi in SELECT * FROM bx_order_item WHERE o."Номер" = "bx_order_Номер" ORDER BY id LOOP
     --
     RAISE NOTICE 'Товар=%', oi.Наименование;
+    -- TODO split oi.Наименование by ":" to get 2nd part (order_mod_id)
+    -- SELECT "КодСодержания" into KS FROM "Содержание" WHERE mod_id = order_mod_id;
     SELECT "КодСодержания" into KS from vwsyncdev WHERE ie_name = oi."Наименование";
     IF (KS is null) THEN
        CreateResult := 2; -- есть не синхронизированная позиция в заказе
