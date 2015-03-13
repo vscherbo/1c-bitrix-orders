@@ -18,12 +18,12 @@ $BODY$ DECLARE
   inet_bill_owner integer = 77;
 BEGIN
     SELECT fvalue INTO BuyerComment 
-    FROM devmod.bx_order_feature
+    FROM bx_order_feature
     WHERE "bx_order_Номер" = bx_order
         AND fname = 'Комментарии покупателя';
 
     SELECT fvalue INTO DeliveryMode 
-    FROM devmod.bx_order_feature
+    FROM bx_order_feature
     WHERE "bx_order_Номер" = bx_order
         AND fname = 'Способ доставки';
 
