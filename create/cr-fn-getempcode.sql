@@ -26,8 +26,13 @@ begin
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', Buyer.inn, Buyer.kpp;
 	    SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = Buyer.inn AND "КПП" = Buyer.kpp;
 	    IF NOT FOUND THEN -- TODO создание предприятия
-	       RAISE NOTICE 'Создание предприятия Предприятие=%, ИНН=%, КПП=%', Buyer.firm_name, Buyer.inn, Buyer.kpp;
-	       INSERT INTO "Предприятия"("Предприятие", "ИНН", "КПП") VALUES (Buyer.firm_name, Buyer.inn, Buyer.kpp);
+            RAISE NOTICE 'Создание предприятия Предприятие=%, ИНН=%, КПП=%', Buyer.firm_name, Buyer.inn, Buyer.kpp;
+            WITH inserted AS (   
+                INSERT INTO "Предприятия"("Предприятие", "ИНН", "КПП") VALUES (Buyer.firm_name, Buyer.inn, Buyer.kpp) RETURNING "Код"
+            )
+            SELECT inserted."Код" INTO FirmCode FROM inserted;
+        ELSE
+            FirmCode := Firm."Код";
 	    END IF;
     ELSIF (Buyer.inn IS NULL) AND (Buyer.kpp IS NULL) THEN -- физ. лицо
         RAISE NOTICE 'Физ. лицо';
