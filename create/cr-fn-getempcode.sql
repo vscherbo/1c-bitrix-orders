@@ -19,8 +19,8 @@ begin
     RAISE NOTICE 'Работник не найден, создаём. buyer_id=%', buyer_id;
     SELECT * INTO Buyer FROM devmod.crosstab('SELECT  "bx_order_Номер", fname, fvalue FROM bx_order_feature
                                             WHERE "bx_order_Номер" = ' || bx_order_id || 
-   	' AND fname IN ( ''Адрес доставки'', ''Грузополучатель'', ''Индекс'', ''ИНН'', ''КПП'', ''Контактное лицо'', ''Контактный Email'' ) ORDER BY fname') 
-    AS bx_order_feature("bx_order_Номер" INTEGER, delivery_address varchar, firm_name varchar, zip_code VARCHAR, INN varchar, KPP varchar, person VARCHAR, email VARCHAR);
+   	' AND fname IN ( ''Адрес доставки'', ''Грузополучатель'', ''Индекс'', ''ИНН'', ''Контактное лицо'', ''Контактный Email'', ''КПП'' ) ORDER BY fname') 
+    AS bx_order_feature("bx_order_Номер" INTEGER, delivery_address varchar, firm_name varchar, zip_code VARCHAR, INN varchar, person VARCHAR, email VARCHAR, KPP varchar);
     IF (Buyer.inn IS NOT NULL) AND (Buyer.kpp IS NOT NULL) THEN -- юр. лицо
         --
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', Buyer.inn, Buyer.kpp;
