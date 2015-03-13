@@ -39,7 +39,8 @@ SQL_DIR=$WRK_DIR/02-sql
 FAIL_DIR=$WRK_DIR/99-failed
 LOG_DIR=$WRK_DIR/logs
 PSQL=psql
-PG_CONNECT="-h $PG_SRV -U arc_energo -a -v ON_ERROR_STOP=1 -1"
+PG_CONNECT="-h $PG_SRV -U arc_energo --echo-all"
+PG_STRONG_OPTS=" --variable=ON_ERROR_STOP=1 --single-transaction"
 
 [ -d $XML_DIR ] || mkdir -p $XML_DIR 
 [ -d $SQL_DIR ] || mkdir -p $SQL_DIR 
@@ -97,10 +98,9 @@ while [ $intrflag -eq 0 ] ; do
               $BIN_DIR/bitrix-orders-to-pg.py $ORDERS_FIXED_XML $ORDERS_FIXED_SQL $PG_SRV
               logmsg $? "Finish create SQL-file $ORDERS_FIXED_SQL"
               logmsg INFO "Load $ORDERS_FIXED_SQL into PG server $PG_SRV"
-              $PSQL $PG_CONNECT -f $ORDERS_FIXED_SQL
+              $PSQL $PG_CONNECT $PG_STRONG_OPTS -f $ORDERS_FIXED_SQL
               logmsg $? "Finish run SQL-file $ORDERS_FIXED_SQL"
-              # ???moved into python code   
-              # $PSQL $PG_CONNECT -c "SELECT fn_inetbill4neworders()"
+              $PSQL $PG_CONNECT -c "SELECT fn_inetbill4neworders()"
           fi
        else
           logmsg ERROR "### Move $ORDERS_FILE to $FAIL_DIR"
