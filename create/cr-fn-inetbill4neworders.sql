@@ -7,9 +7,10 @@ CREATE OR REPLACE FUNCTION fn_inetbill4neworders()
 $BODY$ DECLARE
   o RECORD;
 BEGIN
-   FOR o IN SELECT * FROM bx_order WHERE billcreated = 0 ORDER BY "Номер" LOOP
-       EXECUTE fn_createinetbill(o."Номер");
-   END LOOP;
+    FOR o IN SELECT * FROM bx_order WHERE billcreated = 0 ORDER BY "Номер" LOOP
+        RAISE NOTICE 'Создаём счёт для заказа=%', o."Номер";
+        EXECUTE fn_createinetbill(o."Номер");
+    END LOOP;
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
