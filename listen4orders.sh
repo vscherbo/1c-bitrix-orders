@@ -81,7 +81,7 @@ while [ $intrflag -eq 0 ] ; do
        # trap 
        wget $WGET_QRY_OPTS 'http://'$SITE'/bitrix/admin/1c_exchange.php?type=sale&mode=query&version='$VER'&'$SESS_ID -O - |iconv -f cp1251 -t utf8 > $ORDERS_FILE
        rc=$?
-       trap trapINT INT HUP SIGTERM ERR
+       trap trapINT INT HUP SIGTERM # ERR
        logmsg $rc "Query completed"
        [ -s $ORDERS_FILE ] || rm -f $ORDERS_FILE              # zero-length file 
        [ 3 -eq `wc -l < $ORDERS_FILE` ] && rm -f $ORDERS_FILE # just header, no orders
