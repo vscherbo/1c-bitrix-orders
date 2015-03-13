@@ -25,11 +25,11 @@ pg_srv=sys.argv[3]
 
 if (xml_input_file is None) or (not os.path.isfile(xml_input_file)) or (0 == os.path.getsize(xml_input_file)):
     print "file " + xml_input_file + " doesn't exist OR has zero size. Exiting..."
-    sys.exit(0)    
+    sys.exit(0)
 
 if (sql_output_file is None) or (pg_srv is None):
     print "A wrong number of parameters in comnmand line. Exiting..."
-    sys.exit(0)    
+    sys.exit(0)
 
 #TODO check pg_srv
 con = psycopg2.connect("host='" + pg_srv + "' dbname='arc_energo' user='arc_energo'") # password='XXXX' - .pgpass
@@ -102,13 +102,13 @@ for child in root:
 		            if 1 == cnt:
 		                createf.write(u"-- DROP TABLE bx_buyer CASCADE;\n")
 		                createf.write(u"CREATE TABLE bx_buyer(bx_buyer_id integer,dt_insert timestamp without time zone DEFAULT now(), bx_logname varchar,bx_name varchar);\n\n")
-                 
+
 
     if 1 == cnt:
         createf.write(u"-- DROP TABLE bx_order CASCADE;\n")
         createf.write(u"CREATE TABLE bx_order(id serial, bx_buyer_id integer\n")
     outf.write(u"\nINSERT INTO bx_order(\n")
-    
+
     sql_flds = ['bx_buyer_id']
     sql_vals = [sb_id]
     for elem in child.findall(u'*'):
@@ -119,7 +119,7 @@ for child in root:
     else:
         flagNew = True
         db_orders.append( (int(bx_order_id), ) )
-    
+
     for reqs in child.findall(u'ЗначенияРеквизитов'):
         sale_order_features_insert_dict = []
         for req in reqs.findall(u'ЗначениеРеквизита'):
@@ -164,7 +164,7 @@ for child in root:
     sql_flds = ['bx_order_Номер']
     sql_vals = []
     sql_vals.append(bx_order_id)
-    if 1 == cnt: 
+    if 1 == cnt:
         createf.write(u"-- DROP TABLE bx_order_item CASCADE;\n")
         createf.write(u"CREATE TABLE bx_order_item(id serial,\n")
 # OLD place    outf.write(u"INSERT INTO bx_order_item(\n")
@@ -196,8 +196,8 @@ for child in root:
                     req.clear()
                     # After INSERT  bx_order_item  outf.write(sale_item_features_insert + '\n')
                     sale_item_features_insert_dict.append(sale_item_features_insert)
-        
-        
+
+
             outf.write(u'    -- next item\n')
             sql_flds = [u'bx_order_Номер']
             sql_vals = []
@@ -213,7 +213,7 @@ for child in root:
 
             if 1 == cnt:
                 createf.write(u"-- DROP TABLE bx_order_item_feature CASCADE;\n")
-                createf.write(u'CREATE TABLE bx_order_item_feature (id serial, bx_order_item_id numeric, fname varchar, fvalue varchar);\n') 
+                createf.write(u'CREATE TABLE bx_order_item_feature (id serial, bx_order_item_id numeric, fname varchar, fvalue varchar);\n')
             for insert_clause in sale_item_features_insert_dict:
                 outf.write(insert_clause + '\n')
 

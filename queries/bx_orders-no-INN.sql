@@ -7,4 +7,5 @@ AND o."Номер" NOT IN
 from bx_order o1, bx_order_feature f1
 where o1."Номер" = f1."bx_order_Номер"
 and f1.fname = 'ИНН')
-ORDER BY 1
+ORDER BY 1;
+

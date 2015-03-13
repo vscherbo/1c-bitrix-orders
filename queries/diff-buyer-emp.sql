@@ -8,4 +8,5 @@ SELECT  p.email as "email с сайта"
 FROM "Работники" e, vwPersonalBuyer p
 WHERE p.email = e."ЕАдрес"
 AND UPPER(p.name) != UPPER(e."ФИО")
-ORDER BY e."Код"
+ORDER BY e."Код";
+

@@ -7,5 +7,5 @@ WHERE
    o.bx_buyer_id = b.bx_buyer_id AND
    position('@' in b.email) > 0
 ORDER BY b.bx_buyer_id
--- o."Дата" Asc
+-- o."Дата" ASC;
   
