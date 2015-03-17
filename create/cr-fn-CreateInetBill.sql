@@ -22,10 +22,11 @@ DECLARE
    VAT numeric;
    bill_no INTEGER;
    Price numeric;
-  EmpRec RECORD;
+   EmpRec RECORD;
 BEGIN
+RAISE NOTICE 'Начало fn_createinetbill';
 SELECT bo.*, bb.bx_name, bf.fvalue AS email INTO o 
-    FROM bx_order bo, bx_buyer bb, bx_order_feature bf
+    FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
     WHERE 
         bo."Номер" = bx_order_no 
         AND bo.bx_buyer_id = bb.bx_buyer_id
@@ -65,6 +66,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
       Price := soderg."Цена"*100/(100 + VAT);
       --
       RAISE NOTICE 'bill_no=%, item=%', bill."№ счета", item;
+      -- TODO Выявлять услугу "Оплата доставки"
       
       EXECUTE E'INSERT INTO "Содержание счета" '
               || E'("КодПозиции", '
