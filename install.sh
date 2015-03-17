@@ -12,7 +12,7 @@ do
   then
     # if not equal
     echo INSTALL $f
-    mv ../$f ../$f-$DT && cp $f ../$f && { md5sum $f > $f.md5; }
+    mv ../$f ../$f-$DT && cp bin/$f ../$f && { md5sum bin/$f > $f.md5; }
   #else
   #  echo EQUAL
   fi
