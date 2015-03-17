@@ -217,7 +217,7 @@ for child in root:
             for insert_clause in sale_item_features_insert_dict:
                 outf.write(insert_clause + '\n')
 
-    outf.write(u'SELECT fn_createinetbill('+ bx_order_id +u');')
+    # outf.write(u'SELECT fn_createinetbill('+ bx_order_id +u');')
     outf.close()
     outf=codecs.open('order.tmp', 'r', 'utf-8')
     if flagNew:
