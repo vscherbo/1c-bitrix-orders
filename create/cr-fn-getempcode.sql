@@ -21,6 +21,7 @@ declare
     Bank VARCHAR;
     BIK VARCHAR;
     R_account VARCHAR;
+    R_account_complex VARCHAR;
     K_account VARCHAR;
     LegalAddress VARCHAR;
 begin
@@ -52,22 +53,19 @@ begin
 	    IF NOT FOUND THEN -- TODO создание предприятия
 	        SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
 	        SELECT fvalue INTO FirmName FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Название компании';
-	        RAISE NOTICE 'Создание предприятия Предприятие=%, ИНН=%, КПП=%', FirmName, INN, KPP;
-            WITH inserted AS (   
-                INSERT INTO "Предприятия"("Предприятие", "ИНН", "КПП", "Грузополучатель", "Адрес") 
-                VALUES (FirmName, INN, KPP, Consignee, DeliveryAddress) 
-                RETURNING "Код"
-            )
-            SELECT inserted."Код" INTO FirmCode FROM inserted;
-            -- Добавить запись в Реквизиты
             SELECT fvalue INTO Bank FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Банк';
             SELECT fvalue INTO BIK FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'БИК';
             SELECT fvalue INTO R_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Расчетный счет';
             SELECT fvalue INTO K_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КорСчет';
             SELECT fvalue INTO LegalAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Юридический адрес';
-            INSERT INTO "Реквизиты"("ДатаРкв", "Код", "Название", "ИНН", "КПП", "Банк", "БИК", "Р_счет", "К_счет", "ЮрАдрес", "Грузополучатель")
-                        VALUES(now(), FirmCode, FirmName, INN, KPP, Bank, BIK, R_account, K_account, LegalAddress, Consignee);
-
+	        RAISE NOTICE 'Создание предприятия Предприятие=%, ИНН=%, КПП=%', FirmName, INN, KPP;
+	        R_account_complex := R_account || ' в БИК:' || BIK || ', ' || Bank ;
+            WITH inserted AS (   
+                INSERT INTO "Предприятия"("Предприятие", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес") 
+                VALUES (FirmName, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress) 
+                RETURNING "Код"
+            )
+            SELECT inserted."Код" INTO FirmCode FROM inserted;
         ELSE
             FirmCode := Firm."Код";
 	    END IF;
