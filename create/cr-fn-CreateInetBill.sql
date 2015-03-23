@@ -55,33 +55,39 @@ END LOOP; -- orders item
 --  
 RAISE NOTICE 'CreateResult = %', CreateResult;
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы
-      EmpRec := fn_GetEmpCode(o.bx_buyer_id, o."Номер");
-      RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
-      bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника");
-   Npp := 1;
-   VAT := bill."ставкаНДС";
-   bill_no := bill."№ счета";
-   FOREACH item IN ARRAY arrOrderItems loop
-      SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = KS;
-      Price := soderg."Цена"*100/(100 + VAT);
-      --
-      RAISE NOTICE 'bill_no=%, item=%', bill."№ счета", item;
-      -- TODO Выявлять услугу "Оплата доставки"
+    EmpRec := fn_GetEmpCode(o.bx_buyer_id, o."Номер");
+    RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
+
+    IF EmpRec."Код" is NOT NULL THEN
+        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника");
+        Npp := 1;
+        VAT := bill."ставкаНДС";
+        bill_no := bill."№ счета";
+        FOREACH item IN ARRAY arrOrderItems loop
+            SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = KS;
+            Price := soderg."Цена"*100/(100 + VAT);
+            --
+            RAISE NOTICE 'bill_no=%, item=%', bill."№ счета", item;
+            -- TODO Выявлять услугу "Оплата доставки"
       
-      EXECUTE E'INSERT INTO "Содержание счета" '
-              || E'("КодПозиции", '
-              || E'"№ счета", '
-              || E'"КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во", '
-              || E'"ПозицияСчета", "Наименование", '
-              || E'"Цена", "ЦенаНДС") '
-              || E'VALUES ((SELECT MAX("КодПозиции")+1 FROM "Содержание счета"), '
-              || bill_no || ', ' -- '"№ счета"
-              || item || ', '  -- "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",'
-              || Npp || ', ''' || soderg."НазваниевСчет" || ''', '  -- '"ПозицияСчета", "Наименование", '
-              || round(Price, 2)  || ', ' || soderg."Цена" -- '"Цена", "ЦенаНДС") '
-              || ');' ;
-      Npp := Npp+1;      
-   END LOOP;
+            EXECUTE E'INSERT INTO "Содержание счета" '
+                    || E'("КодПозиции", '
+                    || E'"№ счета", '
+                    || E'"КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во", '
+                    || E'"ПозицияСчета", "Наименование", '
+                    || E'"Цена", "ЦенаНДС") '
+                    || E'VALUES ((SELECT MAX("КодПозиции")+1 FROM "Содержание счета"), '
+                    || bill_no || ', ' -- '"№ счета"
+                    || item || ', '  -- "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",'
+                    || Npp || ', ''' || soderg."НазваниевСчет" || ''', '  -- '"ПозицияСчета", "Наименование", '
+                    || round(Price, 2)  || ', ' || soderg."Цена" -- '"Цена", "ЦенаНДС") '
+                    || ');' ;
+            Npp := Npp+1;      
+        END LOOP;
+    ELSE -- Код IS NULL
+        CreateResult := 9; -- bad Firm
+        RAISE NOTICE 'Невозможно определить Код Предприятия. Счёт не создан. bx_order.billcreated=%', CreateResult;
+    END IF;
 END IF;
 UPDATE bx_order SET billcreated = CreateResult, "Счет" = bill_no WHERE "Номер" = bx_order_no ;
   
