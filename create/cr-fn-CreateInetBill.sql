@@ -25,12 +25,21 @@ DECLARE
    EmpRec RECORD;
 BEGIN
 RAISE NOTICE 'Начало fn_createinetbill';
-SELECT bo.*, bb.bx_name, bf.fvalue AS email INTO o 
+
+SELECT bo.*, bb.bx_name, bf.fvalue AS email INTO o
     FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
     WHERE 
-        bo."Номер" = bx_order_no 
+        bo."Номер" = 7836
         AND bo.bx_buyer_id = bb.bx_buyer_id
-        AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'Контактный email');
+        AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'Контактный email')
+UNION
+SELECT bo.*, bb.bx_name, bf.fvalue AS email
+    FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
+    WHERE 
+        bo."Номер" = 7836
+        AND bo.bx_buyer_id = bb.bx_buyer_id
+        AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'EMail');     
+
 CreateResult := 3; -- пустой состав заказа
 FOR oi in SELECT * FROM bx_order_item WHERE o."Номер" = "bx_order_Номер" ORDER BY id LOOP
     --
