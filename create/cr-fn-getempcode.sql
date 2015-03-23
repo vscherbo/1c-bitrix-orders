@@ -24,6 +24,7 @@ declare
     R_account_complex VARCHAR;
     K_account VARCHAR;
     LegalAddress VARCHAR;
+    email VARCHAR;
 begin
   SELECT "КодРаботника", "Код" into emp from "Работники" where bx_buyer_id = buyer_id;
   IF not found THEN -- (emp is null) THEN -- Работник не найден, создаём
@@ -36,12 +37,10 @@ begin
                                             WHERE "bx_order_Номер" = ' || bx_order_id || 
    	' AND fname IN (
                     ''Контактное лицо'', 
-                    ''Контактный Email'', 
                     ''Контактный телефон'')
                     ORDER BY fname') 
     AS bx_order_feature("bx_order_Номер" INTEGER, 
                     person VARCHAR, 
-                    email VARCHAR, 
                     phone VARCHAR);
     SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
     IF not found THEN DeliveryAddress := ''; END IF;
@@ -58,6 +57,7 @@ begin
             SELECT fvalue INTO R_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Расчетный счет';
             SELECT fvalue INTO K_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КорСчет';
             SELECT fvalue INTO LegalAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Юридический адрес';
+            SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный email';
 	        RAISE NOTICE 'Создание предприятия Предприятие=%, ИНН=%, КПП=%', FirmName, INN, KPP;
 	        R_account_complex := R_account || ' в БИК:' || BIK || ', ' || Bank ;
             WITH inserted AS (   
@@ -73,6 +73,7 @@ begin
         RAISE NOTICE 'Физ. лицо';
         FirmCode := 223719;
         SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Местоположение';
+        SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'EMail';
         IF found THEN DeliveryAddress := PersonLocation || ', ' || DeliveryAddress; END IF;
     ELSIF (INN IS NULL) OR (KPP IS NULL) THEN -- юр. лицо, неполная информация
         RAISE NOTICE 'Юр. лицо, неполная информация ИНН=%, КПП=%', coalesce(INN, 'не определён'), coalesce(KPP, 'не определён');
@@ -82,7 +83,7 @@ begin
        insert INTO "Работники" ("КодРаботника", "Код", bx_buyer_id, 
                                 "Дата", "ФИО", "Телефон", "ЕАдрес", "Примечание")  
                                 values ((SELECT MAX("КодРаботника")+1 FROM "Работники"), FirmCode, buyer_id, 
-                                now(), Buyer.person, Buyer.phone, Buyer.email, DeliveryAddress) 
+                                now(), Buyer.person, Buyer.phone, email, DeliveryAddress) 
                                 RETURNING "КодРаботника", "Код"
     )
     SELECT inserted."КодРаботника", inserted."Код" INTO emp FROM inserted;
