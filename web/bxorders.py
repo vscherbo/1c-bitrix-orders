@@ -37,15 +37,11 @@ def bxorders_list():
 @route('/bx_order_items', method='GET')
 def bxorderitems():
     master_id = request.GET.get('master_id', '').strip()
-    if '-1' == master_id:
-        result = [u'Выберите счёт']
-    else:
-        curs = conn.cursor()
-        curs.execute('SELECT "Номер" FROM bx_order WHERE id=' + master_id + ';')
-        bx_order_num = str(curs.fetchone()[0])
-        curs.execute('SELECT * FROM bx_order_item WHERE bx_order_Номер=' + bx_order_num + ' ORDER BY id;')
-        result = curs.fetchall()
-
+    curs = conn.cursor()
+    curs.execute('SELECT "Номер" FROM bx_order WHERE id=' + master_id + ';')
+    bx_order_num = str(curs.fetchone()[0])
+    curs.execute('SELECT * FROM bx_order_item WHERE bx_order_Номер=' + bx_order_num + ' ORDER BY id;')
+    result = curs.fetchall()
     output = template('make_table', rows=result)
     return(output)
 
