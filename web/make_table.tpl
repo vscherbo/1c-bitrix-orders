@@ -1,7 +1,8 @@
 %#template to generate a HTML table from a list of tuples (or list of lists, or tuple of tuples or ...)
 <br>
-<p>Состав заказа:</p>
-<table border="1">
+<!-- p>Детали:</p -->
+<div class="enjoy-css">
+<table title="Таблица" border="1">
 %for row in rows:
   <tr>
   %for r in row:
@@ -10,3 +11,4 @@
   </tr>
 %end
 </table>
+</div>

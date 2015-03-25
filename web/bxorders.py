@@ -3,7 +3,11 @@
 
 import psycopg2
 import argparse
-from bottle import route, run, template, debug, request
+# from bottle import route, run, template, debug, request, static_file, url
+# from bottle import Bottle, run, debug, route, static_file, view, template, post, request, url
+from bottle import Bottle, run, debug, route, static_file, view, template, post, request, url, SimpleTemplate
+
+SimpleTemplate.defaults["get_url"] = url
 
 parser = argparse.ArgumentParser(description='Pg listener for .')
 parser.add_argument('--host', type=str, help='PG host')
@@ -16,19 +20,16 @@ conn = psycopg2.connect(DSN)
 conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 conn.set_client_encoding('UTF-8')
 
+@route('/static/<filename>', name='static')
+def server_static(filename):
+  return static_file(filename, root='static')
+
 @route('/bxorders')
 def bxorders_list():
-    # password='PASS'-.pgpass
-    # DSN = 'dbname=%s host=%s user=%s' % (args.db, args.host, args.user)
-
-    # conn = psycopg2.connect(DSN)
-    # conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-    # conn.set_client_encoding('UTF-8')
     curs = conn.cursor()
     curs.execute("SELECT * FROM bx_order WHERE dt_insert > CURRENT_DATE;")
     result = curs.fetchall()
     curs.close()
-    # output = template('make_table', rows=result)
     output = template('master_detail', masters=result)
     return output
 
@@ -47,7 +48,19 @@ def bxorderitems():
     output = template('make_table', rows=result)
     return(output)
 
+@route('/bx_order_features', method='GET')
+def bxorderfeatures():
+    master_id = request.GET.get('master_id', '').strip()
+    curs = conn.cursor()
+    curs.execute('SELECT "Номер" FROM bx_order WHERE id=' + master_id + ';')
+    bx_order_num = str(curs.fetchone()[0])
+    curs.execute('SELECT * FROM bx_order_feature WHERE bx_order_Номер=' + bx_order_num + ';')
+    result = curs.fetchall()
+    output = template('make_table', rows=result)
+    return(output)
+    
 debug(True)
-run()
+# run()
+run(reloader=True)
 conn.close()
 
