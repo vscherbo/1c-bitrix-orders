@@ -22,6 +22,7 @@ DECLARE
    VAT numeric;
    bill_no INTEGER;
    Price numeric;
+   bx_sum NUMERIC;
    EmpRec RECORD;
 BEGIN
 RAISE NOTICE 'Начало fn_createinetbill';
@@ -40,7 +41,12 @@ SELECT bo.*, bb.bx_name, bf.fvalue AS email
         AND bo.bx_buyer_id = bb.bx_buyer_id
         AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'EMail');     
 
+IF o IS NULL THEN
+   CreateResult := 4; -- неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
+END IF;
+
 CreateResult := 3; -- пустой состав заказа
+bx_sum := 0;
 FOR oi in SELECT * FROM bx_order_item WHERE o."Номер" = "bx_order_Номер" ORDER BY id LOOP
     --
     RAISE NOTICE 'Товар=%', oi.Наименование;
@@ -58,9 +64,14 @@ FOR oi in SELECT * FROM bx_order_item WHERE o."Номер" = "bx_order_Номе�
        RAISE NOTICE ' format item_str=%', item_str;
        arrOrderItems := array_append(arrOrderItems, item_str);
     END IF;    
-    
+    -- Для контроля "потерянных" позиций
+    bx_sum := bx_sum + oi."Сумма";
 END LOOP; -- orders item
 
+-- Контроль "потерянных" позиций по сумме
+IF bo."Сумма" <> bx_sum THEN
+   CreateResult := 5; 
+END IF;
 --  
 RAISE NOTICE 'CreateResult = %', CreateResult;
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы
