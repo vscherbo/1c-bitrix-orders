@@ -27,10 +27,11 @@ def server_static(filename):
 @route('/bxorders')
 def bxorders_list():
     curs = conn.cursor()
-    curs.execute("SELECT * FROM bx_order WHERE dt_insert > CURRENT_DATE;")
+    # curs.execute("SELECT * FROM bx_order WHERE dt_insert > CURRENT_DATE ORDER BY id;")
+    curs.execute('SELECT id, dt_insert, bx_buyer_id, "Номер", "Сумма", "Валюта", billcreated FROM bx_order WHERE dt_insert > CURRENT_DATE ORDER BY id;')
     result = curs.fetchall()
     curs.close()
-    output = template('master_detail', masters=result)
+    output = template('master_detail', masters=result, headers=(u"id", u"Импортирован", u"Ид покупателя", u"Ид заказа", u"Сумма", u"Валюта", u"Статус"))
     return output
 
 @route('/bx_order_items', method='GET')
@@ -42,7 +43,7 @@ def bxorderitems():
         curs = conn.cursor()
         curs.execute('SELECT "Номер" FROM bx_order WHERE id=' + master_id + ';')
         bx_order_num = str(curs.fetchone()[0])
-        curs.execute('SELECT * FROM bx_order_item WHERE bx_order_Номер=' + bx_order_num + ';')
+        curs.execute('SELECT * FROM bx_order_item WHERE bx_order_Номер=' + bx_order_num + ' ORDER BY id;')
         result = curs.fetchall()
 
     output = template('make_table', rows=result)
@@ -54,7 +55,7 @@ def bxorderfeatures():
     curs = conn.cursor()
     curs.execute('SELECT "Номер" FROM bx_order WHERE id=' + master_id + ';')
     bx_order_num = str(curs.fetchone()[0])
-    curs.execute('SELECT * FROM bx_order_feature WHERE bx_order_Номер=' + bx_order_num + ';')
+    curs.execute('SELECT * FROM bx_order_feature WHERE bx_order_Номер=' + bx_order_num + ' ORDER BY id;')
     result = curs.fetchall()
     output = template('make_table', rows=result)
     return(output)
