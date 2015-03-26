@@ -69,8 +69,9 @@ FOR oi in SELECT * FROM bx_order_item WHERE o."Номер" = "bx_order_Номе�
 END LOOP; -- orders item
 
 -- Контроль "потерянных" позиций по сумме
-IF bo."Сумма" <> bx_sum THEN
-   CreateResult := 5; 
+IF (o."Сумма" <> bx_sum) AND (CreateResult = 5) THEN
+   CreateResult := 5;
+   RAISE NOTICE 'bx_order_sum=%, items_sum=%', o."Сумма", bx_sum; 
 END IF;
 --  
 RAISE NOTICE 'CreateResult = %', CreateResult;
