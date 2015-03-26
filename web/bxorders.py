@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -
 
 import psycopg2
@@ -26,9 +25,18 @@ def server_static(filename):
 
 @route('/bxorders')
 def bxorders_list():
+    fields = {
+    'id': u"id",
+    'dt_insert': u"Импортирован",  
+    'bx_buyer_id': u"Ид покупателя",
+    '"Номер"': u"Ид заказа",
+    '"Сумма"': u"Сумма", 
+    '"Валюта"': u"Валюта",
+    'billcreated': u"Статус",
+    }
     curs = conn.cursor()
     # curs.execute("SELECT * FROM bx_order WHERE dt_insert > CURRENT_DATE ORDER BY id;")
-    curs.execute('SELECT id, dt_insert, bx_buyer_id, "Номер", "Сумма", "Валюта", billcreated FROM bx_order WHERE dt_insert > CURRENT_DATE ORDER BY id;')
+    curs.execute('SELECT id, dt_insert, bx_buyer_id, "Номер", "Сумма", "Валюта", billcreated FROM bx_order WHERE dt_insert > CURRENT_DATE-1 ORDER BY id;')
     result = curs.fetchall()
     curs.close()
     output = template('master_detail', masters=result, headers=(u"id", u"Импортирован", u"Ид покупателя", u"Ид заказа", u"Сумма", u"Валюта", u"Статус"))

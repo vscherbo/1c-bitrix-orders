@@ -22,7 +22,7 @@ function swapBG(el, BG1, BG2) {
  </head>
  <body>
 
-<p>Список заказов за сегодня:</p>
+<p>Список заказов за вчера-сегодня:</p>
 
 <!-- http://stackoverflow.com/questions/9505256/static-files-not-loaded-in-a-bottle-application-when-the-trailing-slash-is-omitt -->
 
