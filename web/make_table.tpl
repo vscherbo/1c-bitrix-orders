@@ -3,6 +3,12 @@
 <!-- p>Детали:</p -->
 <div class="enjoy-css">
 <table title="Таблица" border="1">
+<tr>
+%for h in headers:
+  <td><b>{{h}}</td>
+%end
+</tr>
+
 %for row in rows:
   <tr>
   %for r in row:

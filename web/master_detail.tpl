@@ -35,7 +35,7 @@ function swapBG(el, BG1, BG2) {
             <table border="1" id="bx_orders_cell" >
             <tr>
             %for h in headers:
-                   <td>{{h}}</td>
+                   <td><b>{{h}}</b></td>
             %end
             </tr>
             %for master in masters:
