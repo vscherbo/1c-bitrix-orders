@@ -67,11 +67,20 @@ def bxorderitems():
         curs = conn.cursor()
         curs.execute('SELECT "Номер" AS ord_num FROM bx_order WHERE id=' + master_id + ';')
         bx_order_num = str(curs.fetchone()[0])
-        orderitems_qry = u'SELECT ' + u','.join(Fields.keys()) + u' FROM bx_order_item WHERE bx_order_Номер=' + bx_order_num + u' ORDER BY id;'
+        qry_fields = u','.join(Fields.keys()) 
+        orderitems_qry = (u'SELECT ' + qry_fields +
+                          u', oif.fvalue'
+                          u' FROM bx_order_item oi, bx_order_item_feature oif'
+                          u' WHERE oi.bx_order_Номер=' + bx_order_num +
+                          u' AND oi."Ид" = oif.bx_order_item_id AND oif.bx_order_Номер=oi.bx_order_Номер AND'
+                          u" fname='Модификация'"
+                          u' ORDER BY oi.id;')
         # curs.execute('SELECT * FROM bx_order_item WHERE bx_order_Номер=' + bx_order_num + ' ORDER BY id;')
         curs.execute(orderitems_qry)
         result = curs.fetchall()
-        output = template('make_table', rows=result, headers=Fields.values())
+        headers = Fields.values()
+        headers.append(u'Модификация')
+        output = template('make_table', rows=result, headers=headers)
     return(output)
 
 @route('/bx_order_features', method='GET')
@@ -87,9 +96,8 @@ def bxorderfeatures():
         result = curs.fetchall()
         output = template('make_table', rows=result, headers=(u'Свойство заказа', u'Значение'))
     return(output)
-    
+
 debug(True)
 # run()
 run(reloader=True)
 conn.close()
-

@@ -48,7 +48,6 @@ function swapBG(el, BG1, BG2) {
             %end
             </tr>
             %for master in rows:
-              <!-- div style="height:70%" -->
               <tr onclick="swapBG(this,'grey', 'white');" >
               %for m in master:
                 <td>{{m}}</td>
@@ -80,7 +79,7 @@ document.getElementById('bx_order_features_iframe').src='http://localhost:8080/b
         </tr>
        
         <tr>
-           <td valign="top" align="left">
+           <td colspan="2" valign="top" align="left">
                <div id='outerdiv'> <!-- style="width:100%; overflow-x:hidden;" -->
                <h3><p>Состав заказа</p></h3>
                     <iframe title="Состав заказа" runat="server" frameBorder=0 marginHeight=0 marginWidth=0 name=bx_order_items scrolling=auto
