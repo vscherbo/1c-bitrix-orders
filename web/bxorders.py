@@ -70,10 +70,11 @@ def bxorderitems():
         qry_fields = u','.join(Fields.keys()) 
         orderitems_qry = (u'SELECT ' + qry_fields +
                           u', oif.fvalue'
-                          u' FROM bx_order_item oi, bx_order_item_feature oif'
+                          u' FROM bx_order_item oi'
+                          u' LEFT JOIN bx_order_item_feature oif ON '
+                          u' (oi."Ид" = oif.bx_order_item_id AND oif.bx_order_Номер=oi.bx_order_Номер AND'
+                          u" fname='Модификация')"
                           u' WHERE oi.bx_order_Номер=' + bx_order_num +
-                          u' AND oi."Ид" = oif.bx_order_item_id AND oif.bx_order_Номер=oi.bx_order_Номер AND'
-                          u" fname='Модификация'"
                           u' ORDER BY oi.id;')
         # curs.execute('SELECT * FROM bx_order_item WHERE bx_order_Номер=' + bx_order_num + ' ORDER BY id;')
         curs.execute(orderitems_qry)
