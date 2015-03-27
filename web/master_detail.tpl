@@ -26,7 +26,7 @@ function swapBG(el, BG1, BG2) {
 <!-- http://stackoverflow.com/questions/9505256/static-files-not-loaded-in-a-bottle-application-when-the-trailing-slash-is-omitt -->
 
 <table border="1" cellpadding="1" cellspacing="1" align="left" width="100%" height="100%">
-    <thead> 
+    <thead style="height:40px;"> 
       <tr>
         <td>
            <h3><p align="middle">Список заказов </p></h3>
@@ -38,7 +38,7 @@ function swapBG(el, BG1, BG2) {
     </thead>
     <tbody>
         <tr>
-            <td valign="top" width="50%" style="overflow:auto;">
+            <td valign="top" width="50%" height="600px" style="overflow:auto;">
 
             <!-- table class="enjoy-css" border="1" -->
             <table border="1" width="100%" id="bx_orders_cell">
@@ -48,6 +48,7 @@ function swapBG(el, BG1, BG2) {
             %end
             </tr>
             %for master in rows:
+              <!-- div style="height:70%" -->
               <tr onclick="swapBG(this,'grey', 'white');" >
               %for m in master:
                 <td>{{m}}</td>
@@ -55,7 +56,7 @@ function swapBG(el, BG1, BG2) {
               <td> <!-- style="width: 500px;" -->
                   <form action="" method="GET">
                     <input type="hidden" name="master_id" value="{{master[0]}}" />
-                    <input type="button" value=" Состав " 
+                    <input type="button" value=" Подробно " 
                      onclick="
 document.getElementById('bx_order_items_iframe').src='http://localhost:8080/bx_order_items?master_id='+form.master_id.value ;
 document.getElementById('bx_order_features_iframe').src='http://localhost:8080/bx_order_features?master_id='+form.master_id.value;
@@ -64,6 +65,7 @@ document.getElementById('bx_order_features_iframe').src='http://localhost:8080/b
                   </form>
               </td>
               </tr>
+              </div>
             %end
             </table>
 
