@@ -2,7 +2,7 @@
 <br>
 <!-- p>Детали:</p -->
 <div class="enjoy-css">
-<table title="Таблица" border="1">
+<table title="Таблица" border="1" style="width:100%">
 <tr>
 %for h in headers:
   <td><b>{{h}}</td>
