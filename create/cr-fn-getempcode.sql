@@ -43,7 +43,9 @@ begin
                     person VARCHAR, 
                     phone VARCHAR);
     SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
-    IF not found THEN DeliveryAddress := ''; END IF;
+    IF not found THEN DeliveryAddress := ''; 
+    ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 255);
+    END IF;
     
     IF (INN IS NOT NULL) AND (KPP IS NOT NULL) THEN -- юр. лицо
         --
@@ -60,6 +62,10 @@ begin
             SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный email';
 	        RAISE NOTICE 'Создание предприятия Предприятие=%, ИНН=%, КПП=%', FirmName, INN, KPP;
 	        R_account_complex := R_account || ' в БИК:' || BIK || ', ' || Bank ;
+	        -- IF length(R_account_complex) > 255 THEN R_account_complex := substring(R_account_complex from 1 for 255);
+	        -- END IF;
+	        R_account_complex := substring(R_account_complex from 1 for 255);
+	        LegalAddress := substring(LegalAddress from 1 for 250);
             WITH inserted AS (   
                 INSERT INTO "Предприятия"("Предприятие", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес") 
                 VALUES (FirmName, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress) 
