@@ -33,7 +33,7 @@ begin
     SELECT fvalue INTO INN FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'ИНН';
     SELECT fvalue INTO KPP FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КПП';
     
-    SELECT * INTO Buyer FROM devmod.crosstab('SELECT  "bx_order_Номер", fname, fvalue FROM bx_order_feature
+    SELECT * INTO Buyer FROM crosstab('SELECT  "bx_order_Номер", fname, fvalue FROM bx_order_feature
                                             WHERE "bx_order_Номер" = ' || bx_order_id || 
    	' AND fname IN (
                     ''Контактное лицо'', 
