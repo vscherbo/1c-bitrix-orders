@@ -115,6 +115,7 @@ while [ $intrflag -eq 0 ] ; do
     else
       logmsg ERROR "LOGON not successfull"
     fi
+    cp /dev/null $LOGON_RESULT_TMP
  
 done
 
