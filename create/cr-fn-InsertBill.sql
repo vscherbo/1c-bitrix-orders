@@ -16,9 +16,11 @@ $BODY$ DECLARE
   PaymentType VARCHAR;
   DeliveryService VARCHAR;
   ExtraInfo VARCHAR;
+  exInfo_truncated VARCHAR;
 -- Хозяин=38 - Гараханян
 -- Хозяин=77 - Бондаренко
   inet_bill_owner integer = 77;
+  Max_ExtraInfo CONSTANT INTEGER := 250;
 BEGIN
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
     IF found THEN ExtraInfo := BuyerComment; END IF;
@@ -26,6 +28,10 @@ BEGIN
     IF found THEN ExtraInfo := ExtraInfo || ' Метод оплаты:' || PaymentType; END IF;
     SELECT fvalue INTO DeliveryService FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Название службы доставки';
     IF found THEN ExtraInfo := ExtraInfo || ' Название службы доставки:' || DeliveryService; END IF;
+    IF length(ExtraInfo) > Max_ExtraInfo  THEN
+       exInfo_truncated = rpad(ExtraInfo, Max_ExtraInfo);
+       RAISE NOTICE 'ExtraInfo % longer than %, truncated to=%', ExtraInfo,Max_ExtraInfo,exInfo_truncated;
+    END IF;
 
     SELECT fvalue INTO DeliveryMode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Способ доставки';
 
@@ -34,7 +40,7 @@ BEGIN
     WITH inserted AS (
         INSERT INTO "Счета"
             ("Код", "фирма", "Хозяин", "№ счета", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "Статус", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем") 
-        VALUES (aFirmCode, 'АРКОМ', inet_bill_owner, fn_GetNewBillNo(inet_bill_owner), CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт на заказ с сайта', ExtraInfo, Delivery, DeliveryMode)
+        VALUES (aFirmCode, 'АРКОМ', inet_bill_owner, fn_GetNewBillNo(inet_bill_owner), CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт на заказ с сайта', exInfo_truncated, Delivery, DeliveryMode)
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
