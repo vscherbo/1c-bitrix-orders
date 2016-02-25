@@ -94,6 +94,8 @@ while [ $intrflag -eq 0 ] ; do
        then
           if [ -f $ORDERS_FILE ]; then
               sed -r -e 's/^[[:space:]]+//g' -e 's/>[[:space:]]*</>\n</g' -e 's/windows-1251/UTF-8/' $ORDERS_FILE > $ORDERS_FIXED_XML 
+              logmsg INFO "Fix broken escaped in $ORDERS_FIXED_XML"
+              $BIN_DIR/del-incomplete-escaped-chars.py $ORDERS_FIXED_XML
               logmsg INFO "Create $ORDERS_FIXED_SQL from $ORDERS_FIXED_XML"
               $BIN_DIR/bitrix-orders-to-pg.py $ORDERS_FIXED_XML $ORDERS_FIXED_SQL $PG_SRV
               logmsg $? "Finish create SQL-file $ORDERS_FIXED_SQL"

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DT=`date +%F_%H%M`
-INST_LIST='listen4orders.sh bitrix-orders-to-pg.py'
+INST_LIST='listen4orders.sh bitrix-orders-to-pg.py del-incomplete-escaped-chars.py'
 
 for f in $INST_LIST
 do
