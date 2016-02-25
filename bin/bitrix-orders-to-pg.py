@@ -1,7 +1,7 @@
-#!/usr/local/bin/python2.7
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -
 
-### !/usr/bin/env python2.7
+### !/usr/local/bin/python2.7
 
 
 from datetime import datetime
@@ -177,6 +177,12 @@ for child in root:
             else:
                bx_order_item_id = u"NO_ID"
             #bx_order_item_id = sale_item.find(u'Ид').text
+            for discounts in sale_item.findall(u'Скидки'):
+                for discount in discounts.findall(u'Скидка'):
+                    outf.write(u"-- Пропускаем скидку:" + discount.text + "\n")
+                    for disc_req in discount.iter():
+                        outf.write(u"-- disc_req:" + disc_req.tag + "/" + disc_req.text + "\n")
+                    discounts.remove(discount)
             for reqs in sale_item.findall(u'ЗначенияРеквизитов'):
                 sale_item_features_insert_dict = []
                 for req in reqs.findall(u'ЗначениеРеквизита'):
