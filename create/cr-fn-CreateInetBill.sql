@@ -47,12 +47,19 @@ END IF;
 
 CreateResult := 3; -- пустой состав заказа
 bx_sum := 0;
-FOR oi in SELECT * FROM bx_order_item WHERE o."Номер" = "bx_order_Номер" ORDER BY id LOOP
+FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id 
+                 FROM bx_order_item
+                 LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
+                                            AND bx_order_item_feature."bx_order_Номер" = bx_order_item."bx_order_Номер"
+                                            AND bx_order_item_feature.fname = 'КодМодификации'
+                 WHERE o."Номер" = bx_order_item."bx_order_Номер" 
+                 ORDER BY id 
+                 LOOP
     --
     RAISE NOTICE 'Товар=%', oi.Наименование;
     -- TODO split oi.Наименование by ":" to get 2nd part (order_mod_id)
     -- SELECT "КодСодержания" into KS FROM "Содержание" WHERE mod_id = order_mod_id;
-    SELECT "КодСодержания" into KS from vwsyncdev WHERE ie_name = oi."Наименование";
+    SELECT "КодСодержания" into KS from vwsyncdev WHERE dev_name = oi."Наименование" OR mod_id = oi.mod_id;
     IF (KS is null) THEN
        CreateResult := 2; -- есть не синхронизированная позиция в заказе
        RAISE NOTICE 'The order % has not synched items. Skip this order', bx_order_no;
