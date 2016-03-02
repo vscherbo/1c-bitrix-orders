@@ -3,6 +3,7 @@
 
 # import requests
 from requests import Request, Session
+import requests.exceptions
 from sys import exit
 import codecs
 import time
@@ -36,8 +37,16 @@ def signal_handler(asignal, frame):
     #      SIGNALS_TO_NAMES_DICT.get(asignal, "Unnamed signal: %d" % asignal))
     logging.info('Got signal: %s',
           SIGNALS_TO_NAMES_DICT.get(asignal, "Unnamed signal: %d" % asignal))
-    global do_listen
+    global do_listen, con, sess
     do_listen = False
+    logging.debug('after do_listen = False')
+    """
+    con.close()
+    logging.debug('after con.close()')
+    logging.debug('sess.headers=' + str(sess.headers))
+    sess.close()
+    logging.debug('after sess.close()')
+    """
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
@@ -263,41 +272,72 @@ cur.execute('SELECT bx_buyer_id FROM bx_buyer')
 db_buyers = cur.fetchall()
 cur.execute('SELECT "Номер" FROM bx_order')
 db_orders = cur.fetchall()
-cur.close()
 
 url = proto + conf['site'] + '/bitrix/admin/1c_exchange.php'
 sess = Session()
 sess.verify=verify_flag
+sess.keep_alive = True
+req = Request('GET', url)
 
 # TODO trap signals/interrupts
 do_listen = True
 while do_listen:
-    req = Request('GET', 
-                url,
-                auth=(conf['site_user'], conf['site_pword']),
-    )
-
     # listen, real-time mode
     req.params={'type': 'listen'}
     prepped = sess.prepare_request(req)
     logging.debug("start listen");
-    resp = sess.send(prepped)
-    logging.debug("listen resp.text=%s", resp.text);
+    try:
+        #resp = sess.send(prepped, timeout=30)
+        resp = sess.send(prepped)
+        logging.debug("listen prepped sent");
+    except Exception as e:
+        logging.debug("listen exception=%s", str(e))
+        resp = None
+        continue
+    finally:
+        if resp is None:
+            logging.debug("listen NO resp")
+        else:
+            logging.debug("listen resp.status_code=%s", resp.status_code)
+            logging.debug("listen resp.text=%s", resp.text)
+
+    if 200 != resp.status_code:
+        continue
 
     # TODO
     # if resp.text contains 'success'
 
     # authentication
+    req = Request('GET', 
+                url,
+                auth=(conf['site_user'], conf['site_pword']),
+    )
     req.params={'type': 'sale', 'mode': 'checkauth', 'version': conf['version']}
     prepped = sess.prepare_request(req)
-    resp = sess.send(prepped)
+    try:
+        resp = sess.send(prepped)
+        logging.debug("checkauth prepped sent");
+    except Exception as e:
+        logging.debug("checkauth exception=%s", str(e));
+        resp = None
+        continue
+    finally:    
+        if resp is None:
+            logging.debug("checkauth NO resp")
+        else:
+            logging.debug("checkauth resp.status_code=%s", resp.status_code)
+            logging.debug("checkauth resp.text=%s", resp.text)
+    if 200 != resp.status_code:
+        continue
+
     (auth_result, cookie_file, cookie_value, sessid) = resp.text.split()
-    logging.debug("checkauth resp.text=%s", resp.text)
+    """
     logging.debug("Parsed by =")
     logging.debug("auth_result=%s", auth_result)
     logging.debug("cookie_file=%s", cookie_file)
     logging.debug("cookie_value=%s", cookie_value)
     logging.debug("sessid=%s", sessid)
+    """
 
     # if authorized
     if 'success' == auth_result:
@@ -328,7 +368,11 @@ while do_listen:
 
             xml_orders = get_xml_list_fixed(xml_from_site.splitlines())
             logging.debug("len(xml_orders)=%s", len(xml_orders))
-            xml_lines = u"\n".join(xml_orders)
+            if 4 == len(xml_orders):
+                logging.debug('empty xml, just header. Skip')
+                continue
+            else:
+                xml_lines = u"\n".join(xml_orders)
 
 
 
@@ -339,15 +383,17 @@ while do_listen:
             xmlf=codecs.open(xmlf_name, 'w', 'utf-8')
             xmlf.write(xml_lines)
             xmlf.close()
-            logging.debug("wrote xml file=%s", xmlf_name)
+            logging.debug("wrote xml file: %s", xmlf_name)
 
             el = ET.fromstring(xml_lines.encode('utf-8'))
             logging.debug("xml_lines was parsed")
             parse_xml_insert_into_db(conf['site'], el, con, db_buyers, db_orders, sql_outfile_name)
-            logging.debug("sql-files created=%s", sql_outfile_name)
+            logging.debug("sql-files created: %s", sql_outfile_name)
+            # cur.callproc('fn_inetbill4neworders')
 
             # debug
             # do_listen = False
 
+cur.close()
 
 ############## Bottom line #########################
