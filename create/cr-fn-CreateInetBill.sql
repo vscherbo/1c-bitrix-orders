@@ -24,6 +24,7 @@ DECLARE
    Price numeric;
    bx_sum NUMERIC;
    EmpRec RECORD;
+   loc_OrderItemProcessingTime varchar;
 BEGIN
 RAISE NOTICE 'Начало fn_createinetbill';
 
@@ -32,7 +33,7 @@ SELECT bo.*, bb.bx_name, bf.fvalue AS email INTO o
     WHERE 
         bo."Номер" = bx_order_no
         AND bo.bx_buyer_id = bb.bx_buyer_id
-        AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'Контактный email')
+        AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'Контактный Email')
 UNION
 SELECT bo.*, bb.bx_name, bf.fvalue AS email
     FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
@@ -65,11 +66,16 @@ FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id
        RAISE NOTICE 'The order % has not synched items. Skip this order', bx_order_no;
        EXIT; -- дальше не проверяем
     ELSE
-       CreateResult := 1; -- позиция заказа синхронизирована
-       item_str := format(' %s, %s, ''%s'', %s', KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код") , oi."Количество");
-       -- 
-       RAISE NOTICE ' format item_str=%', item_str;
-       arrOrderItems := array_append(arrOrderItems, item_str);
+       IF is_enough(KS, oi."Количество") THEN
+          CreateResult := 1; -- позиция заказа синхронизирована
+          item_str := format(' %s, %s, ''%s'', %s', KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код") , oi."Количество");
+          -- 
+          RAISE NOTICE ' format item_str=%', item_str;
+          arrOrderItems := array_append(arrOrderItems, item_str);
+       ELSE
+          CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
+          EXIT; -- дальше не проверяем
+       END IF;    
     END IF;    
     -- Для контроля "потерянных" позиций
     bx_sum := bx_sum + oi."Сумма";
@@ -91,7 +97,9 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
         Npp := 1;
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";
+
         FOREACH item IN ARRAY arrOrderItems loop
+            SELECT OrderItem_ProcessingTime() INTO loc_OrderItemProcessingTime; -- by KS
             SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = KS;
             Price := soderg."Цена"*100/(100 + VAT);
             --
@@ -102,11 +110,13 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
                     || E'("КодПозиции", '
                     || E'"№ счета", '
                     || E'"КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во", '
+                    || E'"Срок2", '
                     || E'"ПозицияСчета", "Наименование", '
                     || E'"Цена", "ЦенаНДС") '
                     || E'VALUES ((SELECT MAX("КодПозиции")+1 FROM "Содержание счета"), '
                     || bill_no || ', ' -- '"№ счета"
                     || item || ', '  -- "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",'
+                    || E'''' || loc_OrderItemProcessingTime || ''', '
                     || Npp || ', ''' || soderg."НазваниевСчет" || ''', '  -- '"ПозицияСчета", "Наименование", '
                     || round(Price, 2)  || ', ' || soderg."Цена" -- '"Цена", "ЦенаНДС") '
                     || ');' ;
