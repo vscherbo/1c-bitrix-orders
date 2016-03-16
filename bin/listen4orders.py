@@ -37,16 +37,19 @@ def signal_handler(asignal, frame):
     #      SIGNALS_TO_NAMES_DICT.get(asignal, "Unnamed signal: %d" % asignal))
     logging.info('Got signal: %s',
           SIGNALS_TO_NAMES_DICT.get(asignal, "Unnamed signal: %d" % asignal))
-    global do_listen, con, sess
+    global do_listen, con, sess, req
     do_listen = False
     logging.debug('after do_listen = False')
-    """
+    logging.debug('sess.headers=' + str(sess.headers))
+    logging.debug('req.headers=' + str(req.headers))
     con.close()
     logging.debug('after con.close()')
-    logging.debug('sess.headers=' + str(sess.headers))
+    req = None
+    logging.debug('after req = None')
     sess.close()
     logging.debug('after sess.close()')
-    """
+    sess = None
+    logging.debug('after sess = None')
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGHUP, signal_handler)
@@ -275,21 +278,22 @@ db_orders = cur.fetchall()
 
 url = proto + conf['site'] + '/bitrix/admin/1c_exchange.php'
 sess = Session()
+sess.headers['Connection'] = 'close'
 sess.verify=verify_flag
 sess.keep_alive = True
-req = Request('GET', url)
 
 # TODO trap signals/interrupts
 do_listen = True
 while do_listen:
     # listen, real-time mode
+    req = Request('GET', url)
     req.params={'type': 'listen'}
     prepped = sess.prepare_request(req)
-    logging.debug("start listen");
+    logging.debug("start listen")
     try:
         #resp = sess.send(prepped, timeout=30)
         resp = sess.send(prepped)
-        logging.debug("listen prepped sent");
+        logging.debug("listen prepped sent")
     except Exception as e:
         logging.debug("listen exception=%s", str(e))
         resp = None
@@ -304,21 +308,24 @@ while do_listen:
     if 200 != resp.status_code:
         continue
 
+    saved_cookies = resp.cookies
+    logging.debug("resp.cookies=%s", str(resp.cookies))
     # TODO
     # if resp.text contains 'success'
 
     # authentication
     req = Request('GET', 
                 url,
+                cookies = saved_cookies,
                 auth=(conf['site_user'], conf['site_pword']),
     )
     req.params={'type': 'sale', 'mode': 'checkauth', 'version': conf['version']}
     prepped = sess.prepare_request(req)
     try:
         resp = sess.send(prepped)
-        logging.debug("checkauth prepped sent");
+        logging.debug("checkauth prepped sent")
     except Exception as e:
-        logging.debug("checkauth exception=%s", str(e));
+        logging.debug("checkauth exception=%s", str(e))
         resp = None
         continue
     finally:    
@@ -331,13 +338,11 @@ while do_listen:
         continue
 
     (auth_result, cookie_file, cookie_value, sessid) = resp.text.split()
-    """
     logging.debug("Parsed by =")
     logging.debug("auth_result=%s", auth_result)
     logging.debug("cookie_file=%s", cookie_file)
     logging.debug("cookie_value=%s", cookie_value)
     logging.debug("sessid=%s", sessid)
-    """
 
     # if authorized
     if 'success' == auth_result:
