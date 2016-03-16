@@ -22,6 +22,7 @@ $BODY$ DECLARE
   inet_bill_owner integer = 77;
   Max_ExtraInfo CONSTANT INTEGER := 250;
   loc_OrderProcessingTime varchar;
+  bill_no INTEGER;
 BEGIN
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
     IF found THEN ExtraInfo := BuyerComment; END IF;
@@ -40,10 +41,11 @@ BEGIN
     
     SELECT Order_ProcessingTime() INTO loc_OrderProcessingTime;
     inet_bill_owner := get_owner_by_firm_code(aFirmCode);
+    bill_no := fn_GetNewBillNo(inet_bill_owner);
     WITH inserted AS (
         INSERT INTO "Счета"
-            ("Код", "фирма", "Хозяин", "№ счета", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "Статус", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок") 
-        VALUES (aFirmCode, 'АРКОМ', inet_bill_owner, fn_GetNewBillNo(inet_bill_owner), CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт на заказ с сайта', exInfo_truncated, Delivery, DeliveryMode, loc_OrderProcessingTime)
+            ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "Статус", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок") 
+        VALUES (aFirmCode, 'АРКОМ', inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт на заказ с сайта', exInfo_truncated, Delivery, DeliveryMode, loc_OrderProcessingTime)
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
