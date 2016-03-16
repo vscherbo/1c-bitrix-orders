@@ -3,7 +3,7 @@
 -- DROP FUNCTION fn_createinetbill(integer);
 
 CREATE OR REPLACE FUNCTION fn_createinetbill(bx_order_no integer)
-  RETURNS void AS
+  RETURNS INTEGER AS
 $BODY$
 DECLARE
    oi record;
@@ -12,8 +12,9 @@ DECLARE
    bill record;
    KS integer;
    CreateResult integer;
-   arrOrderItems varchar[];
-   item varchar;
+   -- arrOrderItems varchar[];
+   -- arr_OrderItems t_order_item[];
+   item RECORD;
    item_str varchar;
    item_id integer;
    Npp INTEGER;
@@ -25,6 +26,8 @@ DECLARE
    bx_sum NUMERIC;
    EmpRec RECORD;
    loc_OrderItemProcessingTime varchar;
+   inserted_bill_item RECORD;
+   our_emp_id INTEGER;
 BEGIN
 RAISE NOTICE 'Начало fn_createinetbill';
 
@@ -48,6 +51,10 @@ END IF;
 
 CreateResult := 3; -- пустой состав заказа
 bx_sum := 0;
+
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_okei_code integer, oi_measure_unit character varying(50), oi_quantity numeric(18,3), item_str character varying);
+TRUNCATE tmp_order_items; -- if exists
+
 FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id 
                  FROM bx_order_item
                  LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
@@ -71,7 +78,9 @@ FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id
           item_str := format(' %s, %s, ''%s'', %s', KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код") , oi."Количество");
           -- 
           RAISE NOTICE ' format item_str=%', item_str;
-          arrOrderItems := array_append(arrOrderItems, item_str);
+          -- arrOrderItems := array_append(arrOrderItems, item_str);
+          INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, oi_quantity, item_str)
+                 VALUES (KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код") , oi."Количество", item_str);
        ELSE
           CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
           EXIT; -- дальше не проверяем
@@ -82,9 +91,9 @@ FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id
 END LOOP; -- orders item
 
 -- Контроль "потерянных" позиций по сумме
-IF (o."Сумма" <> bx_sum) AND (CreateResult = 5) THEN
+IF (o."Сумма" <> bx_sum) AND (1 = CreateResult) THEN
    CreateResult := 5;
-   RAISE NOTICE 'bx_order_sum=%, items_sum=%', o."Сумма", bx_sum; 
+   RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', o."Сумма", bx_sum; 
 END IF;
 --  
 RAISE NOTICE 'CreateResult = %', CreateResult;
@@ -98,37 +107,71 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";
 
-        FOREACH item IN ARRAY arrOrderItems loop
+        -- FOREACH item IN ARRAY arrOrderItems loop
+        FOR item in SELECT * FROM tmp_order_items LOOP
             SELECT OrderItem_ProcessingTime() INTO loc_OrderItemProcessingTime; -- by KS
             SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = KS;
             Price := soderg."Цена"*100/(100 + VAT);
             --
-            RAISE NOTICE 'bill_no=%, item=%', bill."№ счета", item;
+            RAISE NOTICE 'bill_no=%, item.ks=%', bill."№ счета", item.ks;
             -- TODO Выявлять услугу "Оплата доставки"
-      
-            EXECUTE E'INSERT INTO "Содержание счета" '
-                    || E'("КодПозиции", '
-                    || E'"№ счета", '
-                    || E'"КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во", '
-                    || E'"Срок2", '
-                    || E'"ПозицияСчета", "Наименование", '
-                    || E'"Цена", "ЦенаНДС") '
-                    || E'VALUES ((SELECT MAX("КодПозиции")+1 FROM "Содержание счета"), '
-                    || bill_no || ', ' -- '"№ счета"
-                    || item || ', '  -- "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",'
-                    || E'''' || loc_OrderItemProcessingTime || ''', '
-                    || Npp || ', ''' || soderg."НазваниевСчет" || ''', '  -- '"ПозицияСчета", "Наименование", '
-                    || round(Price, 2)  || ', ' || soderg."Цена" -- '"Цена", "ЦенаНДС") '
-                    || ');' ;
-            Npp := Npp+1;      
+
+           -- IF do_reserve_bill_item(EmpRec."Код", bill."Хозяин", (item).ks, (item).oi_quantity) THEN 
+
+                    with inserted as (
+                       insert into "Содержание счета"
+                            ("КодПозиции",
+                            "№ счета",
+                            "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",
+                            "Срок2",
+                            "ПозицияСчета", "Наименование",
+                            "Цена", "ЦенаНДС")
+                            values ((select max("КодПозиции")+1 from "Содержание счета"),
+                            bill_no,
+                            item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
+                            loc_orderitemprocessingtime,
+                            npp, soderg."НазваниевСчет",
+                            round(price, 2), soderg."Цена"
+                            ) 
+                     returning * 
+                     ) select * into inserted_bill_item from inserted;
+                     Npp := Npp+1;
+
+                    /**/
+                    SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
+                    INSERT INTO "Резерв"("Счет", "Резерв", "Подкого_Код", "Когда", "Докуда", "Кем_Номер", "КодПозиции", "КодСодержания", "ПримечаниеСклада", "КодСклада") 
+                                  VALUES(bill."№ счета", item.oi_quantity, EmpRec."Код", now(), now()+'10 days'::interval, our_emp_id, inserted_bill_item."КодПозиции", item.ks, '', 2);
+                    /**/                          
+                /**
+                    EXECUTE E'INSERT INTO "Содержание счета" '
+                            || E'("КодПозиции", '
+                            || E'"№ счета", '
+                            || E'"КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во", '
+                            || E'"Срок2", '
+                            || E'"ПозицияСчета", "Наименование", '
+                            || E'"Цена", "ЦенаНДС") '
+                            || E'VALUES ((SELECT MAX("КодПозиции")+1 FROM "Содержание счета"), '
+                            || bill_no || ', ' -- '"№ счета"
+                            || (item).item_str || ', '  -- "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",'
+                            || E'''' || loc_OrderItemProcessingTime || ''', '
+                            || Npp || ', ''' || soderg."НазваниевСчет" || ''', '  -- '"ПозицияСчета", "Наименование", '
+                            || round(Price, 2)  || ', ' || soderg."Цена" -- '"Цена", "ЦенаНДС") '
+                            || ');' ;
+                    Npp := Npp+1;      
+                **/
+           -- END IF; -- do_reserve  
         END LOOP;
     ELSE -- Код IS NULL
         CreateResult := 9; -- bad Firm
         RAISE NOTICE 'Невозможно определить Код Предприятия. Счёт не создан. bx_order.billcreated=%', CreateResult;
     END IF;
 END IF;
+
 UPDATE bx_order SET billcreated = CreateResult, "Счет" = bill_no WHERE "Номер" = bx_order_no ;
-  
+
+TRUNCATE tmp_order_items;
+
+RETURN CreateResult;
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;

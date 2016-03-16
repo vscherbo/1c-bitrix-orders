@@ -9,7 +9,7 @@ $BODY$ DECLARE
 BEGIN
     FOR o IN SELECT * FROM bx_order WHERE billcreated = 0 ORDER BY "Номер" LOOP
         RAISE NOTICE 'Создаём счёт для заказа=%', o."Номер";
-        EXECUTE fn_createinetbill(o."Номер");
+        PERFORM fn_createinetbill(o."Номер");
     END LOOP;
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
