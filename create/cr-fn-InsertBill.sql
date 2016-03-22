@@ -1,12 +1,13 @@
--- Function: fn_insertbill(numeric, integer, integer, integer)
+-- Function: fn_insertbill(numeric, integer, integer, integer, character varying)
 
--- DROP FUNCTION fn_insertbill(numeric, integer, integer, integer);
+-- DROP FUNCTION fn_insertbill(numeric, integer, integer, integer, character varying);
 
 CREATE OR REPLACE FUNCTION fn_insertbill(
     sum numeric,
     bx_order integer,
-    afirmcode integer,
-    aempcode integer)
+    acode integer, -- Код предприятия
+    aempcode integer,
+    ourfirm character varying)
   RETURNS record AS
 $BODY$ DECLARE
   ret_bill RECORD;
@@ -45,7 +46,8 @@ BEGIN
     WITH inserted AS (
         INSERT INTO "Счета"
             ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "Статус", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок") 
-        VALUES (aFirmCode, 'АРКОМ', inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт на заказ с сайта', exInfo_truncated, Delivery, DeliveryMode, loc_OrderProcessingTime)
+        VALUES (acode, ourFirm, inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт на заказ с сайта', exInfo_truncated, Delivery, DeliveryMode, loc_OrderProcessingTime)
+        -- VALUES (aFirmCode, 'АРКОМ', inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт на заказ с сайта', exInfo_truncated, Delivery, DeliveryMode, loc_OrderProcessingTime)
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
@@ -55,9 +57,9 @@ END
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION fn_insertbill(numeric, integer, integer, integer)
+ALTER FUNCTION fn_insertbill(numeric, integer, integer, integer, character varying)
   OWNER TO arc_energo;
-COMMENT ON FUNCTION fn_insertbill(numeric, integer, integer, integer) IS 'С сайта ''Способ доставки''
+COMMENT ON FUNCTION fn_insertbill(numeric, integer, integer, integer, character varying) IS 'С сайта ''Способ доставки''
 1    Самовывоз
 9    Почта России
 5    Междугородний автотранспорт, Почта, Экспресс-почта

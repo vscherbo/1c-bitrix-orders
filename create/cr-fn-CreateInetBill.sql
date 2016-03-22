@@ -28,6 +28,10 @@ DECLARE
    loc_OrderItemProcessingTime varchar;
    inserted_bill_item RECORD;
    our_emp_id INTEGER;
+   vendor_id INTEGER;
+   flgOwen BOOLEAN;
+   skipCheckOwen BOOLEAN;
+   ourFirm VARCHAR;
 BEGIN
 RAISE NOTICE 'Начало fn_createinetbill';
 
@@ -55,6 +59,8 @@ bx_sum := 0;
 CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_okei_code integer, oi_measure_unit character varying(50), oi_quantity numeric(18,3), item_str character varying);
 TRUNCATE tmp_order_items; -- if exists
 
+flgOwen := False;
+skipCheckOwen := FALSE;
 FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id 
                  FROM bx_order_item
                  LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
@@ -67,12 +73,20 @@ FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id
     RAISE NOTICE 'Товар=%', oi.Наименование;
     -- TODO split oi.Наименование by ":" to get 2nd part (order_mod_id)
     -- SELECT "КодСодержания" into KS FROM "Содержание" WHERE mod_id = order_mod_id;
-    SELECT "КодСодержания" into KS from vwsyncdev WHERE dev_name = oi."Наименование" OR mod_id = oi.mod_id;
+    SELECT "КодСодержания","Поставщик" INTO KS, vendor_id from vwsyncdev WHERE mod_id = '008790000021';
     IF (KS is null) THEN
        CreateResult := 2; -- есть не синхронизированная позиция в заказе
        RAISE NOTICE 'The order % has not synched items. Skip this order', bx_order_no;
        EXIT; -- дальше не проверяем
     ELSE
+       -- если Овен, "Поставщик" = 30049
+       IF 30049 = vendor_id AND NOT skipCheckOwen THEN
+         flgOwen := TRUE;
+       ELSE
+         flgOwen := False;
+         skipCheckOwen := TRUE; -- если встретился 'не Овен', больше не проверяем
+       END IF;
+       
        IF is_enough(KS, oi."Количество") THEN
           CreateResult := 1; -- позиция заказа синхронизирована
           item_str := format(' %s, %s, ''%s'', %s', KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код") , oi."Количество");
@@ -102,7 +116,12 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
 
     IF EmpRec."Код" is NOT NULL THEN
-        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника");
+        IF flgOwen THEN
+           ourFirm := 30049;
+        ELSE
+           ourFirm := getFirm(EmpRec."Код");
+        END IF;
+        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника", ourFirm);
         Npp := 1;
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";
