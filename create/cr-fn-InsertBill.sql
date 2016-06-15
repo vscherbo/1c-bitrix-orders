@@ -41,7 +41,7 @@ BEGIN
     IF DeliveryMode = 'Самовывоз' THEN Delivery := 'Самовывоз'; ELSE Delivery := 'Отправка'; END IF;
     
     SELECT Order_ProcessingTime() INTO loc_OrderProcessingTime;
-    inet_bill_owner := get_owner_by_firm_code(aFirmCode);
+    inet_bill_owner := get_bill_owner_by_entcode(aCode);
     bill_no := fn_GetNewBillNo(inet_bill_owner);
     WITH inserted AS (
         INSERT INTO "Счета"

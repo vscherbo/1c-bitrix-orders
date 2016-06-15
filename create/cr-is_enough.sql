@@ -15,6 +15,8 @@ BEGIN
    AND "КодСклада" = 2 -- Ясная
    AND "Примечание" = '';
 
+   RAISE NOTICE 'На складе Ясная и без примечаний количество=%', in_stock;
+   
    IF in_stock >= "Quantity"
    THEN
       return true;

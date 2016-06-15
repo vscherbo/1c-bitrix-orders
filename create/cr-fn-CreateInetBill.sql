@@ -33,7 +33,7 @@ DECLARE
    skipCheckOwen BOOLEAN;
    ourFirm VARCHAR;
 BEGIN
-RAISE NOTICE 'Начало fn_createinetbill';
+RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 
 SELECT bo.*, bb.bx_name, bf.fvalue AS email INTO o
     FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
@@ -61,22 +61,31 @@ TRUNCATE tmp_order_items; -- if exists
 
 flgOwen := False;
 skipCheckOwen := FALSE;
-FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id 
-                 FROM bx_order_item
-                 LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
-                                            AND bx_order_item_feature."bx_order_Номер" = bx_order_item."bx_order_Номер"
-                                            AND bx_order_item_feature.fname = 'КодМодификации'
-                 WHERE o."Номер" = bx_order_item."bx_order_Номер" 
-                 ORDER BY id 
-                 LOOP
+
+FOR oi in (SELECT bx_order_item.*
+                , bx_order_item_feature.fvalue::VARCHAR  as mod_id
+            FROM bx_order_item
+            LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
+                                    AND bx_order_item_feature."bx_order_Номер" = bx_order_item."bx_order_Номер"
+                                    AND bx_order_item_feature.fname = 'КодМодификации'
+            WHERE o."Номер" = bx_order_item."bx_order_Номер" 
+              AND POSITION(':' in bx_order_item."Наименование") = 0
+UNION
+           SELECT bx_order_item.*
+                , regexp_replace(bx_order_item."Наименование", '^.*: ', '') AS mod_id
+           FROM bx_order_item
+           WHERE o."Номер" = bx_order_item."bx_order_Номер" 
+             AND POSITION(':' in bx_order_item."Наименование") > 0
+ORDER BY id 
+) LOOP
     --
-    RAISE NOTICE 'Товар=%', oi.Наименование;
-    -- TODO split oi.Наименование by ":" to get 2nd part (order_mod_id)
-    -- SELECT "КодСодержания" into KS FROM "Содержание" WHERE mod_id = order_mod_id;
-    SELECT "КодСодержания","Поставщик" INTO KS, vendor_id from vwsyncdev WHERE mod_id = '008790000021';
+    RAISE NOTICE 'Заказ=%, Товар=%, oi.mod_id=%', oi."bx_order_Номер", oi.Наименование, oi.mod_id;
+    SELECT "КодСодержания","Поставщик" INTO KS, vendor_id from vwsyncdev 
+    WHERE vwsyncdev.mod_id = oi.mod_id;
+    
     IF (KS is null) THEN
        CreateResult := 2; -- есть не синхронизированная позиция в заказе
-       RAISE NOTICE 'The order % has not synched items. Skip this order', bx_order_no;
+       RAISE NOTICE 'В заказе %  не синхронизированные позиции. Пропускаем заказ', bx_order_no;
        EXIT; -- дальше не проверяем
     ELSE
        -- если Овен, "Поставщик" = 30049
@@ -91,12 +100,13 @@ FOR oi in SELECT bx_order_item.*, bx_order_item_feature.fvalue as mod_id
           CreateResult := 1; -- позиция заказа синхронизирована
           item_str := format(' %s, %s, ''%s'', %s', KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код") , oi."Количество");
           -- 
-          RAISE NOTICE ' format item_str=%', item_str;
+          RAISE NOTICE '   строка заказа item_str=%', item_str;
           -- arrOrderItems := array_append(arrOrderItems, item_str);
           INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, oi_quantity, item_str)
                  VALUES (KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код") , oi."Количество", item_str);
        ELSE
           CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
+          RAISE NOTICE 'Для KS=% нет достаточного количества=%', KS, oi."Количество";
           EXIT; -- дальше не проверяем
        END IF;    
     END IF;    
@@ -116,11 +126,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
 
     IF EmpRec."Код" is NOT NULL THEN
-        IF flgOwen THEN
-           ourFirm := 30049;
-        ELSE
-           ourFirm := getFirm(EmpRec."Код");
-        END IF;
+        ourFirm := getFirm(EmpRec."Код", flgOwen);
         bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника", ourFirm);
         Npp := 1;
         VAT := bill."ставкаНДС";
