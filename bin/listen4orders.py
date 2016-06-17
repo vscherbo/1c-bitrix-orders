@@ -292,7 +292,7 @@ while do_listen:
     logging.debug("start listen")
     try:
         #resp = sess.send(prepped, timeout=30)
-        resp = sess.send(prepped)
+        resp = sess.send(prepped, timeout=3601)
         logging.debug("listen prepped sent")
     except Exception as e:
         logging.debug("listen exception=%s", str(e))
@@ -303,7 +303,8 @@ while do_listen:
             logging.debug("listen NO resp")
         else:
             logging.debug("listen resp.status_code=%s", resp.status_code)
-            logging.debug("listen resp.text=%s", resp.text)
+            if resp.status_code < 500:
+                logging.debug("listen resp.text=%s", resp.text)
 
     if 200 != resp.status_code:
         continue
