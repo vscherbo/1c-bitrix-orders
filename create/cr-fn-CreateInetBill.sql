@@ -32,6 +32,7 @@ DECLARE
    flgOwen BOOLEAN;
    skipCheckOwen BOOLEAN;
    ourFirm VARCHAR;
+   debug_rec RECORD;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 
@@ -51,10 +52,10 @@ SELECT bo.*, bb.bx_name, bf.fvalue AS email
 
 IF o IS NULL THEN
    CreateResult := 4; -- неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
+ELSE
+    CreateResult := 3; -- пустой состав заказа
+    bx_sum := 0;
 END IF;
-
-CreateResult := 3; -- пустой состав заказа
-bx_sum := 0;
 
 CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_okei_code integer, oi_measure_unit character varying(50), oi_quantity numeric(18,3), item_str character varying);
 TRUNCATE tmp_order_items; -- if exists
@@ -72,11 +73,11 @@ FOR oi in (SELECT bx_order_item.*
               AND POSITION(':' in bx_order_item."Наименование") = 0
 UNION
            SELECT bx_order_item.*
-                , regexp_replace(bx_order_item."Наименование", '^.*: ', '') AS mod_id
+                , regexp_replace(bx_order_item."Наименование", '^.*: ', '')::VARCHAR AS mod_id
            FROM bx_order_item
            WHERE o."Номер" = bx_order_item."bx_order_Номер" 
              AND POSITION(':' in bx_order_item."Наименование") > 0
-ORDER BY id 
+           ORDER BY id 
 ) LOOP
     --
     RAISE NOTICE 'Заказ=%, Товар=%, oi.mod_id=%', oi."bx_order_Номер", oi.Наименование, oi.mod_id;
