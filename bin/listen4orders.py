@@ -300,7 +300,7 @@ while do_listen:
         continue
     finally:
         if resp is None:
-            logging.debug("listen NO resp")
+            logging.debug("listen: resp is None")
         else:
             logging.debug("listen resp.status_code=%s", resp.status_code)
             if resp.status_code < 500:
@@ -331,7 +331,7 @@ while do_listen:
         continue
     finally:    
         if resp is None:
-            logging.debug("checkauth NO resp")
+            logging.debug("checkauth: resp is None")
         else:
             logging.debug("checkauth resp.status_code=%s", resp.status_code)
             logging.debug("checkauth resp.text=%s", resp.text)
@@ -374,13 +374,8 @@ while do_listen:
 
             xml_orders = get_xml_list_fixed(xml_from_site.splitlines())
             logging.debug("len(xml_orders)=%s", len(xml_orders))
-            if 4 == len(xml_orders):
-                logging.debug('empty xml, just header. Skip')
-                continue
-            else:
-                xml_lines = u"\n".join(xml_orders)
 
-
+            xml_lines = u"\n".join(xml_orders)
 
             fname_templ = conf['site'] + "-%Y-%m-%d_%H-%M-%S"
             sql_outfile_name = time.strftime("02-sql/orders-" + fname_templ + ".sql")
@@ -391,11 +386,15 @@ while do_listen:
             xmlf.close()
             logging.debug("wrote xml file: %s", xmlf_name)
 
-            el = ET.fromstring(xml_lines.encode('utf-8'))
-            logging.debug("xml_lines was parsed")
-            parse_xml_insert_into_db(conf['site'], el, con, db_buyers, db_orders, sql_outfile_name)
-            logging.debug("sql-files created: %s", sql_outfile_name)
-            # cur.callproc('fn_inetbill4neworders')
+            if 4 == len(xml_orders):
+                logging.debug('empty xml, just header. Skip DB operation.')
+                continue
+            else:
+                el = ET.fromstring(xml_lines.encode('utf-8'))
+                logging.debug("xml_lines was parsed")
+                parse_xml_insert_into_db(conf['site'], el, con, db_buyers, db_orders, sql_outfile_name)
+                logging.debug("sql-files created: %s", sql_outfile_name)
+                # cur.callproc('fn_inetbill4neworders')
 
             # debug
             # do_listen = False
