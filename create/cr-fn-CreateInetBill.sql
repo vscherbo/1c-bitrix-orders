@@ -51,7 +51,7 @@ SELECT bo.*, bb.bx_name, bf.fvalue AS email
         AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'EMail');     
 
 IF o IS NULL THEN
-   CreateResult := 4; -- неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
+   CreateResult := 4; -- отменённый или неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
 ELSE
     CreateResult := 3; -- пустой состав заказа
     bx_sum := 0;
@@ -83,6 +83,7 @@ UNION
     RAISE NOTICE 'Заказ=%, Товар=%, oi.mod_id=%', oi."bx_order_Номер", oi.Наименование, oi.mod_id;
     SELECT "КодСодержания","Поставщик" INTO KS, vendor_id from vwsyncdev 
     WHERE vwsyncdev.mod_id = oi.mod_id;
+    RAISE NOTICE 'KS=%, vendor_id=%', KS, vendor_id;
     
     IF (KS is null) THEN
        CreateResult := 2; -- есть не синхронизированная позиция в заказе
