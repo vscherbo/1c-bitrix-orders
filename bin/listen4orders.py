@@ -42,6 +42,7 @@ def signal_handler(asignal, frame):
     logging.debug('after do_listen = False')
     logging.debug('sess.headers=' + str(sess.headers))
     logging.debug('req.headers=' + str(req.headers))
+    con.commit()
     con.close()
     logging.debug('after con.close()')
     req = None
@@ -277,22 +278,22 @@ cur.execute('SELECT "Номер" FROM bx_order')
 db_orders = cur.fetchall()
 
 url = proto + conf['site'] + '/bitrix/admin/1c_exchange.php'
-sess = Session()
-sess.headers['Connection'] = 'close'
-sess.verify=verify_flag
-sess.keep_alive = True
 
 # TODO trap signals/interrupts
 do_listen = True
 while do_listen:
+    sess = Session()
+    sess.headers['Connection'] = 'close'
+    sess.verify=verify_flag
+    sess.keep_alive = True
     # listen, real-time mode
     req = Request('GET', url)
     req.params={'type': 'listen'}
     prepped = sess.prepare_request(req)
     logging.debug("start listen")
     try:
-        #resp = sess.send(prepped, timeout=30)
-        resp = sess.send(prepped, timeout=3601)
+        resp = sess.send(prepped, timeout=600)
+        #resp = sess.send(prepped, timeout=3601)
         logging.debug("listen prepped sent")
     except Exception as e:
         logging.debug("listen exception=%s", str(e))
@@ -307,10 +308,11 @@ while do_listen:
                 logging.debug("listen resp.text=%s", resp.text)
 
     if 200 != resp.status_code:
+        logging.debug("listen code NEQ 200, sess=%s", str(sess))
         continue
 
     saved_cookies = resp.cookies
-    logging.debug("resp.cookies=%s", str(resp.cookies))
+
     # TODO
     # if resp.text contains 'success'
 
@@ -336,7 +338,11 @@ while do_listen:
             logging.debug("checkauth resp.status_code=%s", resp.status_code)
             logging.debug("checkauth resp.text=%s", resp.text)
     if 200 != resp.status_code:
+        logging.debug("checkauth code NEQ 200, sess=%s", str(sess))
         continue
+
+    saved_cookies = resp.cookies
+    logging.debug("resp.cookies=%s", str(resp.cookies))
 
     (auth_result, cookie_file, cookie_value, sessid) = resp.text.split()
     logging.debug("Parsed by =")
@@ -352,6 +358,7 @@ while do_listen:
         # initializing
         req.params={'type': 'sale', 'mode': 'init', 'version': conf['version'], 'sessid': sess_id[1]}
         prepped = sess.prepare_request(req)
+        sess.cookies = saved_cookies
         resp = sess.send(prepped)
         logging.debug("init resp.text=%s", resp.text)
         (zip_enabled, file_limit, sessid, version) = resp.text.split()
@@ -361,6 +368,7 @@ while do_listen:
         req.params={'type': 'sale', 'mode': 'query', 'version': conf['version'], 'sessid': sess_id[1]}
         req.method='GET'
         prepped = sess.prepare_request(req)
+        sess.cookies = saved_cookies
         resp = sess.send(prepped)
         xml_from_site = resp.text
 
@@ -369,6 +377,7 @@ while do_listen:
             # send 'success'
             req.params={'type': 'sale', 'mode': 'success', 'version': conf['version'], 'sessid': sess_id[1]}
             prepped = sess.prepare_request(req)
+            sess.cookies = saved_cookies
             resp = sess.send(prepped)
             logging.debug("success resp.text=%s", resp.text)
 
