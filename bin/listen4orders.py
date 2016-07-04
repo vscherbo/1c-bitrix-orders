@@ -254,7 +254,7 @@ def parse_xml_insert_into_db(site, root, pg_conn, db_buyers, db_orders, sqlf_nam
 
 # TODO command line options: conf file, order's status file
 conf = {}
-execfile("listen4orders.cfg", conf)
+execfile("listen4orders.conf", conf)
 
 if conf['site'].endswith('arc.world'):
    verify_flag = False
