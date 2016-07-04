@@ -254,7 +254,7 @@ def parse_xml_insert_into_db(site, root, pg_conn, db_buyers, db_orders, sqlf_nam
 
 # TODO command line options: conf file, order's status file
 conf = {}
-execfile("bx-exchange.conf", conf)
+execfile("listen4orders.cfg", conf)
 
 if conf['site'].endswith('arc.world'):
    verify_flag = False
@@ -265,8 +265,8 @@ else:
 
 numeric_level = getattr(logging, args.log, None)
 if not isinstance(numeric_level, int):
-    raise ValueError('Invalid log level: %s' % loglevel)
-logging.basicConfig(filename='bx-listener.log', format='%(asctime)s %(levelname)s: %(message)s', level=numeric_level) # INFO)
+    raise ValueError('Invalid log level: %s' % numeric_level)
+logging.basicConfig(filename='listen4orders.log', format='%(asctime)s %(levelname)s: %(message)s', level=numeric_level) # INFO)
 
 
 con = psycopg2.connect("host='" + conf["pg_srv"] + "' dbname='arc_energo' user='arc_energo'") # password='XXXX' - .pgpass
