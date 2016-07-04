@@ -308,7 +308,7 @@ while do_listen:
                 logging.debug("listen resp.text=%s", resp.text)
 
     if 200 != resp.status_code:
-        logging.debug("listen code NEQ 200, sess=%s", str(sess))
+        logging.debug("listen code NEQ 200, sess.headers=%s, sess.params=%s", str(sess.headers),  str(sess.params))
         continue
 
     saved_cookies = resp.cookies
@@ -338,7 +338,7 @@ while do_listen:
             logging.debug("checkauth resp.status_code=%s", resp.status_code)
             logging.debug("checkauth resp.text=%s", resp.text)
     if 200 != resp.status_code:
-        logging.debug("checkauth code NEQ 200, sess=%s", str(sess))
+        logging.debug("listen code NEQ 200, sess.headers=%s, sess.params=%s", str(sess.headers),  str(sess.params))
         continue
 
     saved_cookies = resp.cookies
@@ -403,11 +403,14 @@ while do_listen:
                 logging.debug("xml_lines was parsed")
                 parse_xml_insert_into_db(conf['site'], el, con, db_buyers, db_orders, sql_outfile_name)
                 logging.debug("sql-files created: %s", sql_outfile_name)
-                # cur.callproc('fn_inetbill4neworders')
+                cur.callproc('fn_inetbill4neworders')
 
             # debug
             # do_listen = False
+    sess.close()
 
+
+# before exit
 cur.close()
 
 ############## Bottom line #########################
