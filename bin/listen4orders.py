@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 # import requests
@@ -281,7 +281,10 @@ url = proto + conf['site'] + '/bitrix/admin/1c_exchange.php'
 
 # TODO trap signals/interrupts
 do_listen = True
+sess = None
 while do_listen:
+    if sess is not None:
+        sess.close()
     sess = Session()
     sess.headers['Connection'] = 'close'
     sess.verify=verify_flag
@@ -404,10 +407,10 @@ while do_listen:
                 parse_xml_insert_into_db(conf['site'], el, con, db_buyers, db_orders, sql_outfile_name)
                 logging.debug("sql-files created: %s", sql_outfile_name)
                 cur.callproc('fn_inetbill4neworders')
+                con.commit()
 
             # debug
             # do_listen = False
-    sess.close()
 
 
 # before exit
