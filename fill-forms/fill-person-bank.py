@@ -2,7 +2,60 @@
 # -*- coding: utf-8 -*-
 
 import svglue
+import os
+import psycopg2
+import psycopg2.extensions
 
+
+prog_name = os.path.basename(__file__)[:-3]
+
+
+conf = {}
+execfile(prog_name + ".conf", conf)
+
+con = psycopg2.connect("host='" + conf["pg_srv"] + "' dbname='arc_energo' user='arc_energo'") # password='XXXX' - .pgpass
+cur = con.cursor()
+person_bank_query = """
+SELECT 
+r."Ф_НазваниеКратко"
+, f."Ф_ИНН"
+, r."Ф_КПП"
+, r."Ф_РассчетныйСчет"
+, r."Ф_Банк"
+, "Ф_КоррСчет"
+, "Ф_БИК"
+, to_char(b."Сумма", '999999999D99')
+, to_char(b."№ счета", '9999-9999')
+FROM "Счета" b
+JOIN "Фирма" f ON b."фирма" = f."КлючФирмы"
+JOIN "ФирмаРеквизиты" r ON b."фирма" = r."КодФирмы" AND r."Ф_Активность" = TRUE
+WHERE 
+b."№ счета" = 12201229;
+"""
+
+cur.execute(person_bank_query)
+rec = cur.fetchall()
+#print rec[0]
+pg_firm = u''
+pg_account = u''
+pg_bank = u''
+(pg_firm, pg_inn, pg_kpp, pg_account, pg_bank, pg_corresp, pg_bik, pg_amount, pg_order) = rec[0]
+
+"""
+pg_inn = '7802731174'
+pg_kpp = '780201001'
+pg_firm = u'ООО "АРКОМ"'
+pg_bank = u'СТ-ПЕТЕРБУРГСКИЙ ФИЛИАЛ ПАО "ПРОМСВЯЗЬБАНК"'
+pg_account = '40702810506000011363'
+pg_corresp = '30101810000000000920'
+pg_bik = '044030920'
+pg_order = '1220-1229' 
+pg_amount = '2870,00'
+"""
+
+pg_account_bank = u''
+pg_account_bank = pg_account + u' в ' + pg_bank.decode('UTF-8')
+pg_firm = pg_firm.decode('UTF-8')
 
 # load the template from a file
 tpl = svglue.load(file='person-bank.svg')
@@ -12,17 +65,6 @@ tpl = svglue.load(file='person-bank.svg')
 #tpl.set_text('bill_amount2', u'2870,00')
 #tpl.set_text('inn_kpp1', u'ИНН: 7802731174 КПП: 780201001')
 #tpl.set_text('inn_kpp2', u'ИНН: 7802731174 КПП: 780201001')
-
-pg_inn = '7802731174'
-pg_kpp = '780201001'
-pg_firm = u'ООО "АРКОМ"'
-pg_bank = u'СТ-ПЕТЕРБУРГСКИЙ ФИЛИАЛ ПАО "ПРОМСВЯЗЬБАНК"'
-pg_account = '40702810506000011363'
-pg_account_bank = pg_account + u' в ' + pg_bank
-pg_corresp = '30101810000000000920'
-pg_bik = '044030920'
-pg_order = '1220-1229' 
-pg_amount = '2870,00'
 
 import textwrap
 
@@ -65,4 +107,3 @@ import cairosvg
 with open('output.pdf', 'w') as out, open('output.svg', 'w') as svgout:
     svgout.write(src)
     cairosvg.svg2pdf(bytestring=src, write_to=out)
-

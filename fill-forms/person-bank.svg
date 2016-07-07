@@ -58,8 +58,8 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="4"
-     inkscape:cx="340.24544"
-     inkscape:cy="772.08745"
+     inkscape:cx="478.74227"
+     inkscape:cy="712.08745"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -221,23 +221,17 @@
            y="0"
            x="0 6.239922 10.567868 15.135811 19.223761 22.831715 26.919664 29.087637 32.695591 36.783539 40.151497 44.239449 47.847401"
            style="font-size:7.99989986px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:ArialMT;-inkscape-font-specification:ArialMT">Оплата заказа</tspan></text>
-</g><g
-       id="g126"><path
-         inkscape:connector-curvature="0"
-         id="path128"
-         style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
-         d="m 154.08,639.12 88.56,0 0,14.88 -88.56,0 0,-14.88 z" /></g><g
-       id="g130"><g
-         clip-path="url(#clipPath134)"
-         id="g132"><text
-           id="text138"
-           transform="matrix(0.9998,0,0,-1,169.68,641.28)"><tspan
-             id="tspan140"
-             sodipodi:role="line"
-             y="0"
-             x="0 6.7199998 13.44 20.16 26.879999 30.959999 37.68 44.400002 51.119999"
-             style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT" template-id="order1">1220-1229</tspan></text>
-</g></g><g
+</g><text
+       id="text138"
+       transform="scale(0.99989999,-1.0001)"
+       x="169.69698"
+       y="-641.21588"
+       style="font-size:12.80000013px;-inkscape-font-specification:Liberation Sans Bold;font-family:Liberation Sans;font-weight:bold;font-style:normal;font-stretch:normal;font-variant:normal;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3166"
+         template-id="order1">012201229</tspan></text>
+<g
        id="g142"><path
          inkscape:connector-curvature="0"
          id="path144"
@@ -350,32 +344,24 @@
            y="0"
            x="0 4.5679431 8.8958883 12.975838 17.055786 21.383732"
            style="font-size:7.99989986px;font-style:italic;font-variant:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-ItalicMT">Кассир</tspan></text>
-</g><g
-       id="g272"><text
-         id="text274"
-         transform="matrix(0.9998,0,0,-1,414.48,642.96)"><tspan
-           id="tspan276"
-           sodipodi:role="line"
-           y="0"
-           x="0 6.7199998 13.44 20.16 26.879999 30.24 36.959999"
-           style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT" template-id="amount1">2870,00</tspan></text>
-</g><g
+</g><text
+       transform="scale(0.9999,-1.0001)"
+       id="text274"
+       x="457.72577"
+       y="-642.49567"
+       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:end;line-height:125%;writing-mode:lr-tb;text-anchor:end;font-family:Liberation Sans;-inkscape-font-specification:Liberation Sans Bold"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3172"
+         x="457.72577"
+         y="-642.49567"
+         template-id="amount1">123456789,00</tspan></text>
+<g
        id="g278"><path
          inkscape:connector-curvature="0"
          id="path280"
          style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
          d="m 152.64,471.84 88.56,0 0,14.88 -88.56,0 0,-14.88 z" /></g><g
-       id="g282"><g
-         clip-path="url(#clipPath286)"
-         id="g284"><text
-           id="text290"
-           transform="matrix(0.9998,0,0,-1,168.24,474.24)"><tspan
-             id="tspan292"
-             sodipodi:role="line"
-             y="0"
-             x="0 6.7199998 13.44 20.16 26.879999 30.959999 37.68 44.400002 51.119999"
-             style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT" template-id="order2">1220-1229</tspan></text>
-</g></g><g
        id="g294"><text
          id="text296"
          transform="matrix(0.9998,0,0,-1,460.32,642.24)"><tspan
@@ -384,25 +370,18 @@
            y="0"
            x="0 7.4400001 13.932 21.372"
            style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT">руб.</tspan></text>
-</g><g
-       id="g300"><text
-         id="text302"
-         transform="matrix(0.9998,0,0,-1,414.48,477.84)"><tspan
-           id="tspan304"
-           sodipodi:role="line"
-           y="0"
-           x="0 6.7199998 13.44 20.16 26.879999 30.24 36.959999"
-           style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT" template-id="amount2">2870,00</tspan></text>
-</g><g
-       id="g306"><text
-         id="text308"
-         transform="matrix(0.9998,0,0,-1,460.32,477.12)"><tspan
-           id="tspan310"
-           sodipodi:role="line"
-           y="0"
-           x="0 7.4400001 13.932 21.372"
-           style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT">руб.</tspan></text>
-</g><g
+</g><text
+       transform="scale(0.99989999,-1.0001)"
+       id="text308"
+       x="460.36603"
+       y="-477.0723"
+       style="font-size:11.99880028px"><tspan
+         style="font-size:11.99880028px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT"
+         x="460.36603 467.8053 474.29663 481.7359"
+         y="-477.0723"
+         sodipodi:role="line"
+         id="tspan310">руб.</tspan></text>
+<g
        id="g312"><text
          id="text314"
          transform="matrix(0.9998,0,0,-1,57.6,88.3199)"><tspan
@@ -463,7 +442,8 @@
          sodipodi:role="line"
          id="tspan3165"
          x="295.74557"
-         y="-772.58582" template-id="firm1">Наша Фирма</tspan></text>
+         y="-772.58582"
+         template-id="firm1">Наша Фирма</tspan></text>
 <text
        id="text42-1"
        transform="scale(0.9999,-1.0001)"
@@ -486,7 +466,8 @@
          sodipodi:role="line"
          id="tspan3188"
          x="297.88141"
-         y="-598.30048" template-id="firm2">Наша Фирма</tspan></text>
+         y="-598.30048"
+         template-id="firm2">Наша Фирма</tspan></text>
 <text
        xml:space="preserve"
        style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
@@ -733,4 +714,28 @@
          sodipodi:role="line"
          id="tspan3210-1"
          template-id="bik2">444444444</tspan></text>
+<text
+       id="text138-4"
+       transform="scale(0.9999,-1.0001)"
+       x="167.34494"
+       y="-475.34579"
+       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Liberation Sans Bold"
+       sodipodi:linespacing="125%"><tspan
+         y="-475.34579"
+         x="167.34494"
+         sodipodi:role="line"
+         id="tspan3166-5"
+         template-id="order2">012201229</tspan></text>
+<text
+       transform="scale(0.9999,-1.0001)"
+       id="text274-9"
+       x="457.26666"
+       y="-475.87393"
+       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:end;line-height:125%;writing-mode:lr-tb;text-anchor:end;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Liberation Sans Bold"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3172-0"
+         x="457.26666"
+         y="-475.87393"
+         template-id="amount2">123456789,00</tspan></text>
 </g></svg>
