@@ -19,6 +19,10 @@ pg_firm = u'ООО "АРКОМ"'
 pg_bank = u'СТ-ПЕТЕРБУРГСКИЙ ФИЛИАЛ ПАО "ПРОМСВЯЗЬБАНК"'
 pg_account = '40702810506000011363'
 pg_account_bank = pg_account + u' в ' + pg_bank
+pg_corresp = '30101810000000000920'
+pg_bik = '044030920'
+pg_order = '1220-1229' 
+pg_amount = '2870,00'
 
 import textwrap
 
@@ -36,6 +40,14 @@ tpl.set_text('account_bank1', a_b_list[0])
 tpl.set_text('account_bank2', a_b_list[0])
 tpl.set_text('bank_tail1', a_b_list[1])
 tpl.set_text('bank_tail2', a_b_list[1])
+tpl.set_text('corresp1', pg_corresp)
+tpl.set_text('corresp2', pg_corresp)
+tpl.set_text('bik1', pg_bik) 
+tpl.set_text('bik2', pg_bik) 
+tpl.set_text('order1', pg_order) 
+tpl.set_text('order2', pg_order) 
+tpl.set_text('amount1', pg_amount) 
+tpl.set_text('amount2', pg_amount) 
 
 # replace the pink box with 'hello.png'. if you do not specify the mimetype,
 # the image will get linked instead of embedded

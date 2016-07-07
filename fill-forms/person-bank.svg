@@ -58,8 +58,8 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="4"
-     inkscape:cx="338.74544"
-     inkscape:cy="942.08745"
+     inkscape:cx="340.24544"
+     inkscape:cy="772.08745"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -128,16 +128,18 @@
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
          id="tspan3183">р/сч </tspan></text>
+<text
+       transform="scale(0.99989999,-1.0001)"
+       id="text66"
+       x="148.33484"
+       y="-724.00757"
+       style="font-size:11.19999981px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3159"
+         x="148.33484"
+         y="-724.00757">к/сч  </tspan></text>
 <g
-       id="g64"><text
-         id="text66"
-         transform="matrix(0.9998,0,0,-1,148.32,724.08)"><tspan
-           id="tspan68"
-           sodipodi:role="line"
-           y="0"
-           x="0 4.8099518 7.6899233 12.019879 17.05983 19.699802 24.739752 29.779703 34.819653 39.8596 44.899551 49.939499 54.97945 60.019402 65.059349 70.099297 75.139252 80.179199 85.219147 90.259094 95.299049 100.339 105.37894 110.4189 115.45885 120.49879 125.77874 131.53868 138.74861 145.46855 148.10852 153.14847 158.18842 163.22836 168.26831 173.30827 178.34822 183.38817 188.42812"
-           style="font-size:9.99989986px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPSMT;-inkscape-font-specification:TimesNewRomanPSMT">к/сч 30101810000000000920 БИК 044030920</tspan></text>
-</g><g
        id="g70"><path
          inkscape:connector-curvature="0"
          id="path72"
@@ -234,7 +236,7 @@
              sodipodi:role="line"
              y="0"
              x="0 6.7199998 13.44 20.16 26.879999 30.959999 37.68 44.400002 51.119999"
-             style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT">1220-1229</tspan></text>
+             style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT" template-id="order1">1220-1229</tspan></text>
 </g></g><g
        id="g142"><path
          inkscape:connector-curvature="0"
@@ -246,17 +248,6 @@
          id="path148"
          style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
          d="m 354.72,635.04 0.96,0 0,42.96 -0.96,0 0,-42.96 z" /></g><g
-       id="g180"><g
-         clip-path="url(#clipPath184)"
-         id="g182"><text
-           id="text188"
-           transform="matrix(0.9998,0,0,-1,148.32,552.24)"><tspan
-             id="tspan190"
-             sodipodi:role="line"
-             y="0"
-             x="0 4.8099518 7.6899233 12.019879 17.05983 19.699802 24.739752 29.779703 34.819653 39.8596 44.899551 49.939499 54.97945 60.019402 65.059349 70.099297 75.139252 80.179199 85.219147 90.259094 95.299049 100.339 105.37894 110.4189 115.45885 120.49879 125.77874 131.53868 138.74861 145.46855 148.10852 153.14847 158.18842 163.22836 168.26831 173.30827 178.34822 183.38817 188.42812"
-             style="font-size:9.99989986px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPSMT;-inkscape-font-specification:TimesNewRomanPSMT">к/сч 30101810000000000920 БИК 044030920</tspan></text>
-</g></g><g
        id="g192"><path
          inkscape:connector-curvature="0"
          id="path194"
@@ -367,7 +358,7 @@
            sodipodi:role="line"
            y="0"
            x="0 6.7199998 13.44 20.16 26.879999 30.24 36.959999"
-           style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT">2870,00</tspan></text>
+           style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT" template-id="amount1">2870,00</tspan></text>
 </g><g
        id="g278"><path
          inkscape:connector-curvature="0"
@@ -383,7 +374,7 @@
              sodipodi:role="line"
              y="0"
              x="0 6.7199998 13.44 20.16 26.879999 30.959999 37.68 44.400002 51.119999"
-             style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT">1220-1229</tspan></text>
+             style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT" template-id="order2">1220-1229</tspan></text>
 </g></g><g
        id="g294"><text
          id="text296"
@@ -401,7 +392,7 @@
            sodipodi:role="line"
            y="0"
            x="0 6.7199998 13.44 20.16 26.879999 30.24 36.959999"
-           style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT">2870,00</tspan></text>
+           style="font-size:12px;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Arial;-inkscape-font-specification:Arial-BoldMT" template-id="amount2">2870,00</tspan></text>
 </g><g
        id="g306"><text
          id="text308"
@@ -464,16 +455,15 @@
 </g><text
        xml:space="preserve"
        style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif Bold"
-       x="298.94559"
-       y="-771.3858"
+       x="295.74557"
+       y="-772.58582"
        id="text3738"
        sodipodi:linespacing="1000%"
        transform="scale(1,-1)"><tspan
          sodipodi:role="line"
-         id="tspan3740"
-         x="298.94559"
-         y="-771.3858"
-         template-id="firm1">_____________________</tspan></text>
+         id="tspan3165"
+         x="295.74557"
+         y="-772.58582" template-id="firm1">Наша Фирма</tspan></text>
 <text
        id="text42-1"
        transform="scale(0.9999,-1.0001)"
@@ -488,16 +478,15 @@
 <text
        xml:space="preserve"
        style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif Bold"
-       x="299.2814"
+       x="297.88141"
        y="-598.30048"
        id="text3738-7"
        sodipodi:linespacing="1000%"
        transform="scale(1,-1)"><tspan
          sodipodi:role="line"
-         id="tspan3740-4"
-         x="299.2814"
-         y="-598.30048"
-         template-id="firm2">_____________________</tspan></text>
+         id="tspan3188"
+         x="297.88141"
+         y="-598.30048" template-id="firm2">Наша Фирма</tspan></text>
 <text
        xml:space="preserve"
        style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
@@ -659,4 +648,89 @@
          sodipodi:role="line"
          id="tspan3230-6"
          template-id="account_bank2">222222222222222222222 в наименование банка1</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="293.80002"
+       y="-723.60004"
+       id="text3161"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         sodipodi:role="line"
+         id="tspan3163"
+         x="293.80002"
+         y="-723.60004">БИК  </tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:11.2px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="169.76054"
+       y="-723.84607"
+       id="text3185-3"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         sodipodi:role="line"
+         id="tspan3187"
+         template-id="corresp1">33333333333333333333</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="322.92188"
+       y="-723.375"
+       id="text3166-1"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         sodipodi:role="line"
+         id="tspan3210"
+         template-id="bik1"
+         x="322.92188"
+         y="-723.375">444444444</tspan></text>
+<text
+       transform="scale(0.9999,-1.0001)"
+       id="text66-3"
+       x="147.71268"
+       y="-553.74646"
+       style="font-size:11.19999981px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3159-3"
+         x="147.71268"
+         y="-553.74646">к/сч</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="291.77789"
+       y="-553.12195"
+       id="text3161-0"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         sodipodi:role="line"
+         id="tspan3163-8"
+         x="291.77789"
+         y="-553.12195">БИК  </tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:11.19999981px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="169.13844"
+       y="-553.56799"
+       id="text3185-3-5"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         y="-553.56799"
+         x="169.13844"
+         sodipodi:role="line"
+         id="tspan3187-0"
+         template-id="corresp2">33333333333333333333</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="320.89975"
+       y="-552.89691"
+       id="text3166-1-0"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         y="-552.89691"
+         x="320.89975"
+         sodipodi:role="line"
+         id="tspan3210-1"
+         template-id="bik2">444444444</tspan></text>
 </g></svg>
