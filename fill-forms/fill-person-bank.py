@@ -20,14 +20,22 @@ pg_bank = u'СТ-ПЕТЕРБУРГСКИЙ ФИЛИАЛ ПАО "ПРОМСВЯ�
 pg_account = '40702810506000011363'
 pg_account_bank = pg_account + u' в ' + pg_bank
 
+import textwrap
+
+wr = textwrap.TextWrapper(width=50, break_long_words=False)
+a_b_list = wr.wrap(pg_account_bank)
+
+
 tpl.set_text('firm1', pg_firm)
 tpl.set_text('firm2', pg_firm)
 tpl.set_text('inn1', pg_inn)
 tpl.set_text('inn2', pg_inn)
 tpl.set_text('kpp1', pg_kpp) 
 tpl.set_text('kpp2', pg_kpp)
-tpl.set_text('account_bank1', pg_account_bank)
-tpl.set_text('account_bank2', pg_account_bank)
+tpl.set_text('account_bank1', a_b_list[0])
+tpl.set_text('account_bank2', a_b_list[0])
+tpl.set_text('bank_tail1', a_b_list[1])
+tpl.set_text('bank_tail2', a_b_list[1])
 
 # replace the pink box with 'hello.png'. if you do not specify the mimetype,
 # the image will get linked instead of embedded

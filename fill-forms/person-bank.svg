@@ -58,8 +58,8 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="4"
-     inkscape:cx="304.87485"
-     inkscape:cy="764.73576"
+     inkscape:cx="338.74544"
+     inkscape:cy="942.08745"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -600,16 +600,15 @@
          id="tspan100-5">Подпись плательщика:</tspan></text>
 <text
        xml:space="preserve"
-       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       style="font-size:14px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif;text-anchor:start;text-align:start;writing-mode:lr"
        x="218"
        y="119"
        id="text3185"
        sodipodi:linespacing="1000%"
        transform="matrix(0.8,0,0,-0.8,0,842)"><tspan
          sodipodi:role="line"
-         id="tspan3187"
-         x="218"
-         y="119" template-id="account_bank1">22222</tspan></text>
+         id="tspan3230"
+         template-id="account_bank1">222222222222222222222 в наименование банка1</tspan></text>
 <text
        transform="scale(0.9999,-1.0001)"
        id="text54-0"
@@ -623,14 +622,41 @@
          id="tspan3183-7">р/сч</tspan></text>
 <text
        xml:space="preserve"
-       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
-       x="175.23222"
-       y="-574.54401"
-       id="text3185-6"
+       style="font-size:11.2px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="148.04063"
+       y="-736.48126"
+       id="text3185-5"
        sodipodi:linespacing="1000%"
        transform="scale(1,-1)"><tspan
          sodipodi:role="line"
-         id="tspan3187-7"
-         x="175.23222"
-         y="-574.54401" template-id="account_bank2">22222</tspan></text>
+         id="tspan3186"
+         x="148.04063"
+         y="-736.48126"
+         template-id="bank_tail1">вторая часть длинного наименования банка или его филиала</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:11.2px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="148.14375"
+       y="-563.9812"
+       id="text3185-5-7"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         sodipodi:role="line"
+         id="tspan3186-9"
+         x="148.14375"
+         y="-563.9812"
+         template-id="bank_tail2">вторая часть длинного наименования банка или его филиала</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:11.2px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="173.44063"
+       y="-574.68127"
+       id="text3185-0"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         y="-574.68127"
+         x="173.44063"
+         sodipodi:role="line"
+         id="tspan3230-6"
+         template-id="account_bank2">222222222222222222222 в наименование банка1</tspan></text>
 </g></svg>
