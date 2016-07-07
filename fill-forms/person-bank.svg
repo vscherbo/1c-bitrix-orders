@@ -58,8 +58,8 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="4"
-     inkscape:cx="304.37485"
-     inkscape:cy="714.73576"
+     inkscape:cx="304.87485"
+     inkscape:cy="764.73576"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -119,25 +119,16 @@
          y="-757.63"
          sodipodi:role="line"
          id="tspan50">ИНН: </tspan></text>
+<text
+       transform="scale(0.9999,-1.0001)"
+       id="text54"
+       x="148.33484"
+       y="-747.28528"
+       style="font-size:11.20000006px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr;text-anchor:start;font-family:Liberation Sans;-inkscape-font-specification:Liberation Sans"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3183">р/сч </tspan></text>
 <g
-       id="g52"><text
-         id="text54"
-         transform="matrix(0.9998,0,0,-1,148.32,747.36)"><tspan
-           id="tspan56"
-           sodipodi:role="line"
-           y="0"
-           x="0 5.0399494 7.9199209 12.249878 17.289827 19.9298 24.969749 30.009701 35.049648 40.0896 45.129547 50.169498 55.20945 60.249397 65.289345 70.3293 75.369247 80.409195 85.449142 90.489098 95.529045 100.56899 105.60894 110.6489 115.68884 120.72879 123.36877 128.16872 130.80869 137.52863 143.76855 147.12852 154.33846 160.5784 166.81833 173.05827 178.58821 184.34816 191.54808 197.07803 202.84798 209.5679 216.28784 223.49777 230.70769 233.34767 241.26759 248.47751 255.20744 262.41739 269.62729 276.35724 278.99722 286.20712 293.41705 300.62698"
-           style="font-size:9.99989986px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPSMT;-inkscape-font-specification:TimesNewRomanPSMT">р/сч 40702810506000011363 в СТ-ПЕТЕРБУРГСКИЙ ФИЛИАЛ ПАО </tspan></text>
-</g><g
-       id="g58"><text
-         id="text60"
-         transform="matrix(0.9998,0,0,-1,148.32,735.6)"><tspan
-           id="tspan62"
-           sodipodi:role="line"
-           y="0"
-           x="0 4.0799594 11.289887 16.819832 24.02976 32.91967 39.639603 46.129539 52.849472 57.88942 63.649364 69.409309 76.619232 83.589165 90.309097"
-           style="font-size:9.99989986px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPSMT;-inkscape-font-specification:TimesNewRomanPSMT">&quot;ПРОМСВЯЗЬБАНК&quot;</tspan></text>
-</g><g
        id="g64"><text
          id="text66"
          transform="matrix(0.9998,0,0,-1,148.32,724.08)"><tspan
@@ -180,16 +171,19 @@
            y="0"
            x="0 1.926 5.7719998 8.4180002 12.498 15.384 18.504 21.389999 24.51 25.955999 27.162001 30.521999 34.362 37.007999 38.453999 40.133999 43.02 45.66 48.779999 51.425999 54.071999 56.952 59.598 62.958 64.403999 67.290001 70.410004 72.816002 75.456001 78.101997 81.222 83.627998 88.428001 91.314003 94.433998 96.839996"
            style="font-size:6px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPSMT;-inkscape-font-specification:TimesNewRomanPSMT">(фамилия, имя, отчество плательщика)</tspan></text>
-</g><g
-       id="g96"><text
-         id="text98"
-         transform="matrix(0.9998,0,0,-1,145.92,616.56)"><tspan
-           id="tspan100"
-           sodipodi:role="line"
-           y="0"
-           x="0 7.9199209 12.95987 17.999821 23.529764 29.05971 33.619663 38.189617 40.82959 46.359535 51.639484 56.679432 64.599358 69.159309 74.439255 79.009209 87.409126 92.939072 97.989021 103.02897"
-           style="font-size:9.99989986px;font-style:italic;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPS;-inkscape-font-specification:TimesNewRomanPS-BoldItalicMT">Подпись плательщика:</tspan></text>
-</g><g
+</g><text
+       transform="scale(1.0322125,-0.96879274)"
+       id="text98"
+       x="141.35373"
+       y="-636.42084"
+       style="font-size:9.60000011px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:120%;writing-mode:lr;text-anchor:start;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif Bold Italic"
+       sodipodi:linespacing="120%"><tspan
+         style="font-size:9.60000011px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:120%;writing-mode:lr;text-anchor:start;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif Bold Italic"
+         x="141.35373 149.52876 154.73103 159.93333 165.64133 171.34953 176.05635 180.77354 183.49841 189.20662 194.65663 199.85887 208.034 212.74068 218.19083 222.90793 231.57854 237.28656 242.49916 247.70149"
+         y="-636.42084"
+         sodipodi:role="line"
+         id="tspan100">Подпись плательщика:</tspan></text>
+<g
        id="g102"><text
          id="text104"
          transform="matrix(0.9998,0,0,-1,167.76,669.36)"><tspan
@@ -252,24 +246,6 @@
          id="path148"
          style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
          d="m 354.72,635.04 0.96,0 0,42.96 -0.96,0 0,-42.96 z" /></g><g
-       id="g168"><text
-         id="text170"
-         transform="matrix(0.9998,0,0,-1,148.32,575.52)"><tspan
-           id="tspan172"
-           sodipodi:role="line"
-           y="0"
-           x="0 5.0399494 7.9199209 12.249878 17.289827 19.9298 24.969749 30.009701 35.049648 40.0896 45.129547 50.169498 55.20945 60.249397 65.289345 70.3293 75.369247 80.409195 85.449142 90.489098 95.529045 100.56899 105.60894 110.6489 115.68884 120.72879 123.36877 128.16872 130.80869 137.52863 143.76855 147.12852 154.33846 160.5784 166.81833 173.05827 178.58821 184.34816 191.54808 197.07803 202.84798 209.5679 216.28784 223.49777 230.70769 233.34767 241.26759 248.47751 255.20744 262.41739 269.62729 276.35724 278.99722 286.20712 293.41705 300.62698"
-           style="font-size:9.99989986px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPSMT;-inkscape-font-specification:TimesNewRomanPSMT">р/сч 40702810506000011363 в СТ-ПЕТЕРБУРГСКИЙ ФИЛИАЛ ПАО </tspan></text>
-</g><g
-       id="g174"><text
-         id="text176"
-         transform="matrix(0.9998,0,0,-1,148.32,564)"><tspan
-           id="tspan178"
-           sodipodi:role="line"
-           y="0"
-           x="0 4.0799594 11.289887 16.819832 24.02976 32.91967 39.639603 46.129539 52.849472 57.88942 63.649364 69.409309 76.619232 83.589165 90.309097"
-           style="font-size:9.99989986px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPSMT;-inkscape-font-specification:TimesNewRomanPSMT">&quot;ПРОМСВЯЗЬБАНК&quot;</tspan></text>
-</g><g
        id="g180"><g
          clip-path="url(#clipPath184)"
          id="g182"><text
@@ -319,15 +295,6 @@
            y="0"
            x="0 1.926 5.7719998 8.4180002 12.258 15.384 18.27 21.396 24.275999 25.722 27.167999 30.294001 34.133999 37.014 38.459999 39.905998 43.026001 45.666 48.785999 51.431999 54.077999 56.717999 59.598 62.717999 64.164001 67.290001 70.176003 72.821999 75.461998 78.108002 80.994003 83.639999 88.206001 91.332001 94.218002 96.863998"
            style="font-size:6px;font-variant:normal;font-weight:normal;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPSMT;-inkscape-font-specification:TimesNewRomanPSMT">(фамилия, имя, отчество плательщика)</tspan></text>
-</g><g
-       id="g222"><text
-         id="text224"
-         transform="matrix(0.9998,0,0,-1,145.2,447.84)"><tspan
-           id="tspan226"
-           sodipodi:role="line"
-           y="0"
-           x="0 7.9199209 12.95987 17.999821 23.529764 29.05971 33.619663 38.189617 40.82959 46.359535 51.639484 56.679432 64.599358 69.159309 74.439255 79.009209 87.409126 92.939072 97.989021 103.02897"
-           style="font-size:9.99989986px;font-style:italic;font-variant:normal;font-weight:bold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:TimesNewRomanPS;-inkscape-font-specification:TimesNewRomanPS-BoldItalicMT">Подпись плательщика:</tspan></text>
 </g><g
        id="g228"><text
          id="text230"
@@ -542,7 +509,8 @@
          sodipodi:role="line"
          id="tspan3158"
          x="221.25"
-         y="104.99999" template-id="inn1">0000000000</tspan></text>
+         y="104.99999"
+         template-id="inn1">0000000000</tspan></text>
 <text
        xml:space="preserve"
        style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
@@ -566,7 +534,8 @@
          sodipodi:role="line"
          id="tspan3168"
          x="353.5"
-         y="104.99999" template-id="kpp1">111111111</tspan></text>
+         y="104.99999"
+         template-id="kpp1">111111111</tspan></text>
 <text
        transform="scale(0.9999,-1.0001)"
        id="text48-4"
@@ -590,7 +559,8 @@
          sodipodi:role="line"
          id="tspan3158-7"
          x="177.89297"
-         y="-586.19379" template-id="inn2">0000000000</tspan></text>
+         y="-586.19379"
+         template-id="inn2">0000000000</tspan></text>
 <text
        xml:space="preserve"
        style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
@@ -614,5 +584,53 @@
          sodipodi:role="line"
          id="tspan3168-3"
          x="283.69299"
-         y="-586.19379" template-id="kpp2">111111111</tspan></text>
+         y="-586.19379"
+         template-id="kpp2">111111111</tspan></text>
+<text
+       transform="scale(1.0322125,-0.96879276)"
+       id="text98-8"
+       x="140.90427"
+       y="-462.32785"
+       style="font-size:9.60000038px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:120.00000477%;writing-mode:lr-tb;text-anchor:start;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif Bold Italic"
+       sodipodi:linespacing="120%"><tspan
+         style="font-size:9.60000038px;font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:120.00000477%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif Bold Italic"
+         x="140.90427 149.0793 154.28157 159.48387 165.19186 170.90007 175.60689 180.32408 183.04895 188.75716 194.20717 199.40941 207.58453 212.29121 217.74136 222.45847 231.12909 236.8371 242.04968 247.25201"
+         y="-462.32785"
+         sodipodi:role="line"
+         id="tspan100-5">Подпись плательщика:</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="218"
+       y="119"
+       id="text3185"
+       sodipodi:linespacing="1000%"
+       transform="matrix(0.8,0,0,-0.8,0,842)"><tspan
+         sodipodi:role="line"
+         id="tspan3187"
+         x="218"
+         y="119" template-id="account_bank1">22222</tspan></text>
+<text
+       transform="scale(0.9999,-1.0001)"
+       id="text54-0"
+       x="149.16713"
+       y="-575.04651"
+       style="font-size:11.19999981px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;display:inline;font-family:Liberation Sans;-inkscape-font-specification:Liberation Sans"
+       sodipodi:linespacing="125%"><tspan
+         y="-575.04651"
+         x="149.16713"
+         sodipodi:role="line"
+         id="tspan3183-7">р/сч</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="175.23222"
+       y="-574.54401"
+       id="text3185-6"
+       sodipodi:linespacing="1000%"
+       transform="scale(1,-1)"><tspan
+         sodipodi:role="line"
+         id="tspan3187-7"
+         x="175.23222"
+         y="-574.54401" template-id="account_bank2">22222</tspan></text>
 </g></svg>
