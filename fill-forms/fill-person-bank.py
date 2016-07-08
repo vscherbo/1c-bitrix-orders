@@ -26,9 +26,13 @@ r."Ф_НазваниеКратко"
 , "Ф_БИК"
 , to_char(b."Сумма", '999999999D99')
 , to_char(b."№ счета", '9999-9999')
+, e.email
+, e.telephone
+, e."Имя"
 FROM "Счета" b
 JOIN "Фирма" f ON b."фирма" = f."КлючФирмы"
 JOIN "ФирмаРеквизиты" r ON b."фирма" = r."КодФирмы" AND r."Ф_Активность" = TRUE
+JOIN "Сотрудники" e ON b."Хозяин" = e."Менеджер"
 WHERE 
 b."№ счета" = 12201229;
 """
@@ -39,7 +43,7 @@ rec = cur.fetchall()
 pg_firm = u''
 pg_account = u''
 pg_bank = u''
-(pg_firm, pg_inn, pg_kpp, pg_account, pg_bank, pg_corresp, pg_bik, pg_amount, pg_order) = rec[0]
+(pg_firm, pg_inn, pg_kpp, pg_account, pg_bank, pg_corresp, pg_bik, pg_amount, pg_order, pg_email, pg_phone, pg_mgr_name) = rec[0]
 
 """
 pg_inn = '7802731174'
@@ -56,6 +60,7 @@ pg_amount = '2870,00'
 pg_account_bank = u''
 pg_account_bank = pg_account + u' в ' + pg_bank.decode('UTF-8')
 pg_firm = pg_firm.decode('UTF-8')
+pg_mgr_name = pg_mgr_name.decode('UTF-8')
 
 # load the template from a file
 tpl = svglue.load(file='person-bank.svg')
@@ -76,7 +81,7 @@ tpl.set_text('firm1', pg_firm)
 tpl.set_text('firm2', pg_firm)
 tpl.set_text('inn1', pg_inn)
 tpl.set_text('inn2', pg_inn)
-tpl.set_text('kpp1', pg_kpp) 
+tpl.set_text('kpp1', pg_kpp)
 tpl.set_text('kpp2', pg_kpp)
 tpl.set_text('account_bank1', a_b_list[0])
 tpl.set_text('account_bank2', a_b_list[0])
@@ -84,12 +89,16 @@ tpl.set_text('bank_tail1', a_b_list[1])
 tpl.set_text('bank_tail2', a_b_list[1])
 tpl.set_text('corresp1', pg_corresp)
 tpl.set_text('corresp2', pg_corresp)
-tpl.set_text('bik1', pg_bik) 
-tpl.set_text('bik2', pg_bik) 
-tpl.set_text('order1', pg_order) 
-tpl.set_text('order2', pg_order) 
-tpl.set_text('amount1', pg_amount) 
-tpl.set_text('amount2', pg_amount) 
+tpl.set_text('bik1', pg_bik)
+tpl.set_text('bik2', pg_bik)
+tpl.set_text('order1', pg_order)
+tpl.set_text('order2', pg_order)
+tpl.set_text('amount1', pg_amount)
+tpl.set_text('amount2', pg_amount)
+
+tpl.set_text('phone', pg_phone)
+tpl.set_text('email', pg_email)
+tpl.set_text('mgr_name', pg_mgr_name)
 
 # replace the pink box with 'hello.png'. if you do not specify the mimetype,
 # the image will get linked instead of embedded
