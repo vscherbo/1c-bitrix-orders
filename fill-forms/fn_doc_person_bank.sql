@@ -1,0 +1,89 @@
+-- Function: arc_energo.fn_doc_person_bank(integer)
+
+-- DROP FUNCTION arc_energo.fn_doc_person_bank(integer);
+
+CREATE OR REPLACE FUNCTION arc_energo.fn_doc_person_bank(bill_no integer)
+  RETURNS character varying AS
+$BODY$
+import svglue
+import os
+import textwrap
+import cairosvg
+import plpy
+from os.path import expanduser
+
+person_bank_query = """
+SELECT 
+r."Ф_НазваниеКратко" AS pg_firm
+, f."Ф_ИНН" AS pg_inn
+, r."Ф_КПП" AS pg_kpp
+-- , r."Ф_РассчетныйСчет" AS pg_account
+-- , r."Ф_Банк" AS pg_bank
+, r."Ф_РассчетныйСчет" || E' в ' || r."Ф_Банк" AS pg_account_bank
+, "Ф_КоррСчет" AS pg_corresp
+, "Ф_БИК" AS pg_bik
+, to_char(b."Сумма", '999999999D99') AS pg_amount
+, to_char(b."№ счета", '9999-9999') AS pg_order
+, e.email AS pg_email
+, e.telephone AS pg_phone
+, e."Имя" AS pg_mgr_name
+FROM arc_energo."Счета" b
+JOIN arc_energo."Фирма" f ON b."фирма" = f."КлючФирмы"
+JOIN arc_energo."ФирмаРеквизиты" r ON b."фирма" = r."КодФирмы" AND r."Ф_Активность" = TRUE
+JOIN arc_energo."Сотрудники" e ON b."Хозяин" = e."Менеджер"
+WHERE 
+b."№ счета" = 
+""" + str(bill_no) + ";"
+
+home = expanduser("~")
+tpl = svglue.load(file=home+'/fill-forms/person-bank.svg')
+
+res = plpy.execute(person_bank_query)
+
+pg_firm = res[0]["pg_firm"].decode('UTF-8')
+pg_mgr_name = res[0]["pg_mgr_name"].decode('UTF-8')
+
+#pg_account_bank = u''
+#pg_account_bank = res[0]["pg_account"] + u' в ' + res[0]["pg_bank"].decode('UTF-8')
+#wr = textwrap.TextWrapper(width=50, break_long_words=False)
+#a_b_list = wr.wrap(pg_account_bank)
+
+wr = textwrap.TextWrapper(width=50, break_long_words=False)
+a_b_list = wr.wrap(res[0]["pg_account_bank"].decode('UTF-8'))
+
+
+tpl.set_text('firm1', pg_firm)
+tpl.set_text('firm2', pg_firm)
+tpl.set_text('inn1', res[0]["pg_inn"])
+tpl.set_text('inn2', res[0]["pg_inn"])
+tpl.set_text('kpp1', res[0]["pg_kpp"])
+tpl.set_text('kpp2', res[0]["pg_kpp"])
+tpl.set_text('account_bank1', a_b_list[0])
+tpl.set_text('account_bank2', a_b_list[0])
+tpl.set_text('bank_tail1', a_b_list[1])
+tpl.set_text('bank_tail2', a_b_list[1])
+tpl.set_text('corresp1', res[0]["pg_corresp"])
+tpl.set_text('corresp2', res[0]["pg_corresp"])
+tpl.set_text('bik1', res[0]["pg_bik"])
+tpl.set_text('bik2', res[0]["pg_bik"])
+tpl.set_text('order1', res[0]["pg_order"])
+tpl.set_text('order2', res[0]["pg_order"])
+tpl.set_text('amount1', res[0]["pg_amount"])
+tpl.set_text('amount2', res[0]["pg_amount"])
+
+tpl.set_text('phone', res[0]["pg_phone"])
+tpl.set_text('email', res[0]["pg_email"])
+tpl.set_text('mgr_name', pg_mgr_name)
+
+src = str(tpl)
+
+fn=home+'/fill-forms/output/'+ str(bill_no) +'.pdf'
+with open(fn, 'w') as out:
+    cairosvg.svg2pdf(bytestring=src, write_to=out)
+
+return fn
+$BODY$
+  LANGUAGE plpython2u VOLATILE
+  COST 100;
+ALTER FUNCTION arc_energo.fn_doc_person_bank(integer)
+  OWNER TO postgres;
