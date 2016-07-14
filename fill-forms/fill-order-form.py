@@ -6,27 +6,8 @@ from odf.opendocument import load
 from odf.table import Table, TableRow, TableCell
 from odf import text
 import psycopg2
-
-
-def odf_dump_nodes(start_node, level=0):
-    if start_node.nodeType==3:
-        # text node
-        if start_node.firstChild is None:
-            str_text = 'None'
-        else:
-            str_text = start_node.firstChild.__unicode__().encode('utf-8', 'ignore')
-        print "  "*level, "NODE:", start_node.nodeType, ":(text):", str_text
-    else:
-        # element node
-        attrs= []
-        for k in start_node.attributes.keys():
-            attrs.append( k[1] + ':' + start_node.attributes[k]  )
-        print "  "*level, "NODE:", start_node.nodeType, ":", start_node.qname[1], " ATTR:(", ",".join(attrs), ") ", start_node.firstChild.__unicode__().encode('utf-8', 'ignore')
-
-        for n in start_node.childNodes:
-            odf_dump_nodes(n, level+1)
-    return
-
+from odf.userfield import UserFields
+from odf_dump import odf_dump_nodes
 
 
 infile = u""
@@ -88,8 +69,65 @@ for r in range(len(recs)):
         pars = cells[i].getElementsByType(text.P)
         pars[0].addText(r["pg_mgr_name"].decode('UTF-8')
     """    
-
-
 doc.save(u"order-55.odt")
+
+
+order_fields_query = """
+SELECT
+r."Ф_НазваниеКратко" pg_firm
+, f."Ф_ИНН" pg_inn
+, r."Ф_КПП" pg_kpp
+, r."Ф_РассчетныйСчет" || E' в ' || r."Ф_Банк" AS pg_account_bank
+, "Ф_КоррСчет" pg_corresp
+, "Ф_БИК" pg_bik
+, to_char(b."Сумма", '999999999D99') AS pg_amount
+, to_char(b."№ счета", '9999-9999') AS pg_order
+, b."Дата счета" pg_order_date
+, e.email pg_email
+, e.telephone pg_phone
+, e."Имя" pg_mgr_name
+FROM "Счета" b
+JOIN "Фирма" f ON b."фирма" = f."КлючФирмы"
+JOIN "ФирмаРеквизиты" r ON b."фирма" = r."КодФирмы" AND r."Ф_Активность" = TRUE
+JOIN "Сотрудники" e ON b."Хозяин" = e."Менеджер"
+WHERE
+b."№ счета" = 55202951
+"""
+
+cur.execute(order_fields_query)
+recs = cur.fetchall()
+colnames = [desc[0] for desc in cur.description]
+vals = []
+print "colnames=", colnames
+for t in recs[0]:
+    #print t.decode('utf-8')
+    vals.append(t)
+
+
+
+obj = UserFields(infile, u"order-55.odt")
+
+print "obj.list_fields=", obj.list_fields()
+"""
+upd_dict1 = {}
+upd_dict1['inn'] = recs[0]["pg_inn"]
+upd_dict1['kpp'] = recs[0]["pg_kpp"]
+
+print "upd_dict1=", upd_dict1
+"""
+
+upd_dict = {}
+upd_dict = dict(zip(colnames, vals))
+print "upd_dict=", upd_dict
+print "type(upd_dict)=", type(upd_dict)
+
+
+inst = {'inn': '7802731174', 'kpp': '780201001'}
+print "inst=", inst
+print "type(inst)=", type(inst)
+
+#obj.update({'inn': '7802731174', 'kpp': '780201001'})
+obj.update(upd_dict)
+
 
 

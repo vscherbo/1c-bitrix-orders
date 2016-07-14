@@ -77,7 +77,9 @@ tpl.set_text('mgr_name', pg_mgr_name)
 
 src = str(tpl)
 
-fn=home+'/fill-forms/output/'+ str(bill_no) +'.pdf'
+out_dir = '/mnt/nfs/storage'
+#fn=home+'/fill-forms/output/'+ str(res[0]["pg_order"]) +'.pdf'
+fn=out_dir+'/output/'+ str(res[0]["pg_order"]) +'.pdf'
 with open(fn, 'w') as out:
     cairosvg.svg2pdf(bytestring=src, write_to=out)
 
