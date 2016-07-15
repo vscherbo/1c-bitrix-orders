@@ -20,13 +20,14 @@ c."ПозицияСчета"::VARCHAR pg_position
 ,to_char("Кол-во", '999 999D99') pg_qnt
 ,to_char("ЦенаНДС", '999 999D99') pg_price
 ,to_char(round("Кол-во"*"ЦенаНДС", 2), '999 999D99') pg_sum
-, "Срок2" pg_period
+,COALESCE("Срок2", E'') pg_period
+,round("Кол-во"*"ЦенаНДС", 2) pg_sum_dec
 FROM "Содержание счета" c
 WHERE
 c."№ счета" = 
 """ + str(bill_no) + " ORDER BY pg_position ;"
 
-fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period"}
+fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period", 7: "pg_sum_dec"}
 
 
 home = expanduser("~")
@@ -41,16 +42,21 @@ rows = tab.getElementsByType(TableRow)
 recs = plpy.execute(order_items_query)
 #plpy.log("items nrows="+str(recs.nrows()))
 #plpy.log("items recs[0]="+str(recs[0]))
+sum_total = 0
 for r in range(recs.nrows()):
+    sum_total += recs[r]["pg_sum_dec"]
     cells = rows[r+1].getElementsByType(TableCell)
     cells_header = rows[0].getElementsByType(TableCell)
-    plpy.log("r=" + str(r) + ", len(cells)=" + str(len(cells)))
+    #plpy.log("r=" + str(r) + ", len(cells)=" + str(len(cells)))
     for cind in range(len(cells)):
         pars = cells[cind].getElementsByType(text.P)
         pars_header = cells_header[cind].getElementsByType(text.P)
-        #plpy.log("cind=" + str(cind) +"" +  + ", pars_header=" + pars_header[0].firstChild.__unicode__().encode('utf-8', 'ignore'))
+        plpy.log("cind=" + str(cind) + ", pars_header=" + pars_header[0].firstChild.__unicode__().encode('utf-8', 'ignore'))
         #plpy.log("cind=" + str(cind) + ", val=" + recs[r][fld_items[cind]].decode('utf-8') )
         pars[0].addText(recs[r][fld_items[cind]].decode('utf-8'))
+
+rec_total_in_words = plpy.execute("SELECT propis(" + str(sum_total) +");"  )
+sum_total_in_words = rec_total_in_words[0]["propis"].decode('utf-8')
 
 for row in range(len(recs)+1, len(rows)):
     tab.removeChild(rows[row])
@@ -71,6 +77,7 @@ r."Ф_НазваниеКратко" pg_firm
 , e.email pg_email
 , e.telephone pg_phone
 , e."Имя" pg_mgr_name
+, COALESCE(b."Дополнительно", E'') pg_add_info
 FROM "Счета" b
 JOIN "Фирма" f ON b."фирма" = f."КлючФирмы"
 JOIN "ФирмаРеквизиты" r ON b."фирма" = r."КодФирмы" AND r."Ф_Активность" = TRUE
@@ -89,7 +96,8 @@ for (k, v) in recs[0].items():
 
 obj = UserFields(outfile, outfile)
 obj.update(upd_dict)
-
+obj.update({"pg_total": sum_total})
+obj.update({"pg_sum_in_words": sum_total_in_words})
 
 return outfile
 $BODY$
