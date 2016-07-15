@@ -26,6 +26,9 @@ WHERE
 c."№ счета" = 
 """ + str(bill_no) + " ORDER BY pg_position ;"
 
+fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period"}
+
+
 home = expanduser("~")
 doc = load(home + u'/fill-forms/order_form_template.odt')
 out_dir = u'/mnt/storage'
@@ -36,15 +39,18 @@ tab = doc.text.getElementsByType(Table)[1]
 rows = tab.getElementsByType(TableRow)
 
 recs = plpy.execute(order_items_query)
-plpy.log("items nrows="+str(recs.nrows()))
-plpy.log("items recs[0]="+str(recs[0]))
-"""
-for r in range(len(recs)):
+#plpy.log("items nrows="+str(recs.nrows()))
+#plpy.log("items recs[0]="+str(recs[0]))
+for r in range(recs.nrows()):
     cells = rows[r+1].getElementsByType(TableCell)
+    cells_header = rows[0].getElementsByType(TableCell)
+    plpy.log("r=" + str(r) + ", len(cells)=" + str(len(cells)))
     for cind in range(len(cells)):
         pars = cells[cind].getElementsByType(text.P)
-        pars[0].addText(recs[r][cind].decode('UTF-8'))
-"""
+        pars_header = cells_header[cind].getElementsByType(text.P)
+        #plpy.log("cind=" + str(cind) +"" +  + ", pars_header=" + pars_header[0].firstChild.__unicode__().encode('utf-8', 'ignore'))
+        #plpy.log("cind=" + str(cind) + ", val=" + recs[r][fld_items[cind]].decode('utf-8') )
+        pars[0].addText(recs[r][fld_items[cind]].decode('utf-8'))
 
 for row in range(len(recs)+1, len(rows)):
     tab.removeChild(rows[row])
@@ -78,8 +84,8 @@ upd_dict = {}
 for (k, v) in recs[0].items():
     upd_dict[k] = v.decode('utf-8')
 
-dbg_str = "upd_dict=" + str(upd_dict)
-plpy.log(dbg_str)
+#dbg_str = "upd_dict=" + str(upd_dict)
+#plpy.log(dbg_str)
 
 obj = UserFields(outfile, outfile)
 obj.update(upd_dict)
