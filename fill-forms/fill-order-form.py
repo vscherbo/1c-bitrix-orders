@@ -13,9 +13,10 @@ from odf_dump import odf_dump_nodes
 infile = u""
 infile += sys.argv[1]
 doc = load(infile)
+outfile = u"output/order-55.odt"
 
 # get 1st table
-tab = doc.text.getElementsByType(Table)[0]
+tab = doc.text.getElementsByType(Table)[1]
 #header = tab.getElementsByType(TableRow)[0] # 0 row of data
 #row1 = tab.getElementsByType(TableRow)[1] # 1st row of data
 rows = tab.getElementsByType(TableRow)
@@ -69,7 +70,10 @@ for r in range(len(recs)):
         pars = cells[i].getElementsByType(text.P)
         pars[0].addText(r["pg_mgr_name"].decode('UTF-8')
     """    
-doc.save(u"order-55.odt")
+doc.save(outfile)
+
+
+
 
 
 order_fields_query = """
@@ -82,7 +86,7 @@ r."Ф_НазваниеКратко" pg_firm
 , "Ф_БИК" pg_bik
 , to_char(b."Сумма", '999999999D99') AS pg_amount
 , to_char(b."№ счета", '9999-9999') AS pg_order
-, b."Дата счета" pg_order_date
+, to_char(b."Дата счета", 'DD.MM.YYYY') pg_order_date
 , e.email pg_email
 , e.telephone pg_phone
 , e."Имя" pg_mgr_name
@@ -101,11 +105,11 @@ vals = []
 print "colnames=", colnames
 for t in recs[0]:
     #print t.decode('utf-8')
-    vals.append(t)
+    vals.append(t.decode('utf-8'))
 
 
 
-obj = UserFields(infile, u"order-55.odt")
+obj = UserFields(outfile, outfile)
 
 print "obj.list_fields=", obj.list_fields()
 """
