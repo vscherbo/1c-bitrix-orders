@@ -20,6 +20,7 @@ tab = doc.text.getElementsByType(Table)[1]
 #header = tab.getElementsByType(TableRow)[0] # 0 row of data
 #row1 = tab.getElementsByType(TableRow)[1] # 1st row of data
 rows = tab.getElementsByType(TableRow)
+empty_row = rows[-1]
 """
 pars = header.getElementsByType(text.P)
 for p in pars:
@@ -32,7 +33,7 @@ con = psycopg2.connect("host='vm-pg.arc.world' dbname='arc_energo' user='arc_ene
 cur = con.cursor()
 order_items_query = """
 SELECT
-c."ПозицияСчета" pg_position
+c."ПозицияСчета"::VARCHAR pg_position
 , "Наименование" pg_pos_name
 ,"Ед Изм" pg_mes_unit
 ,"Кол-во" pg_qnt
@@ -59,22 +60,31 @@ for r in range(len(recs)):
     cells = rows[r+1].getElementsByType(TableCell)
 
     pars = cells[0].getElementsByType(text.P)
-    pars[0].addText(str(pg_position))
+    pars[0].addText(pg_position)
     pars = cells[1].getElementsByType(text.P)
     pars[0].addText(pg_pos_name.decode('UTF-8'))
     pars = cells[2].getElementsByType(text.P)
     pars[0].addText(pg_mes_unit.decode('UTF-8'))
 
-    """    
-    for i in range(len(cells)):
-        pars = cells[i].getElementsByType(text.P)
-        pars[0].addText(r["pg_mgr_name"].decode('UTF-8')
-    """    
+for row in range(len(recs)+1, len(rows)):
+    tab.removeChild(rows[row])
+
 doc.save(outfile)
 
-
-
-
+""" Search and Replace example
+textdoc = load("myfile.odt")
+texts = textdoc.getElementsByType(text.P)
+s = len(texts)
+for i in range(s):
+    old_text = teletype.extractText(texts[i])
+    new_text = old_text.replace('something','something else')
+    new_S = text.P()
+    new_S.setAttribute("stylename",texts[i].getAttribute("stylename"))
+    new_S.addText(new_text)
+    texts[i].parentNode.insertBefore(new_S,texts[i])
+    texts[i].parentNode.removeChild(texts[i])
+textdoc.save('myfile.odt')
+"""
 
 order_fields_query = """
 SELECT
