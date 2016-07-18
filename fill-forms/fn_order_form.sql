@@ -5,6 +5,7 @@
 CREATE OR REPLACE FUNCTION arc_energo.fn_order_form(bill_no integer)
   RETURNS character varying AS
 $BODY$
+#-*- coding:utf-8 -*-
 from odf.opendocument import load
 from odf.table import Table, TableRow, TableCell
 from odf import text
@@ -30,11 +31,10 @@ c."№ счета" =
 
 fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period", 7: "pg_sum_dec"}
 
-
 home = expanduser("~")
 doc = load(home + u'/fill-forms/order_form_template.odt')
-out_dir = u'/mnt/storage'
-outfile=out_dir + u'/output/'+ str(bill_no) + u'.odt'
+out_dir = '/mnt/storage'
+outfile=out_dir + '/output/'+ str(bill_no) + '-Бланк-заказа.odt'.decode('utf-8')
 
 # get 1st table
 tab = doc.text.getElementsByType(Table)[1]
@@ -92,9 +92,6 @@ recs = plpy.execute(order_fields_query)
 upd_dict = {}
 for (k, v) in recs[0].items():
     upd_dict[k] = v.decode('utf-8')
-
-#dbg_str = "upd_dict=" + str(upd_dict)
-#plpy.log(dbg_str)
 
 obj = UserFields(outfile, outfile)
 obj.update(upd_dict)

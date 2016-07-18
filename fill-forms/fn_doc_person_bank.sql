@@ -5,6 +5,7 @@
 CREATE OR REPLACE FUNCTION arc_energo.fn_doc_person_bank(bill_no integer)
   RETURNS character varying AS
 $BODY$
+#-*- coding:utf-8 -*-
 import svglue
 import os
 import textwrap
@@ -78,8 +79,7 @@ tpl.set_text('mgr_name', pg_mgr_name)
 src = str(tpl)
 
 out_dir = '/mnt/nfs/storage'
-#fn=home+'/fill-forms/output/'+ str(res[0]["pg_order"]) +'.pdf'
-fn=out_dir+'/output/'+ str(res[0]["pg_order"]) +'.pdf'
+fn=out_dir + '/output/' + str(res[0]["pg_order"]).strip() + '-Квитанция.pdf'.decode('utf-8')
 with open(fn, 'w') as out:
     cairosvg.svg2pdf(bytestring=src, write_to=out)
 
