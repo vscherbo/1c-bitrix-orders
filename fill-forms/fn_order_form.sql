@@ -10,6 +10,7 @@ from odf.table import Table, TableRow, TableCell
 from odf import text
 from odf.userfield import UserFields
 import plpy
+import locale
 from os.path import expanduser
 
 order_items_query = """
@@ -25,7 +26,7 @@ c."ПозицияСчета"::VARCHAR pg_position
 FROM "Содержание счета" c
 WHERE
 c."№ счета" = 
-""" + str(bill_no) + " ORDER BY pg_position ;"
+""" + str(bill_no) + """ ORDER BY c."ПозицияСчета";"""
 
 fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period", 7: "pg_sum_dec"}
 
@@ -39,6 +40,7 @@ outfile=out_dir + u'/output/'+ str(bill_no) + u'.odt'
 tab = doc.text.getElementsByType(Table)[1]
 rows = tab.getElementsByType(TableRow)
 
+locale.setlocale(locale.LC_ALL, '')
 recs = plpy.execute(order_items_query)
 #plpy.log("items nrows="+str(recs.nrows()))
 #plpy.log("items recs[0]="+str(recs[0]))
@@ -96,7 +98,10 @@ for (k, v) in recs[0].items():
 
 obj = UserFields(outfile, outfile)
 obj.update(upd_dict)
-obj.update({"pg_total": sum_total})
+#obj.update({"pg_total": sum_total})
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+obj.update({"pg_total": locale.currency(sum_total, False).replace('.', ',')})
+locale.setlocale(locale.LC_ALL, '')
 obj.update({"pg_sum_in_words": sum_total_in_words})
 
 return outfile
