@@ -1,5 +1,5 @@
 SELECT 
-c."ПозицияСчета" pg_position
+c."ПозицияСчета"::VARCHAR pg_position
 , "Наименование" pg_pos_name
 ,"Ед Изм" pg_mes_unit
 ,"Кол-во" pg_qnt
@@ -9,5 +9,6 @@ c."ПозицияСчета" pg_position
 FROM "Содержание счета" c
 -- JOIN "Фирма" f ON b."фирма" = f."КлючФирмы"
 WHERE 
-c."№ счета" = 55202951
-ORDER BY pg_position
+c."№ счета" = 44200110 -- 55202951
+ORDER BY c."ПозицияСчета"
+--pg_position
