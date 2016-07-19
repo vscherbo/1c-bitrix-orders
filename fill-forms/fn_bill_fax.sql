@@ -64,7 +64,7 @@ for r in range(recs.nrows()):
 rec_total_in_words = plpy.execute("SELECT propis(" + str(sum_total) +");"  )
 sum_total_in_words = rec_total_in_words[0]["propis"].decode('utf-8')
 sum_words = sum_total_in_words.split(' ')
-sum_total_in_words = sum_words[0].capitalize() + ' '.join(sum_words[1:])
+sum_total_in_words = sum_words[0].capitalize() + ' ' + ' '.join(sum_words[1:])
 #for i in range(1, len(sum_words):
 #    sum_total_in_words += sum_words[i]
  
@@ -119,9 +119,9 @@ for (k, v) in recs[0].items():
 
 obj = UserFields(outfile, outfile)
 obj.update(upd_dict)
-obj.update({"pg_vat": sum_total - sum_novat})
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 obj.update({"pg_total": locale.currency(sum_total, False).replace('.', ',')})
+obj.update({"pg_vat": locale.currency(sum_total - sum_novat, False).replace('.', ',')})
 locale.setlocale(locale.LC_ALL, '')
 obj.update({"pg_sum_in_words": sum_total_in_words})
 
