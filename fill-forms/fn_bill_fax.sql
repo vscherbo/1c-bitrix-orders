@@ -1,8 +1,8 @@
 -- Function: fn_bill_fax(integer)
 
--- DROP FUNCTION fn_bill_fax(integer);
+-- DROP FUNCTION arc_energo.fn_bill_fax(integer);
 
-CREATE OR REPLACE FUNCTION fn_bill_fax(bill_no integer)
+CREATE OR REPLACE FUNCTION arc_energo.fn_bill_fax(bill_no integer)
   RETURNS character varying AS
 $BODY$
 #-*- coding:utf-8 -*-
@@ -24,12 +24,14 @@ c."ПозицияСчета"::VARCHAR pg_position
 ,to_char(round("Кол-во"*"ЦенаНДС", 2), '999 999D99') pg_sum
 ,COALESCE("Срок2", E'') pg_period
 ,round("Кол-во"*"ЦенаНДС", 2) pg_sum_dec
+,round("Кол-во"*"Цена", 2) pg_sum_novat_dec
 FROM "Содержание счета" c
 WHERE
 c."№ счета" = 
 """ + str(bill_no) + """ ORDER BY c."ПозицияСчета";"""
 
-fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period", 7: "pg_sum_dec"}
+#fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period", 7: "pg_sum_dec", 8: "pg_sum_novat_dec"}
+fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period"}
 
 home = expanduser("~")
 doc = load(home + u'/fill-forms/bill_fax_template.odt')
@@ -45,8 +47,10 @@ recs = plpy.execute(order_items_query)
 #plpy.log("items nrows="+str(recs.nrows()))
 #plpy.log("items recs[0]="+str(recs[0]))
 sum_total = 0
+sum_novat = 0
 for r in range(recs.nrows()):
     sum_total += recs[r]["pg_sum_dec"]
+    sum_novat += recs[r]["pg_sum_novat_dec"]
     cells = rows[r+1].getElementsByType(TableCell)
     cells_header = rows[0].getElementsByType(TableCell)
     #plpy.log("r=" + str(r) + ", len(cells)=" + str(len(cells)))
@@ -59,7 +63,11 @@ for r in range(recs.nrows()):
 
 rec_total_in_words = plpy.execute("SELECT propis(" + str(sum_total) +");"  )
 sum_total_in_words = rec_total_in_words[0]["propis"].decode('utf-8')
-
+sum_words = sum_total_in_words.split(' ')
+sum_total_in_words = sum_words[0].capitalize() + ' '.join(sum_words[1:])
+#for i in range(1, len(sum_words):
+#    sum_total_in_words += sum_words[i]
+ 
 for row in range(len(recs)+1, len(rows)):
     tab.removeChild(rows[row])
 
@@ -81,10 +89,10 @@ r."Ф_НазваниеКратко" pg_firm
 , r."Ф_Банк" pg_bank
 , "Ф_КоррСчет" pg_corresp
 , "Ф_БИК" pg_bik
-, b."Сумма" 
-, b."№ счета" pg_order
-, b."Дата счета" pg_order_date
-, b."ставкаНДС":: VARCHAR pg_vat
+,to_char(b."Сумма", '999 999D99') pg_price
+, to_char(b."№ счета", '9999-9999') AS pg_order
+, to_char(b."Дата счета", 'DD.MM.YYYY') pg_order_date
+, b."ставкаНДС"::VARCHAR pg_vat
 , b."Дополнительно" pg_add
 , b."ОтгрузкаКем" pg_carrier
 , e.email pg_email
@@ -106,11 +114,12 @@ b."№ счета" =
 recs = plpy.execute(bill_fax_fields_query)
 upd_dict = {}
 for (k, v) in recs[0].items():
+    plpy.log(v)
     upd_dict[k] = v.decode('utf-8')
 
 obj = UserFields(outfile, outfile)
 obj.update(upd_dict)
-#obj.update({"pg_total": sum_total})
+obj.update({"pg_vat": sum_total - sum_novat})
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 obj.update({"pg_total": locale.currency(sum_total, False).replace('.', ',')})
 locale.setlocale(locale.LC_ALL, '')
@@ -120,5 +129,5 @@ return outfile
 $BODY$
   LANGUAGE plpython2u VOLATILE
   COST 100;
-ALTER FUNCTION fn_bill_fax(integer)
+ALTER FUNCTION arc_energo.fn_bill_fax(integer)
   OWNER TO postgres;

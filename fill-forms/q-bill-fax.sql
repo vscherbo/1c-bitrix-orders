@@ -14,7 +14,7 @@ r."Ф_НазваниеКратко" pg_firm
 , "Ф_КоррСчет" pg_corresp
 , "Ф_БИК" pg_bik
 , b."Сумма" 
-, b."№ счета" pg_order
+, b."№ счета"::VARCHAR pg_order
 , b."Дата счета" pg_order_date
 , b."ставкаНДС":: VARCHAR pg_vat
 , b."Дополнительно" pg_add
