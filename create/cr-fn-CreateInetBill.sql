@@ -123,20 +123,23 @@ IF (o."Сумма" <> bx_sum) AND (1 = CreateResult) THEN
 END IF;
 --  
 RAISE NOTICE 'CreateResult = %', CreateResult;
-IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы
+IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
     EmpRec := fn_GetEmpCode(o.bx_buyer_id, o."Номер");
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
 
     IF EmpRec."Код" is NOT NULL THEN
         ourFirm := getFirm(EmpRec."Код", flgOwen);
-        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника", ourFirm);
+        loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта '!Со склада'
+        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника", ourFirm, '!Со склада');
         Npp := 1;
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";
 
         -- FOREACH item IN ARRAY arrOrderItems loop
         FOR item in SELECT * FROM tmp_order_items LOOP
-            SELECT OrderItem_ProcessingTime() INTO loc_OrderItemProcessingTime; -- by KS
+            -- здесь м.б. только "В наличии"
+            -- SELECT OrderItem_ProcessingTime() INTO loc_OrderItemProcessingTime; -- by KS
+            -- SELECT devmod.get_def_time_delivery(oi.mod_id) INTO loc_OrderItemProcessingTime;
             SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = KS;
             Price := soderg."Цена"*100/(100 + VAT);
             --
@@ -168,7 +171,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
                     SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
                     INSERT INTO "Резерв"("Счет", "Резерв", "Подкого_Код", "Когда", "Докуда", "Кем_Номер", "КодПозиции", "КодСодержания", "ПримечаниеСклада", "КодСклада") 
                                   VALUES(bill."№ счета", item.oi_quantity, EmpRec."Код", now(), now()+'10 days'::interval, our_emp_id, inserted_bill_item."КодПозиции", item.ks, '', 2);
-                    /**/                          
+                    /**/
                 /**
                     EXECUTE E'INSERT INTO "Содержание счета" '
                             || E'("КодПозиции", '
