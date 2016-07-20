@@ -12,6 +12,7 @@ from odf import text
 from odf.userfield import UserFields
 import plpy
 import locale
+import re
 from os.path import expanduser
 
 order_items_query = """
@@ -57,7 +58,7 @@ for r in range(recs.nrows()):
     for cind in range(len(cells)):
         pars = cells[cind].getElementsByType(text.P)
         pars_header = cells_header[cind].getElementsByType(text.P)
-        plpy.log("cind=" + str(cind) + ", pars_header=" + pars_header[0].firstChild.__unicode__().encode('utf-8', 'ignore'))
+        #plpy.log("cind=" + str(cind) + ", pars_header=" + pars_header[0].firstChild.__unicode__().encode('utf-8', 'ignore'))
         #plpy.log("cind=" + str(cind) + ", val=" + recs[r][fld_items[cind]].decode('utf-8') )
         pars[0].addText(recs[r][fld_items[cind]].decode('utf-8'))
 
@@ -65,11 +66,17 @@ rec_total_in_words = plpy.execute("SELECT propis(" + str(sum_total) +");"  )
 sum_total_in_words = rec_total_in_words[0]["propis"].decode('utf-8')
 sum_words = sum_total_in_words.split(' ')
 sum_total_in_words = sum_words[0].capitalize() + ' ' + ' '.join(sum_words[1:])
-#for i in range(1, len(sum_words):
-#    sum_total_in_words += sum_words[i]
  
 for row in range(len(recs)+1, len(rows)):
     tab.removeChild(rows[row])
+
+# total positions in words
+rec_total_pos_in_words = plpy.execute("SELECT propis(" + str(recs.nrows()) +");"  )
+re_rubl = re.compile(u'рубл.*$', flags=re.IGNORECASE)
+total_pos_in_words = re_rubl.sub('', rec_total_pos_in_words[0]["propis"]).decode('utf-8')
+plpy.log(total_pos_in_words.encode('utf-8'))
+total_words = total_pos_in_words.split(' ')
+total_pos_in_words = total_words[0].capitalize() + ' ' + ' '.join(total_words[1:])
 
 doc.save(outfile)
 
@@ -114,7 +121,7 @@ b."№ счета" =
 recs = plpy.execute(bill_fax_fields_query)
 upd_dict = {}
 for (k, v) in recs[0].items():
-    plpy.log(v)
+    #plpy.log(v)
     upd_dict[k] = v.decode('utf-8')
 
 obj = UserFields(outfile, outfile)
@@ -124,7 +131,9 @@ obj.update({"pg_total": locale.currency(sum_total, False).replace('.', ',')})
 obj.update({"pg_vat": locale.currency(sum_total - sum_novat, False).replace('.', ',')})
 locale.setlocale(locale.LC_ALL, '')
 obj.update({"pg_sum_in_words": sum_total_in_words})
-
+# obj.update({"pg_total_pos": recs.nrows()+1})
+obj.update({"pg_total_pos": total_pos_in_words})
+ 
 return outfile
 $BODY$
   LANGUAGE plpython2u VOLATILE
