@@ -74,7 +74,6 @@ for row in range(len(recs)+1, len(rows)):
 rec_total_pos_in_words = plpy.execute("SELECT propis(" + str(recs.nrows()) +");"  )
 re_rubl = re.compile(u'рубл.*$', flags=re.IGNORECASE)
 total_pos_in_words = re_rubl.sub('', rec_total_pos_in_words[0]["propis"]).decode('utf-8')
-plpy.log(total_pos_in_words.encode('utf-8'))
 total_words = total_pos_in_words.split(' ')
 total_pos_in_words = total_words[0].capitalize() + ' ' + ' '.join(total_words[1:])
 
@@ -89,7 +88,7 @@ r."Ф_НазваниеКратко" pg_firm
 , r."Ф_ПочтовыйАдрес" pg_post_address
 , r."Ф_ФактическийАдрес" pg_fact_address
 , r."Ф_Телефон" pg_citi_phone
-, f."ПрефиксВСчет" pg_prefix
+, trim(f."ПрефиксВСчет") pg_prefix
 , f."Ф_ИНН" pg_inn
 , r."Ф_КПП" pg_kpp
 , r."Ф_РассчетныйСчет" pg_account
@@ -112,8 +111,12 @@ JOIN "Фирма" f ON b."фирма" = f."КлючФирмы"
 JOIN "ФирмаРеквизиты" r ON b."фирма" = r."КодФирмы" AND r."Ф_Активность" = TRUE
 JOIN "Сотрудники" e ON b."Хозяин" = e."Менеджер"
 JOIN "Предприятия" c ON c."Код" = b."Код"
--- JOIN "Подписи" s ON s."КлючФирмы" = b."фирма" AND s."КодОтчета" = 'СчетФакс' AND s."НомерСотрудника" = 0
-JOIN (SELECT "КлючФирмы", "ЗаДиректора", "ВидНомерДатаДокументаДир" FROM "Подписи" WHERE "КодОтчета" = 'СчетФакс' AND "НомерСотрудника" = 0 ORDER BY "ДатаСтартаПодписи" DESC LIMIT 1) s ON s."КлючФирмы" = b."фирма"
+JOIN (SELECT "ДатаСтартаПодписи", "КодОтчета", "НомерСотрудника", "КлючФирмы", "ЗаДиректора", "ВидНомерДатаДокументаДир" 
+    FROM "Подписи" 
+    WHERE "КодОтчета" = 'СчетФакс' 
+          AND "НомерСотрудника" = 0 
+          AND "КлючФирмы" = (SELECT "фирма" FROM "Счета" WHERE "№ счета" = """  + str(bill_no) + """)
+    ORDER BY "ДатаСтартаПодписи" DESC LIMIT 1 ) AS s ON s."КлючФирмы" = b."фирма"
 WHERE 
 b."№ счета" = 
 """ + str(bill_no) + ";"
@@ -121,7 +124,7 @@ b."№ счета" =
 recs = plpy.execute(bill_fax_fields_query)
 upd_dict = {}
 for (k, v) in recs[0].items():
-    #plpy.log(v)
+    #plpy.log('[' + v + ']')
     upd_dict[k] = v.decode('utf-8')
 
 obj = UserFields(outfile, outfile)
