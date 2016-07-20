@@ -91,7 +91,11 @@ b."№ счета" =
 recs = plpy.execute(order_fields_query)
 upd_dict = {}
 for (k, v) in recs[0].items():
-    upd_dict[k] = v.decode('utf-8')
+    if v is None:
+        upd_dict[k] = ''
+    else:
+        #plpy.log('[' + v + ']')
+        upd_dict[k] = v.decode('utf-8')
 
 obj = UserFields(outfile, outfile)
 obj.update(upd_dict)
