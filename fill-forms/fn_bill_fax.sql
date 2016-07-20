@@ -100,10 +100,10 @@ r."Ф_НазваниеКратко" pg_firm
 , to_char(b."Дата счета", 'DD.MM.YYYY') pg_order_date
 , b."ставкаНДС"::VARCHAR pg_vat
 , b."Дополнительно" pg_add
-, b."ОтгрузкаКем" pg_carrier
+, COALESCE (quote_literal(b."ОтгрузкаКем") || '. Оплата доставки при получении', 'Самовывоз') pg_carrier
 , e.email pg_email
 , e.telephone pg_phone
-, e."Имя" pg_mgr_name
+, e."ФИО" pg_mgr_name
 , c."ЮрНазвание" pg_firm_buyer
 , c."Факс" pg_fax
 FROM "Счета" b
