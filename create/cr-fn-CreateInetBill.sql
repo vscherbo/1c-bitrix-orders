@@ -140,7 +140,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             -- здесь м.б. только "В наличии"
             -- SELECT OrderItem_ProcessingTime() INTO loc_OrderItemProcessingTime; -- by KS
             -- SELECT devmod.get_def_time_delivery(oi.mod_id) INTO loc_OrderItemProcessingTime;
-            SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = KS;
+            SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = item.ks;
             Price := soderg."Цена"*100/(100 + VAT);
             --
             RAISE NOTICE 'bill_no=%, item.ks=%', bill."№ счета", item.ks;
