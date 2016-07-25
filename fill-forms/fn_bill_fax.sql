@@ -36,8 +36,8 @@ fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 
 
 home = expanduser("~")
 doc = load(home + u'/fill-forms/bill_fax_template.odt')
-out_dir = '/mnt/storage'
-outfile=out_dir + '/output/'+ str(bill_no) + '-Счет-факс.odt'.decode('utf-8')
+out_dir = '/mnt/nfs/autobill'
+outfile=out_dir + '/db/'+ str(bill_no) + '-Счет-факс.odt'.decode('utf-8')
 
 # get 1st table
 tab = doc.text.getElementsByType(Table)[4]
@@ -122,6 +122,9 @@ b."№ счета" =
 """ + str(bill_no) + ";"
 
 recs = plpy.execute(bill_fax_fields_query)
+if 0 == recs.nrows():
+    return 'Not found'
+
 upd_dict = {}
 for (k, v) in recs[0].items():
     if v is None:

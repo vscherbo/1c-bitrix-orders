@@ -78,7 +78,7 @@ tpl.set_text('mgr_name', pg_mgr_name)
 
 src = str(tpl)
 
-out_dir = '/mnt/nfs/storage'
+out_dir = '/mnt/nfs/autobill'
 fn=out_dir + '/output/' + str(res[0]["pg_order"]).strip() + '-Квитанция.pdf'.decode('utf-8')
 with open(fn, 'w') as out:
     cairosvg.svg2pdf(bytestring=src, write_to=out)
