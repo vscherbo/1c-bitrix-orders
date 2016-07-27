@@ -26,7 +26,7 @@ $BODY$ DECLARE
   bill_no INTEGER;
 BEGIN
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
-    IF found THEN ExtraInfo := BuyerComment; END IF;
+    IF found THEN  BuyerComment := 'Покупатель: ' ||BuyerComment; END IF;
     SELECT fvalue INTO PaymentType FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Метод оплаты';
     IF found THEN ExtraInfo := ExtraInfo || ' Метод оплаты:' || PaymentType; END IF;
     SELECT fvalue INTO DeliveryService FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Название службы доставки';
@@ -54,7 +54,7 @@ BEGIN
     WITH inserted AS (
         INSERT INTO "Счета"
             ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "Статус", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок") 
-        VALUES (acode, ourFirm, inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт на заказ с сайта', exInfo_truncated, Delivery, DeliveryMode, OrderProcessingTime)
+        VALUES (acode, ourFirm, inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 'Автосчёт, '+BuyerComment, exInfo_truncated, Delivery, DeliveryMode, OrderProcessingTime)
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
