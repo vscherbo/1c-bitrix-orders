@@ -105,7 +105,11 @@ obj.update({"pg_total": locale.currency(sum_total, False).replace('.', ',')})
 locale.setlocale(locale.LC_ALL, '')
 obj.update({"pg_sum_in_words": sum_total_in_words})
 
-return outfile
+odt2pdf_query = "SELECT odt2pdf('" + outfile + "');"
+odt2pdf_query = odt2pdf_query.encode('utf8')
+res = plpy.execute(odt2pdf_query)
+#return outfile
+return res[0]["odt2pdf"]
 $BODY$
   LANGUAGE plpython2u VOLATILE
   COST 100;

@@ -20,7 +20,7 @@ SELECT
 c."ПозицияСчета"::VARCHAR pg_position
 , "Наименование" pg_pos_name
 ,"Ед Изм" pg_mes_unit
-,to_char("Кол-во", '999 999D99') pg_qnt
+,to_char("Кол-во", '999 999D') pg_qnt
 ,to_char("ЦенаНДС", '999 999D99') pg_price
 ,to_char(round("Кол-во"*"ЦенаНДС", 2), '999 999D99') pg_sum
 ,COALESCE("Срок2", E'') pg_period
@@ -142,8 +142,12 @@ locale.setlocale(locale.LC_ALL, '')
 obj.update({"pg_sum_in_words": sum_total_in_words})
 # obj.update({"pg_total_pos": recs.nrows()+1})
 obj.update({"pg_total_pos": total_pos_in_words})
- 
-return outfile
+
+odt2pdf_query = "SELECT odt2pdf('" + outfile + "');"
+odt2pdf_query = odt2pdf_query.encode('utf8')
+res = plpy.execute(odt2pdf_query)
+#return outfile
+return res[0]["odt2pdf"]
 $BODY$
   LANGUAGE plpython2u VOLATILE
   COST 100;
