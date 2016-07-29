@@ -90,7 +90,7 @@ c."№ счета" =
 fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period"}
 
 home = expanduser("~")
-doc = load(home + u'/fill-forms/bill_fax_template.odt')
+doc = load(home + u'/fill-forms/bill_fax_template-'+ upd_dict["pg_firm_key"]  +u'.odt')
 out_dir = '/mnt/nfs/autobill'
 outfile=out_dir + '/db/'+ str(bill_no) + '-Счет-факс.odt'.decode('utf-8')
 
