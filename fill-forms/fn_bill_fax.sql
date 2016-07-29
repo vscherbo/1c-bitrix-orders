@@ -92,7 +92,8 @@ fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 
 home = expanduser("~")
 doc = load(home + u'/fill-forms/bill_fax_template-'+ upd_dict["pg_firm_key"]  +u'.odt')
 out_dir = '/mnt/nfs/autobill'
-outfile=out_dir + '/db/'+ str(bill_no) + '-Счет-факс.odt'.decode('utf-8')
+outfile=out_dir + '/db/'+ str(bill_no)[:4] + '-' + str(bill_no)[4:] + '-Счет-факс.odt'.decode('utf-8')
+
 
 # get 1st table
 tab = doc.text.getElementsByType(Table)[4]
