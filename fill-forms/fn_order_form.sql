@@ -105,8 +105,8 @@ for (k, v) in recs[0].items():
 obj = UserFields(outfile, outfile)
 obj.update(upd_dict)
 #obj.update({"pg_total": sum_total})
-locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-obj.update({"pg_total": locale.currency(sum_total, False).replace('.', ',')})
+locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
+obj.update({"pg_total": locale.currency(sum_total, False, True).replace('.', ',').decode('utf-8')})
 locale.setlocale(locale.LC_ALL, '')
 obj.update({"pg_sum_in_words": sum_total_in_words})
 
