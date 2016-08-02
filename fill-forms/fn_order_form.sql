@@ -33,7 +33,9 @@ fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 
 
 home = expanduser("~")
 doc = load(home + u'/fill-forms/order_form_template.odt')
-out_dir = '/mnt/nfs/autobill'
+rv = plpy.execute("SELECT const_value FROM arc_energo.arc_constants WHERE const_name='autobill_out_dir'")
+out_dir = rv[0]["const_value"]
+#out_dir = '/mnt/nfs/autobill'
 outfile=out_dir + '/db/'+ str(bill_no)[:4] + '-' + str(bill_no)[4:]  + '-Бланк-заказа.odt'.decode('utf-8')
 
 # get 1st table
