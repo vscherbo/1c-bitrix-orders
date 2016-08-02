@@ -26,7 +26,8 @@ declare
     LegalAddress VARCHAR;
     email VARCHAR;
 begin
-  SELECT "КодРаботника", "Код" into emp from "Работники" where bx_buyer_id = buyer_id;
+  SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
+  SELECT "КодРаботника", "Код", "ЕАдрес" into emp from "Работники" where bx_buyer_id = buyer_id;
   IF not found THEN -- (emp is null) THEN -- Работник не найден, создаём
     -- 
     RAISE NOTICE 'Работник не найден, создаём. buyer_id=%', buyer_id;
@@ -51,7 +52,6 @@ begin
         --
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', INN, KPP;
 	SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
-	SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
 	IF NOT FOUND THEN -- TODO создание предприятия
 	    SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
 	    SELECT fvalue INTO FirmName FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Название компании';
@@ -95,6 +95,10 @@ begin
     SELECT inserted."КодРаботника", inserted."Код" INTO emp FROM inserted;
     --
     RAISE NOTICE 'Создан работник';
+  ELSE -- Если у Работника не заполнен EАдрес, заносим email из заказа
+    IF emp."ЕАдрес" IS NULL THEN
+       UPDATE "Работники" SET "ЕАдрес" = email WHERE bx_buyer_id = buyer_id;
+    END IF;
   END IF; -- Работник не найден
   RAISE NOTICE 'КодРаботника=%, Код=%', emp."КодРаботника", emp."Код";
   RETURN emp;
