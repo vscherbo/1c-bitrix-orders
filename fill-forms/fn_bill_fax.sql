@@ -70,6 +70,14 @@ for (k, v) in recs[0].items():
         #plpy.log('[' + v + ']')
         upd_dict[k] = v.decode('utf-8')
 
+locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
+re_director = re.compile(u'.*иректор', flags=re.IGNORECASE)
+plpy.notice("Director=" + upd_dict["pg_proxy_doc"].encode('utf-8')  )
+if re_director.search(upd_dict["pg_proxy_doc"].encode('utf-8')):
+    upd_dict["pg_as_director"] = upd_dict["pg_proxy_doc"]
+    upd_dict["pg_proxy_doc"] = ""
+    plpy.notice("MATCH Director=" + upd_dict["pg_as_director"].encode('utf-8')  )
+
 order_items_query = """
 SELECT
 c."ПозицияСчета"::VARCHAR pg_position
