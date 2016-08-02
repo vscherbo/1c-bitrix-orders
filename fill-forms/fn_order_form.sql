@@ -19,7 +19,7 @@ SELECT
 c."ПозицияСчета"::VARCHAR pg_position
 , "Наименование" pg_pos_name
 ,"Ед Изм" pg_mes_unit
-,to_char("Кол-во", '999 999D99') pg_qnt
+,to_char("Кол-во", '999 999D') pg_qnt
 ,to_char("ЦенаНДС", '999 999D99') pg_price
 ,to_char(round("Кол-во"*"ЦенаНДС", 2), '999 999D99') pg_sum
 ,COALESCE("Срок2", E'') pg_period
@@ -61,6 +61,9 @@ for r in range(recs.nrows()):
 
 rec_total_in_words = plpy.execute("SELECT propis(" + str(sum_total) +");"  )
 sum_total_in_words = rec_total_in_words[0]["propis"].decode('utf-8')
+sum_words = sum_total_in_words.split(' ')
+sum_total_in_words = sum_words[0].capitalize() + ' ' + ' '.join(sum_words[1:])
+
 
 for row in range(len(recs)+1, len(rows)):
     tab.removeChild(rows[row])
