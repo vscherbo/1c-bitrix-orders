@@ -64,7 +64,7 @@ flgOwen := False;
 skipCheckOwen := FALSE;
 
 FOR oi in (SELECT bx_order_item.*
-                , bx_order_item_feature.fvalue::VARCHAR  as mod_id
+                , lpad(bx_order_item_feature.fvalue::VARCHAR, 12, '0')  as mod_id
             FROM bx_order_item
             LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
                                     AND bx_order_item_feature."bx_order_Номер" = bx_order_item."bx_order_Номер"
