@@ -70,7 +70,7 @@ begin
                 RETURNING "Код"
             )
             SELECT inserted."Код" INTO FirmCode FROM inserted;
-            RAISE NOTICE 'Создано предприятия Код=%, Предприятие=%, ИНН=%, КПП=%', FirmCode, FirmName, INN, KPP;
+            RAISE NOTICE 'Создано предприятие Код=%, Предприятие=%, ИНН=%, КПП=%', FirmCode, FirmName, INN, KPP;
         ELSE
             FirmCode := Firm."Код";
 	    END IF; -- if found
