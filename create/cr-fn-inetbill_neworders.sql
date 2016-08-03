@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION fn_inetbill_neworders()
 $BODY$ DECLARE
   o RECORD;
   cr_bill_result INTEGER;
+  msg_id INTEGER;
   bill_no INTEGER;
   enterprise_code INTEGER;
   payment_method_id INTEGER;
@@ -14,7 +15,8 @@ BEGIN
         RAISE NOTICE 'Создаём счёт для заказа=%', o."Номер";
         cr_bill_result := fn_createinetbill(o."Номер");
         IF 1 = cr_bill_result THEN -- автосчёт создан
-           PERFORM "fnCreateAutoBillMessage"(o."Номер");
+            msg_id := "fnCreateAutoBillMessage"(o."Номер");
+            PERFORM fn_sendbillsinglemsg(msg_id);
         END IF; -- 1 = cr_bill_result
     END LOOP;
 END;$BODY$
