@@ -12,7 +12,7 @@ CREATE OR REPLACE FUNCTION fn_insertbill(
   RETURNS record AS
 $BODY$ DECLARE
   ret_bill RECORD;
-  BuyerComment VARCHAR;
+  BuyerComment VARCHAR = '';
   DeliveryMode VARCHAR;
   Delivery VARCHAR;
   PaymentType VARCHAR;
@@ -26,7 +26,7 @@ $BODY$ DECLARE
   bill_no INTEGER;
 BEGIN
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
-    IF found THEN  BuyerComment := 'Покупатель: ' ||BuyerComment; END IF;
+    IF found THEN BuyerComment := 'Покупатель: ' ||BuyerComment; END IF;
     SELECT fvalue INTO PaymentType FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Метод оплаты';
     IF found THEN ExtraInfo := ExtraInfo || ' Метод оплаты:' || PaymentType; END IF;
     SELECT fvalue INTO DeliveryService FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Название службы доставки';
