@@ -3,10 +3,11 @@
 -- DROP FUNCTION "fnCreateAutoBillMessage"(integer);
 
 CREATE OR REPLACE FUNCTION "fnCreateAutoBillMessage"(order_id integer)
-  RETURNS void AS
+  RETURNS integer AS
 $BODY$DECLARE 
 mstr varchar(255);
-loc_msg_to integer = 2; -- в файл, если ниже не заданое иное
+-- loc_msg_to integer = 2; -- в файл, если ниже не заданое иное
+loc_msg_to integer = 0; -- клиенту, если ниже не заданое иное
 message_id integer;
 bill_no INTEGER;
 enterprise_code INTEGER;
@@ -26,7 +27,8 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
         RAISE NOTICE 'Извещение для Автосчёта=%', mstr;
         SELECT fvalue INTO payment_method_id FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Метод оплаты ИД';
         -- 21 - Наличные
-        -- 22 - Банк
+        -- 22 - Банк???
+        -- 25 - Квитанция
         -- 26 - Платрон
         SELECT fvalue INTO delivery_service FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Способ доставки';
         IF 223719 = enterprise_code THEN -- Если Физлицо
@@ -35,10 +37,10 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
             IF 'Курьерская служба' != delivery_service THEN
                 mstr := mstr || E'\nВо вложении находится бланк Вашего заказа.';
                 loc_msg_type := 2; -- бланк-заказа
-                IF 22 = payment_method_id THEN -- Квитанция для Банка
+                IF 25 = payment_method_id THEN -- Квитанция для Банка
                     mstr := mstr || E'\nТам же - квитанция для оплаты в отделении банка.';               
                     loc_msg_type := 3; -- бланк-заказа и квитанция
-                END IF; -- 22, Банк
+                END IF; -- 25, Квитанция
             ELSE
                 RAISE NOTICE 'Автосчёт с доставкой курьерской службой, пропускаем.';
             END IF; -- 'Курьерская служба'
@@ -68,7 +70,7 @@ IF NEW."ИнтернетЗаказ" > 7000 AND NEW."ИнтернетЗаказ" 
     PERFORM "fn_InetOrderNewStatus"(NEW."Статус", NEW."ИнтернетЗаказ");
 END IF;
 **/
-
+    RETURN message_id;
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
