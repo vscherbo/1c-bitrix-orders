@@ -14,6 +14,7 @@ declare
     KPP VARCHAR;
     Buyer RECORD;
     FirmCode INTEGER;
+    ZipCode VARCHAR;
     FirmName VARCHAR;
     Consignee VARCHAR;
     DeliveryAddress VARCHAR;
@@ -59,12 +60,13 @@ begin
             SELECT fvalue INTO R_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Расчетный счет';
             SELECT fvalue INTO K_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КорСчет';
             SELECT fvalue INTO LegalAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Юридический адрес';
+            SELECT fvalue INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
             R_account_complex := R_account || ' в БИК:' || BIK || ', ' || Bank ;
             R_account_complex := substring(R_account_complex from 1 for 255);
             LegalAddress := substring(LegalAddress from 1 for 250);
             WITH inserted AS (   
-                INSERT INTO "Предприятия"("Предприятие", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес") 
-                VALUES (FirmName, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress) 
+                INSERT INTO "Предприятия"("Предприятие", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес") 
+                VALUES (FirmName, ZipCode, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress) 
                 RETURNING "Код"
             )
             SELECT inserted."Код" INTO FirmCode FROM inserted;
