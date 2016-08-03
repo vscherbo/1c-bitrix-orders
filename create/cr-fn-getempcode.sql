@@ -49,32 +49,29 @@ begin
     END IF;
     
     IF (INN IS NOT NULL) AND (KPP IS NOT NULL) THEN -- юр. лицо
-        --
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', INN, KPP;
-	SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
-	IF NOT FOUND THEN -- TODO создание предприятия
-	    SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
-	    SELECT fvalue INTO FirmName FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Название компании';
+    	SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
+	    IF NOT FOUND THEN -- создание предприятия
+            SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
+            SELECT fvalue INTO FirmName FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Название компании';
             SELECT fvalue INTO Bank FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Банк';
             SELECT fvalue INTO BIK FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'БИК';
             SELECT fvalue INTO R_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Расчетный счет';
             SELECT fvalue INTO K_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КорСчет';
             SELECT fvalue INTO LegalAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Юридический адрес';
-	    RAISE NOTICE 'Создание предприятия Предприятие=%, ИНН=%, КПП=%', FirmName, INN, KPP;
-	    R_account_complex := R_account || ' в БИК:' || BIK || ', ' || Bank ;
-	    -- IF length(R_account_complex) > 255 THEN R_account_complex := substring(R_account_complex from 1 for 255);
-	    -- END IF;
-	    R_account_complex := substring(R_account_complex from 1 for 255);
-	    LegalAddress := substring(LegalAddress from 1 for 250);
+            R_account_complex := R_account || ' в БИК:' || BIK || ', ' || Bank ;
+            R_account_complex := substring(R_account_complex from 1 for 255);
+            LegalAddress := substring(LegalAddress from 1 for 250);
             WITH inserted AS (   
                 INSERT INTO "Предприятия"("Предприятие", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес") 
                 VALUES (FirmName, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress) 
                 RETURNING "Код"
             )
             SELECT inserted."Код" INTO FirmCode FROM inserted;
+            RAISE NOTICE 'Создано предприятия Код=%, Предприятие=%, ИНН=%, КПП=%', FirmCode, FirmName, INN, KPP;
         ELSE
             FirmCode := Firm."Код";
-	    END IF;
+	    END IF; -- if found
     ELSIF (INN IS NULL) AND (KPP IS NULL) THEN -- физ. лицо
         RAISE NOTICE 'Физ. лицо';
         FirmCode := 223719;
@@ -94,7 +91,7 @@ begin
     )
     SELECT inserted."КодРаботника", inserted."Код" INTO emp FROM inserted;
     --
-    RAISE NOTICE 'Создан работник';
+    RAISE NOTICE 'Создан работник Код=%', emp;
   ELSE -- Если у Работника не заполнен EАдрес, заносим email из заказа
     IF emp."ЕАдрес" IS NULL THEN
        UPDATE "Работники" SET "ЕАдрес" = email WHERE bx_buyer_id = buyer_id;
