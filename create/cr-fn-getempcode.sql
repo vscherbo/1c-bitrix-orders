@@ -16,7 +16,7 @@ declare
     FirmCode INTEGER;
     ZipCode VARCHAR;
     FirmName VARCHAR;
-    FName VARCHAR;
+    FirmNameRE VARCHAR;
     Consignee VARCHAR;
     DeliveryAddress VARCHAR;
     PersonLocation VARCHAR;
@@ -58,7 +58,7 @@ begin
             -- SELECT fvalue INTO FirmName FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Название компании';
             SELECT fvalue
                 , TRIM(lname[1] || lname[3]) || ' ' || lname[2]
-            INTO FirmName, FName
+            INTO FirmName, FirmNameRE
             FROM (SELECT fvalue 
                 , regexp_matches(
                       regexp_replace(fvalue, '["''«»“]*', '', 'g')
@@ -76,7 +76,7 @@ begin
             LegalAddress := substring(LegalAddress from 1 for 250);
             WITH inserted AS (   
                 INSERT INTO "Предприятия"("Предприятие", "ЮрНазвание", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес") 
-                VALUES (FName, FirmName, ZipCode, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress) 
+                VALUES (FirmNameRE, FirmName, ZipCode, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress) 
                 RETURNING "Код"
             )
             SELECT inserted."Код" INTO FirmCode FROM inserted;
