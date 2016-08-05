@@ -122,7 +122,7 @@ UNION
           CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
           RAISE NOTICE 'Для KS=% нет достаточного количества=%', KS, oi."Количество";
           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-            'Для %(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, KS, oi."Количество", loc_in_stock
+            'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, KS, oi."Количество", loc_in_stock
           ), CreateResult );
           -- не прерываем обработку! EXIT; -- дальше не проверяем
        END IF;    
