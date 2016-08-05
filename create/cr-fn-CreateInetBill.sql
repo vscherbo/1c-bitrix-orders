@@ -33,8 +33,10 @@ DECLARE
    skipCheckOwen BOOLEAN;
    ourFirm VARCHAR;
    debug_rec RECORD;
+   loc_in_stock NUMERIC; 
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
+INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, 'Начало обработки заказа');
 
 SELECT bo.*, bb.bx_name, bf.fvalue AS email INTO o
     FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
@@ -80,15 +82,19 @@ UNION
            ORDER BY id 
 ) LOOP
     --
-    RAISE NOTICE 'Заказ=%, Товар=%, oi.mod_id=%', oi."bx_order_Номер", oi.Наименование, oi.mod_id;
+    RAISE NOTICE 'Заказ=%, обрабатываем Товар=%, oi.mod_id=%', oi."bx_order_Номер", oi.Наименование, oi.mod_id;
+    INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no, oi.mod_id, format('Старт %s', oi.Наименование));
     SELECT "КодСодержания","Поставщик" INTO KS, vendor_id from vwsyncdev 
-    WHERE vwsyncdev.mod_id = oi.mod_id;
+            WHERE vwsyncdev.mod_id = oi.mod_id;
     RAISE NOTICE 'KS=%, vendor_id=%', KS, vendor_id;
     
     IF (KS is null) THEN
        CreateResult := 2; -- есть не синхронизированная позиция в заказе
-       RAISE NOTICE 'В заказе %  не синхронизированные позиции. Пропускаем заказ', bx_order_no;
-       EXIT; -- дальше не проверяем
+       RAISE NOTICE 'В заказе %  не синхронизированная позиция с mod_id=%', bx_order_no, oi.mod_id;
+       INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id,  format(
+        '%s - не синхронизированная позиция', oi.Наименование
+       ), CreateResult );
+       -- не прерываем обработку! EXIT; -- дальше не проверяем
     ELSE
        -- если Овен, "Поставщик" = 30049
        IF 30049 = vendor_id AND NOT skipCheckOwen THEN
@@ -98,10 +104,16 @@ UNION
          skipCheckOwen := TRUE; -- если встретился 'не Овен', больше не проверяем
        END IF;
        
-       IF is_enough(KS, oi."Количество") THEN
-          CreateResult := 1; -- позиция заказа синхронизирована
+       loc_in_stock := is_in_stock(KS, oi."Количество");
+       IF loc_in_stock >= oi."Количество" THEN
+          IF CreateResult NOT IN (2,6) THEN 
+             CreateResult := 1; -- позиция заказа синхронизирована
+          END IF;    
           item_str := format(' %s, %s, ''%s'', %s', KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код") , oi."Количество");
           -- 
+          INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
+             '%s(KS=%s) синхронизирован и есть на складе', oi.Наименование, KS
+          ), 1 ); 
           RAISE NOTICE '   строка заказа item_str=%', item_str;
           -- arrOrderItems := array_append(arrOrderItems, item_str);
           INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, oi_quantity, item_str)
@@ -109,11 +121,18 @@ UNION
        ELSE
           CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
           RAISE NOTICE 'Для KS=% нет достаточного количества=%', KS, oi."Количество";
-          EXIT; -- дальше не проверяем
+          INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
+            'Для %(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, KS, oi."Количество", loc_in_stock
+          ), CreateResult );
+          -- не прерываем обработку! EXIT; -- дальше не проверяем
        END IF;    
     END IF;    
     -- Для контроля "потерянных" позиций
     bx_sum := bx_sum + oi."Сумма";
+    RAISE NOTICE 'CreateResult = %', CreateResult;
+    INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no,  oi.mod_id, format(
+        'Финиш %s , результат=%s', oi.Наименование, CreateResult
+    ));
 END LOOP; -- orders item
 
 -- Контроль "потерянных" позиций по сумме
@@ -122,15 +141,14 @@ IF (o."Сумма" <> bx_sum) AND (1 = CreateResult) THEN
    RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', o."Сумма", bx_sum; 
 END IF;
 --  
-RAISE NOTICE 'CreateResult = %', CreateResult;
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
     EmpRec := fn_GetEmpCode(o.bx_buyer_id, o."Номер");
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
 
     IF EmpRec."Код" is NOT NULL THEN
         ourFirm := getFirm(EmpRec."Код", flgOwen);
-        loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта '!Со склада'
-        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника", ourFirm, '!Со склада');
+        loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
+        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника", ourFirm);
         Npp := 1;
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";
@@ -155,14 +173,15 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
                             "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",
                             "Срок2",
                             "ПозицияСчета", "Наименование",
-                            "Цена", "ЦенаНДС")
+                            "Цена", "ЦенаНДС",
+                            "Гдезакупать")
                             values ((select max("КодПозиции")+1 from "Содержание счета"),
                             bill_no,
                             item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
                             loc_orderitemprocessingtime,
                             npp, soderg."НазваниевСчет",
-                            round(price, 2), soderg."Цена"
-                            ) 
+                            round(price, 2), soderg."Цена",
+                            "Рез.склада") 
                      returning * 
                      ) select * into inserted_bill_item from inserted;
                      Npp := Npp+1;
@@ -191,6 +210,10 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
                 **/
            -- END IF; -- do_reserve  
         END LOOP;
+
+        INSERT INTO aub_log(bx_order_no, descr, res_code) VALUES(bx_order_no, format(
+            'Автосчёт %s создан', bill."№ счета"
+        ), 99);
     ELSE -- Код IS NULL
         CreateResult := 9; -- bad Firm
         RAISE NOTICE 'Невозможно определить Код Предприятия. Счёт не создан. bx_order.billcreated=%', CreateResult;
