@@ -27,6 +27,7 @@ declare
     K_account VARCHAR;
     LegalAddress VARCHAR;
     email VARCHAR;
+    Fax VARCHAR;
 begin
   SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
   SELECT "КодРаботника", "Код", "ЕАдрес" into emp from "Работники" where bx_buyer_id = buyer_id;
@@ -71,12 +72,13 @@ begin
             SELECT fvalue INTO K_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КорСчет';
             SELECT fvalue INTO LegalAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Юридический адрес';
             SELECT fvalue INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
+            SELECT fvalue INTO Fax FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Факс';
             R_account_complex := R_account || ' в БИК:' || BIK || ', ' || Bank ;
             R_account_complex := substring(R_account_complex from 1 for 255);
             LegalAddress := substring(LegalAddress from 1 for 250);
             WITH inserted AS (   
-                INSERT INTO "Предприятия"("Предприятие", "ЮрНазвание", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес") 
-                VALUES (FirmNameRE, FirmName, ZipCode, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress) 
+                INSERT INTO "Предприятия"("Предприятие", "ЮрНазвание", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес", "Факс") 
+                VALUES (FirmNameRE, FirmName, ZipCode, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress, Fax) 
                 RETURNING "Код"
             )
             SELECT inserted."Код" INTO FirmCode FROM inserted;
