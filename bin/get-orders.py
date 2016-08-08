@@ -123,7 +123,7 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
                     else:
                         elem_text = u""
                     str1 = str1 + u'=' + elem_text+'\n'
-                    sale_order_features_insert += '\'' + elem_text + '\');'
+                    sale_order_features_insert += '\'' + elem_text.replace("'", "''")  + '\');'
                 #order_status = existing_order.search(str1)
                 #if order_status:
                 #    tmp_status = u''
@@ -202,7 +202,7 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
 
         # outf.write(u'SELECT fn_createinetbill('+ bx_order_id +u');')
         outf.close()
-        if flagNew and not flagFastOrder:
+        if flagNew: # and not flagFastOrder
             outf = codecs.open(outf_name, 'r', 'utf-8')
             sqlf.write(outf.read())
             outf.seek(0)
@@ -334,7 +334,8 @@ if 'success' == auth_result:
             parse_xml_insert_into_db(conf['site'], el, con, sql_outfile_name)
             logging.info("sql-file created: %s", sql_outfile_name)
             cur = con.cursor()
-            cur.callproc('fn_inetbill4neworders')
+            #cur.callproc('fn_inetbill4neworders')
+            cur.callproc('fn_inetbill_neworders')
             con.commit()
             cur.close()
 
