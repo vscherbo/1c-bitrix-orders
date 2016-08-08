@@ -9,7 +9,7 @@ DECLARE
    oi record;
    o record;
    soderg RECORD;
-   bill record;
+   bill RECORD;
    KS integer;
    CreateResult integer;
    -- arrOrderItems varchar[];
@@ -36,7 +36,7 @@ DECLARE
    loc_in_stock NUMERIC; 
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
-INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, 'Начало обработки заказа');
+INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
 
 SELECT bo.*, bb.bx_name, bf.fvalue AS email INTO o
     FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
@@ -140,7 +140,7 @@ IF (o."Сумма" <> bx_sum) AND (1 = CreateResult) THEN
    CreateResult := 5;
    RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', o."Сумма", bx_sum; 
 END IF;
---  
+-- 
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
     EmpRec := fn_GetEmpCode(o.bx_buyer_id, o."Номер");
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
@@ -164,61 +164,44 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             RAISE NOTICE 'bill_no=%, item.ks=%', bill."№ счета", item.ks;
             -- TODO Выявлять услугу "Оплата доставки"
 
-           -- IF do_reserve_bill_item(EmpRec."Код", bill."Хозяин", (item).ks, (item).oi_quantity) THEN 
+            WITH inserted AS (
+               INSERT INTO "Содержание счета"
+                    ("КодПозиции",
+                    "№ счета",
+                    "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",
+                    "Срок2",
+                    "ПозицияСчета", "Наименование",
+                    "Цена", "ЦенаНДС",
+                    "Гдезакупать")
+                    VALUES ((SELECT max("КодПозиции")+1 FROM "Содержание счета"),
+                    bill_no,
+                    item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
+                    loc_orderitemprocessingtime,
+                    npp, soderg."НазваниевСчет",
+                    round(price, 2), soderg."Цена",
+                    'Рез.склада') 
+             RETURNING * 
+             ) SELECT * INTO inserted_bill_item FROM inserted;
+             Npp := Npp+1;
 
-                    with inserted as (
-                       insert into "Содержание счета"
-                            ("КодПозиции",
-                            "№ счета",
-                            "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",
-                            "Срок2",
-                            "ПозицияСчета", "Наименование",
-                            "Цена", "ЦенаНДС",
-                            "Гдезакупать")
-                            values ((select max("КодПозиции")+1 from "Содержание счета"),
-                            bill_no,
-                            item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
-                            loc_orderitemprocessingtime,
-                            npp, soderg."НазваниевСчет",
-                            round(price, 2), soderg."Цена",
-                            "Рез.склада") 
-                     returning * 
-                     ) select * into inserted_bill_item from inserted;
-                     Npp := Npp+1;
-
-                    /**/
-                    SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
-                    INSERT INTO "Резерв"("Счет", "Резерв", "Подкого_Код", "Когда", "Докуда", "Кем_Номер", "КодПозиции", "КодСодержания", "ПримечаниеСклада", "КодСклада") 
-                                  VALUES(bill."№ счета", item.oi_quantity, EmpRec."Код", now(), now()+'10 days'::interval, our_emp_id, inserted_bill_item."КодПозиции", item.ks, '', 2);
-                    /**/
-                /**
-                    EXECUTE E'INSERT INTO "Содержание счета" '
-                            || E'("КодПозиции", '
-                            || E'"№ счета", '
-                            || E'"КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во", '
-                            || E'"Срок2", '
-                            || E'"ПозицияСчета", "Наименование", '
-                            || E'"Цена", "ЦенаНДС") '
-                            || E'VALUES ((SELECT MAX("КодПозиции")+1 FROM "Содержание счета"), '
-                            || bill_no || ', ' -- '"№ счета"
-                            || (item).item_str || ', '  -- "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",'
-                            || E'''' || loc_OrderItemProcessingTime || ''', '
-                            || Npp || ', ''' || soderg."НазваниевСчет" || ''', '  -- '"ПозицияСчета", "Наименование", '
-                            || round(Price, 2)  || ', ' || soderg."Цена" -- '"Цена", "ЦенаНДС") '
-                            || ');' ;
-                    Npp := Npp+1;      
-                **/
-           -- END IF; -- do_reserve  
+            /**/
+            SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
+            INSERT INTO "Резерв"("Счет", "Резерв", "Подкого_Код", "Когда", "Докуда", "Кем_Номер", "КодПозиции", "КодСодержания", "ПримечаниеСклада", "КодСклада") 
+                          VALUES(bill."№ счета", item.oi_quantity, EmpRec."Код", now(), now()+'10 days'::interval, our_emp_id, inserted_bill_item."КодПозиции", item.ks, '', 2);
         END LOOP;
+        INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, format(
+            'Автосчёт создан {%s}', bill."№ счета"
+        ), CreateResult, -1);
 
-        INSERT INTO aub_log(bx_order_no, descr, res_code) VALUES(bx_order_no, format(
-            'Автосчёт %s создан', bill."№ счета"
-        ), 99);
     ELSE -- Код IS NULL
         CreateResult := 9; -- bad Firm
         RAISE NOTICE 'Невозможно определить Код Предприятия. Счёт не создан. bx_order.billcreated=%', CreateResult;
     END IF;
-END IF;
+ELSE
+    INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, 'Автосчёт не создан', CreateResult, -1);
+END IF; -- CreateResult = 1
+
+
 
 UPDATE bx_order SET billcreated = CreateResult, "Счет" = bill_no WHERE "Номер" = bx_order_no ;
 
