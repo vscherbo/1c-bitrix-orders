@@ -116,6 +116,7 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
                 for elem in req.iterfind(u'Наименование'):
                     str1 = elem.text
                     sale_order_features_insert += '\'' + elem.text + '\', '
+
                 for elem in req.iterfind(u'Значение'):
                     if elem.text:
                         elem_text = elem.text.replace('\r\n','/').replace('\n','/')
@@ -237,6 +238,8 @@ else:
    verify_flag = True
    proto = 'https://'
 
+re_ver_num = re.compile(r'<НомерВерсии>(\d+)</НомерВерсии>')
+
 numeric_level = getattr(logging, args.log, None)
 if not isinstance(numeric_level, int):
     raise ValueError('Invalid log level: %s' % numeric_level)
@@ -319,25 +322,34 @@ if 'success' == auth_result:
         if 4 == len(xml_orders):
             logging.debug('empty xml, just header. Skip DB operation.')
         else:
-            xml_lines = u"\n".join(xml_orders)
-            fname_templ = conf['site'] + "-%Y-%m-%d_%H-%M-%S"
-            sql_outfile_name = time.strftime("02-sql/orders-" + fname_templ + ".sql")
-            xmlf_name = time.strftime("01-xml/orders-" + fname_templ + ".xml")
-            # xmlf_name = time.strftime("01-xml/orders-" +conf['site'] + "-%Y-%m-%d_%H-%M-%S.xml")
-            xmlf=codecs.open(xmlf_name, 'w', 'utf-8')
-            xmlf.write(xml_lines)
-            xmlf.close()
-            logging.info("wrote xml file: %s", xmlf_name)
+            ver_num = '0'
+            for x in xml_orders:
+                m_ver = re_ver_num.match(x.encode('utf-8'))
+                if m_ver:
+                    ver_num = m_ver.group(1)
 
-            el = ET.fromstring(xml_lines.encode('utf-8'))
-            logging.info("xml_lines were parsed")
-            parse_xml_insert_into_db(conf['site'], el, con, sql_outfile_name)
-            logging.info("sql-file created: %s", sql_outfile_name)
-            cur = con.cursor()
-            #cur.callproc('fn_inetbill4neworders')
-            cur.callproc('fn_inetbill_neworders')
-            con.commit()
-            cur.close()
+            if '2' == ver_num: # new orders only
+                xml_lines = u"\n".join(xml_orders)
+                fname_templ = conf['site'] + "-%Y-%m-%d_%H-%M-%S"
+                sql_outfile_name = time.strftime("02-sql/orders-" + fname_templ + ".sql")
+                xmlf_name = time.strftime("01-xml/orders-" + fname_templ + ".xml")
+                # xmlf_name = time.strftime("01-xml/orders-" +conf['site'] + "-%Y-%m-%d_%H-%M-%S.xml")
+                xmlf=codecs.open(xmlf_name, 'w', 'utf-8')
+                xmlf.write(xml_lines)
+                xmlf.close()
+                logging.info("wrote xml file: %s", xmlf_name)
+
+                el = ET.fromstring(xml_lines.encode('utf-8'))
+                logging.info("xml_lines were parsed")
+                parse_xml_insert_into_db(conf['site'], el, con, sql_outfile_name)
+                logging.info("sql-file created: %s", sql_outfile_name)
+                cur = con.cursor()
+                #cur.callproc('fn_inetbill4neworders')
+                cur.callproc('fn_inetbill_neworders')
+                con.commit()
+                cur.close()
+            else:
+                logging.info('version number too high {%s}. Skip.', ver_num)
 
         # debug
         # do_listen = False
