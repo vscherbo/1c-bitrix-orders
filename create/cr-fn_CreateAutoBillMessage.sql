@@ -12,7 +12,7 @@ message_id integer;
 bill_no INTEGER;
 enterprise_code INTEGER;
 payment_method_id INTEGER;
-delivery_service VARCHAR;
+delivery_mode VARCHAR;
 buyer_comment VARCHAR;
 ord_date timestamp without time zone;
 ord_time VARCHAR;
@@ -30,11 +30,11 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
         -- 22 - Банк???
         -- 25 - Квитанция
         -- 26 - Платрон
-        SELECT fvalue INTO delivery_service FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Способ доставки';
+        SELECT fvalue INTO delivery_mode FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Способ доставки';
         IF 223719 = enterprise_code THEN -- Если Физлицо
             RAISE NOTICE 'Автосчёт физ. лица.';
             -- Если НЕ 'Курьерская служба', формируем текст письма
-            IF 'Курьерская служба' != delivery_service THEN
+            IF 'Курьерская служба' != delivery_mode THEN
                 mstr := mstr || E'\nВо вложении находится бланк Вашего заказа.';
                 loc_msg_type := 2; -- бланк-заказа
                 IF 25 = payment_method_id THEN -- Квитанция для Банка
@@ -46,9 +46,11 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
             END IF; -- 'Курьерская служба'
         ELSE
            RAISE NOTICE 'Автосчёт юр. лица.';
-           -- формируем текст письма (счёт-факс)
-           mstr := mstr || E'\nВо вложении находится счёт для оплаты. Счёт действителен в течение 5 дней.';
-           loc_msg_type := 4; -- счёт-факс
+           IF delivery_mode IN ('Деловые Линии', 'ПЭК', 'Байкал Сервис') THEN -- широко используемые ТК
+               -- формируем текст письма (счёт-факс)
+               mstr := mstr || E'\nВо вложении находится счёт для оплаты. Счёт действителен в течение 5 дней.';
+               loc_msg_type := 4; -- счёт-факс
+            END IF; -- широко используемые ТК
         END IF; -- физлицо
 
         IF length(mstr) > 0 AND loc_msg_type IS NOT NULL THEN -- помещаем письмо в очередь сообщений

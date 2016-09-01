@@ -12,7 +12,6 @@ declare
     Firm RECORD;
     INN VARCHAR;
     KPP VARCHAR;
-    Buyer RECORD;
     FirmCode INTEGER;
     ZipCode VARCHAR;
     FirmName VARCHAR;
@@ -27,7 +26,10 @@ declare
     K_account VARCHAR;
     LegalAddress VARCHAR;
     email VARCHAR;
+    email1 VARCHAR;
     Fax VARCHAR;
+    person VARCHAR;
+    phone VARCHAR;
 begin
   SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
   SELECT "КодРаботника", "Код", "ЕАдрес" into emp from "Работники" where bx_buyer_id = buyer_id;
@@ -39,15 +41,11 @@ begin
     SELECT fvalue INTO KPP FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КПП';
     KPP := regexp_replace(KPP, '[^0-9]*', '', 'g');
     
-    SELECT * INTO Buyer FROM crosstab('SELECT  "bx_order_Номер", fname, fvalue FROM bx_order_feature
-                                            WHERE "bx_order_Номер" = ' || bx_order_id || 
-   	' AND fname IN (
-                    ''Контактное лицо'', 
-                    ''Контактный телефон'')
-                    ORDER BY fname') 
-    AS bx_order_feature("bx_order_Номер" INTEGER, 
-                    person VARCHAR, 
-                    phone VARCHAR);
+    SELECT fvalue INTO person FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактное лицо';
+    IF NOT FOUND THEN person := 'н/д'; END IF;
+    SELECT fvalue INTO phone  FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный телефон';
+    IF NOT FOUND THEN phone := 'н/д'; END IF;
+
     SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
     IF not found THEN DeliveryAddress := ''; 
     ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 100);
@@ -121,7 +119,11 @@ Fax
         RAISE NOTICE 'Физ. лицо';
         FirmCode := 223719;
         SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Местоположение';
-        SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'EMail';
+        SELECT fvalue INTO email1 FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'EMail';
+        IF 'siteorders@kipspb.ru' <> email1 AND email <> email1 THEN
+            email := email1;
+            RAISE NOTICE 'заменяем _контактный email_ на EMail';
+        END IF;
         IF found THEN DeliveryAddress := PersonLocation || ', ' || DeliveryAddress; END IF;
     ELSIF (INN IS NULL) OR (KPP IS NULL) THEN -- юр. лицо, неполная информация
         RAISE NOTICE 'Юр. лицо, неполная информация ИНН=%, КПП=%', coalesce(INN, 'не определён'), coalesce(KPP, 'не определён');
@@ -131,7 +133,7 @@ Fax
        insert INTO "Работники" ("КодРаботника", "Код", bx_buyer_id, 
                                 "Дата", "ФИО", "Телефон", "ЕАдрес", "Примечание")  
                                 values ((SELECT MAX("КодРаботника")+1 FROM "Работники"), FirmCode, buyer_id, 
-                                now(), Buyer.person, Buyer.phone, email, DeliveryAddress) 
+                                now(), person, phone, email, DeliveryAddress) 
                                 RETURNING "КодРаботника", "Код"
     )
     SELECT inserted."КодРаботника", inserted."Код" INTO emp FROM inserted;

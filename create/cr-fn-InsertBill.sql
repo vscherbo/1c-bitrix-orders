@@ -25,6 +25,7 @@ $BODY$ DECLARE
   Max_BillInfo CONSTANT INTEGER := 500;
   bill_no INTEGER;
   loc_OrderProcessingTime VARCHAR;
+  loc_DeliveryPayer VARCHAR := '';
 BEGIN
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
     IF found THEN BillInfo := BillInfo || 'Покупатель: ' ||BuyerComment; END IF;
@@ -32,16 +33,6 @@ BEGIN
     IF found THEN BillInfo := BillInfo || ' Метод оплаты:' || PaymentType; END IF;
     SELECT fvalue INTO DeliveryService FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Название службы доставки';
     IF found THEN BillInfo := BillInfo || ' Служба доставки:' || DeliveryService; END IF;
-
-    /*
-    IF length(ExtraInfo) > Max_ExtraInfo  THEN
-       exInfo_truncated = rpad(ExtraInfo, Max_ExtraInfo);
-       RAISE NOTICE 'ExtraInfo % longer than %, truncated.', ExtraInfo,Max_ExtraInfo;
-    ELSE
-       exInfo_truncated = ExtraInfo;
-    END IF;
-    RAISE NOTICE 'exInfo_truncated=%', exInfo_truncated;
-    */
 
     SELECT fvalue INTO DeliveryMode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Способ доставки';
 
@@ -53,7 +44,8 @@ BEGIN
        Delivery := 'Отправка';
        loc_OrderProcessingTime := '1...3 рабочих дня'; 
         -- TODO заполняем Дополнительно
-        ExtraInfo := ExtraInfo ||  ' Оплата доставки при получении.';
+       ExtraInfo := ExtraInfo ||  ' Оплата доставки при получении.';
+       loc_DeliveryPayer := 'Они';
     END IF;
     
     -- SELECT Order_ProcessingTime() INTO loc_OrderProcessingTime;
@@ -63,9 +55,9 @@ BEGIN
         INSERT INTO "Счета"
             ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "Статус", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата") 
         VALUES (acode, ourFirm, inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 
-                rpad(BillInfo, Max_BillInfo), 
-                rpad(ExtraInfo, Max_ExtraInfo), 
-                Delivery, DeliveryMode, loc_OrderProcessingTime, 'Они')
+                rtrim(rpad(BillInfo, Max_BillInfo)),
+                rtrim(rpad(ExtraInfo, Max_ExtraInfo)),
+                Delivery, DeliveryMode, loc_OrderProcessingTime, loc_DeliveryPayer)
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
