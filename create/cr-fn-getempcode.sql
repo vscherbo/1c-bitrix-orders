@@ -124,6 +124,7 @@ Fax
             email := email1;
             RAISE NOTICE 'заменяем _контактный email_ на EMail';
         END IF;
+        if 'н/д' = person THEN person := email; END IF;
         IF found THEN DeliveryAddress := PersonLocation || ', ' || DeliveryAddress; END IF;
     ELSIF (INN IS NULL) OR (KPP IS NULL) THEN -- юр. лицо, неполная информация
         RAISE NOTICE 'Юр. лицо, неполная информация ИНН=%, КПП=%', coalesce(INN, 'не определён'), coalesce(KPP, 'не определён');
