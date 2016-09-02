@@ -30,6 +30,7 @@ declare
     Fax VARCHAR;
     person VARCHAR;
     phone VARCHAR;
+    EmpNotice VARCHAR;
 begin
   SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
   SELECT "КодРаботника", "Код", "ЕАдрес" into emp from "Работники" where bx_buyer_id = buyer_id;
@@ -46,13 +47,17 @@ begin
     SELECT fvalue INTO phone  FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный телефон';
     IF NOT FOUND THEN phone := 'н/д'; END IF;
 
+    SELECT fvalue INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
+    IF not found THEN ZipCode := ''; END IF;
+
     SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
-    IF not found THEN DeliveryAddress := ''; 
-    ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 100);
-    END IF;
     
     IF (INN IS NOT NULL) AND (KPP IS NOT NULL) THEN -- юр. лицо
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', INN, KPP;
+        IF not found THEN DeliveryAddress := ''; 
+        ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 100);
+        END IF;
+
     	SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
 	    IF NOT FOUND THEN -- создание предприятия
             SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
@@ -72,7 +77,7 @@ begin
             SELECT fvalue INTO R_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Расчетный счет';
             SELECT fvalue INTO K_account FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КорСчет';
             SELECT fvalue INTO LegalAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Юридический адрес';
-            SELECT fvalue INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
+            -- SELECT fvalue INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
             SELECT fvalue INTO Fax FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Факс';
             -- R_account_complex := R_account || ' в БИК:' || BIK || ', ' || Bank ;
             R_account_complex := R_account || ' ' || Bank ;
@@ -118,14 +123,16 @@ Fax
     ELSIF (INN IS NULL) AND (KPP IS NULL) THEN -- физ. лицо
         RAISE NOTICE 'Физ. лицо';
         FirmCode := 223719;
-        SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Местоположение';
         SELECT fvalue INTO email1 FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'EMail';
         IF 'siteorders@kipspb.ru' <> email1 AND email <> email1 THEN
             email := email1;
             RAISE NOTICE 'заменяем _контактный email_ на EMail';
         END IF;
         if 'н/д' = person THEN person := email; END IF;
-        IF found THEN DeliveryAddress := PersonLocation || ', ' || DeliveryAddress; END IF;
+
+        SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Местоположение';
+        IF NOT found THEN PersonLocation := ''; END IF;
+        EmpNotice := SUBSTRING(concat_ws(', ', ZipCode, PersonLocation, DeliveryAddress) from 1 for 255);
     ELSIF (INN IS NULL) OR (KPP IS NULL) THEN -- юр. лицо, неполная информация
         RAISE NOTICE 'Юр. лицо, неполная информация ИНН=%, КПП=%', coalesce(INN, 'не определён'), coalesce(KPP, 'не определён');
     END IF;
@@ -134,7 +141,7 @@ Fax
        insert INTO "Работники" ("КодРаботника", "Код", bx_buyer_id, 
                                 "Дата", "ФИО", "Телефон", "ЕАдрес", "Примечание")  
                                 values ((SELECT MAX("КодРаботника")+1 FROM "Работники"), FirmCode, buyer_id, 
-                                now(), person, phone, email, DeliveryAddress) 
+                                now(), person, phone, email, EmpNotice) 
                                 RETURNING "КодРаботника", "Код"
     )
     SELECT inserted."КодРаботника", inserted."Код" INTO emp FROM inserted;
