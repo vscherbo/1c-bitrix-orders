@@ -62,9 +62,12 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
     # db_buyers = []  -  fetchall from DB
     sqlf=codecs.open(sqlf_name, 'w', 'utf-8')
     for child in root:
+        bx_order_version = child.find(u'НомерВерсии').text
+        if bx_order_version <> '2':
+            continue
         bx_order_id = child.find(u'Номер').text
         outf_name = '02-sql/order-'+ site + '-' + bx_order_id +'.tmp'
-        outf = codecs.open(outf_name, 'w', 'utf-8')
+        outf = codecs.open(outf_name, 'a', 'utf-8')
 
         sql_flds = []
         sql_vals = []
@@ -74,24 +77,43 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
                 for elem in cli.iter():
                     if u'Ид'== elem.tag:
                         outf.write(u'\n\n-- ###################################################\n')
-                        outf.write(elem2str(u'-- bx_order:', elem.tag, elem.text, sql_flds, sql_vals))
+                        outf.write(elem2str(u'-- bx_buyer:', elem.tag, elem.text, sql_flds, sql_vals))
+                        sql_flds = [] # очищаем!!!
+                        sql_vals = []
                         buyer = elem.text.split("#") #0-id, 1-bx_logname, 2-bx_name
                         sb_id = buyer[0]
+                        outf.write(u'--sb_id={'+ sb_id +'}\n')
                         buyer[1] = buyer[1].strip(u' ')
                         buyer[2] = buyer[2].strip(u' ')
                         flagFastOrder = 'OrderUser' in buyer[1]
+                        sql_flds.append(u' "bx_buyer_id"')
+                        sql_vals.append(' \'' + sb_id.replace('\'', '\'\'') + u'\'')
+                        sql_flds.append(u' "bx_logname"')
+                        sql_vals.append(' \'' + buyer[1].replace('\'', '\'\'') + u'\'')
+                        sql_flds.append(u' "bx_name"')
+                        sql_vals.append(' \'' + buyer[2].replace('\'', '\'\'') + u'\'')
+
                         #outf.write(u"-- typeof sb_id=" + str(type(sb_id)) + u"'\n")
                         #print 'sb_id=', sb_id
                         #print 'sb_id_key=', (int(sb_id), )
                         #print db_buyers
-                        if (int(sb_id), ) in db_buyers:
-                            outf.write(u"-- UPDATE bx_buyer SET bx_logname='" + buyer[1] + u"', bx_name='" + buyer[2] + u"'\n")
-                            outf.write(u"-- WHERE bx_buyer_id=" + buyer[0] +";\n")
-                        else:
-                            db_buyers.append( (int(sb_id), ) )
-                            #print "after append db_buyers=", db_buyers
-                            outf.write(u'INSERT INTO bx_buyer(bx_buyer_id,bx_logname,bx_name)\n')
-                            outf.write(u"VALUES (\'" + u'\', \''.join(buyer) + "\');\n")
+                    if u'ИНН'== elem.tag:
+                        outf.write(elem2str(u'-- bx_buyer:', elem.tag, elem.text, sql_flds, sql_vals))
+                    if u'КПП'== elem.tag:
+                        outf.write(elem2str(u'-- bx_buyer:', elem.tag, elem.text, sql_flds, sql_vals))
+
+                if (int(sb_id), ) in db_buyers:
+                    outf.write(u"-- UPDATE bx_buyer SET bx_logname='" + buyer[1] + u"', bx_name='" + buyer[2] + u"'\n")
+                    outf.write(u"-- WHERE bx_buyer_id=" + buyer[0] +";\n")
+                else:
+                    db_buyers.append( (int(sb_id), ) )
+                    #print "after append db_buyers=", db_buyers
+                    outf.write(u'--' + u'INSERT INTO bx_buyer(bx_buyer_id,bx_logname,bx_name)\n')
+                    outf.write(u'--' + u"VALUES (\'" + u'\', \''.join(buyer) + "\');\n")
+
+                    outf.write(u'INSERT INTO bx_buyer(\n')
+                    outf.write(u','.join(sql_flds) + ")\n")
+                    outf.write(u"VALUES (" + u','.join(sql_vals) + ");\n\n")
 
 
         outf.write(u"\nINSERT INTO bx_order(\n")
@@ -268,91 +290,88 @@ try:
     logging.debug("checkauth prepped sent")
     logging.debug("checkauth resp.status_code=%s", resp.status_code)
     logging.debug("checkauth resp.text=%s", resp.text)
-except Exception as e:
-    logging.debug("checkauth exception=%s", str(e))
-    resp = None
 
-if 200 != resp.status_code:
-    logging.debug("checkauth code NEQ 200, sess.headers=%s, sess.params=%s", str(sess.headers),  str(sess.params))
-    exit(resp.status_code)
+    if 200 != resp.status_code:
+        logging.debug("checkauth code NEQ 200, sess.headers=%s, sess.params=%s", str(sess.headers),  str(sess.params))
+        exit(resp.status_code)
 
-saved_cookies = resp.cookies
-logging.debug("resp.cookies=%s", str(resp.cookies))
+    saved_cookies = resp.cookies
+    logging.debug("resp.cookies=%s", str(resp.cookies))
 
-(auth_result, cookie_file, cookie_value, sessid) = resp.text.split()
-logging.debug("Parsed by =")
-logging.debug("auth_result=%s", auth_result)
-logging.debug("cookie_file=%s", cookie_file)
-logging.debug("cookie_value=%s", cookie_value)
-logging.debug("sessid=%s", sessid)
+    (auth_result, cookie_file, cookie_value, sessid) = resp.text.split()
+    logging.debug("Parsed by =")
+    logging.debug("auth_result=%s", auth_result)
+    logging.debug("cookie_file=%s", cookie_file)
+    logging.debug("cookie_value=%s", cookie_value)
+    logging.debug("sessid=%s", sessid)
 
-# if authorized
-if 'success' == auth_result:
-    logging.info("Authentication succeed!")
-    sess_id = sessid.split('=')
-    # initializing
-    req.params={'type': 'sale', 'mode': 'init', 'version': conf['version'], 'sessid': sess_id[1]}
-    prepped = sess.prepare_request(req)
-    sess.cookies = saved_cookies
-    resp = sess.send(prepped)
-    logging.debug("init resp.text=%s", resp.text)
-    (zip_enabled, file_limit, sessid, version) = resp.text.split()
-
-    # query orders from site
-    sess_id = sessid.split('=')
-    req.params={'type': 'sale', 'mode': 'query', 'version': conf['version'], 'sessid': sess_id[1]}
-    req.method='GET'
-    prepped = sess.prepare_request(req)
-    sess.cookies = saved_cookies
-    resp = sess.send(prepped)
-    xml_from_site = resp.text
-
-
-    if 200 == resp.status_code:
-        # send 'success'
-        req.params={'type': 'sale', 'mode': 'success', 'version': conf['version'], 'sessid': sess_id[1]}
+    # if authorized
+    if 'success' == auth_result:
+        logging.info("Authentication succeed!")
+        sess_id = sessid.split('=')
+        # initializing
+        req.params={'type': 'sale', 'mode': 'init', 'version': conf['version'], 'sessid': sess_id[1]}
         prepped = sess.prepare_request(req)
         sess.cookies = saved_cookies
         resp = sess.send(prepped)
-        logging.debug("success resp.text=%s", resp.text)
+        logging.debug("init resp.text=%s", resp.text)
+        (zip_enabled, file_limit, sessid, version) = resp.text.split()
 
-        xml_orders = get_xml_list_fixed(xml_from_site.splitlines())
-        logging.debug("len(xml_orders)=%s", len(xml_orders))
+        # query orders from site
+        sess_id = sessid.split('=')
+        req.params={'type': 'sale', 'mode': 'query', 'version': conf['version'], 'sessid': sess_id[1]}
+        req.method='GET'
+        prepped = sess.prepare_request(req)
+        sess.cookies = saved_cookies
+        resp = sess.send(prepped)
+        xml_from_site = resp.text
 
-        if 4 == len(xml_orders):
-            logging.debug('empty xml, just header. Skip DB operation.')
-        else:
-            ver_num = '0'
-            for x in xml_orders:
-                m_ver = re_ver_num.match(x.encode('utf-8'))
-                if m_ver:
-                    ver_num = m_ver.group(1)
 
-            if '2' == ver_num: # new orders only
-                xml_lines = u"\n".join(xml_orders)
-                fname_templ = conf['site'] + "-%Y-%m-%d_%H-%M-%S"
-                sql_outfile_name = time.strftime("02-sql/orders-" + fname_templ + ".sql")
-                xmlf_name = time.strftime("01-xml/orders-" + fname_templ + ".xml")
-                # xmlf_name = time.strftime("01-xml/orders-" +conf['site'] + "-%Y-%m-%d_%H-%M-%S.xml")
-                xmlf=codecs.open(xmlf_name, 'w', 'utf-8')
-                xmlf.write(xml_lines)
-                xmlf.close()
-                logging.info("wrote xml file: %s", xmlf_name)
+        if 200 == resp.status_code:
+            # send 'success'
+            req.params={'type': 'sale', 'mode': 'success', 'version': conf['version'], 'sessid': sess_id[1]}
+            prepped = sess.prepare_request(req)
+            sess.cookies = saved_cookies
+            resp = sess.send(prepped)
+            logging.debug("success resp.text=%s", resp.text)
 
-                el = ET.fromstring(xml_lines.encode('utf-8'))
-                logging.info("xml_lines were parsed")
-                parse_xml_insert_into_db(conf['site'], el, con, sql_outfile_name)
-                logging.info("sql-file created: %s", sql_outfile_name)
-                cur = con.cursor()
-                #cur.callproc('fn_inetbill4neworders')
-                cur.callproc('fn_inetbill_neworders')
-                con.commit()
-                cur.close()
+            xml_orders = get_xml_list_fixed(xml_from_site.splitlines())
+            logging.debug("len(xml_orders)=%s", len(xml_orders))
+
+            if 4 == len(xml_orders):
+                logging.debug('empty xml, just header. Skip DB operation.')
             else:
-                logging.info('version number too high {%s}. Skip.', ver_num)
+                ver_num = '0'
+                for x in xml_orders:
+                    m_ver = re_ver_num.match(x.encode('utf-8'))
+                    if m_ver:
+                        ver_num = m_ver.group(1)
 
-        # debug
-        # do_listen = False
+                if True: #'2' == ver_num: # new orders only
+                    xml_lines = u"\n".join(xml_orders)
+                    fname_templ = conf['site'] + "-%Y-%m-%d_%H-%M-%S"
+                    sql_outfile_name = time.strftime("02-sql/orders-" + fname_templ + ".sql")
+                    xmlf_name = time.strftime("01-xml/orders-" + fname_templ + ".xml")
+                    # xmlf_name = time.strftime("01-xml/orders-" +conf['site'] + "-%Y-%m-%d_%H-%M-%S.xml")
+                    xmlf=codecs.open(xmlf_name, 'w', 'utf-8')
+                    xmlf.write(xml_lines)
+                    xmlf.close()
+                    logging.info("wrote xml file: %s", xmlf_name)
+
+                    el = ET.fromstring(xml_lines.encode('utf-8'))
+                    logging.info("xml_lines were parsed")
+                    parse_xml_insert_into_db(conf['site'], el, con, sql_outfile_name)
+                    logging.info("sql-file created: %s", sql_outfile_name)
+                    cur = con.cursor()
+                    #cur.callproc('fn_inetbill4neworders')
+                    cur.callproc('fn_inetbill_neworders')
+                    con.commit()
+                    cur.close()
+                else:
+                    logging.info('version number too high {%s}. Skip.', ver_num)
+
+except Exception as e:
+    logging.critical("exception=%s", str(e))
 
 
 ############## Bottom line #########################
