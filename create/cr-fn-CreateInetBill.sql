@@ -36,6 +36,7 @@ DECLARE
    debug_rec RECORD;
    loc_in_stock NUMERIC; 
    dlr_discount INTEGER;
+   vw_notice VARCHAR;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -123,6 +124,15 @@ UNION
        ELSE
           CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
           RAISE NOTICE 'Для KS=% нет достаточного количества=%', KS, oi."Количество";
+          FOR vw_notice IN SELECT '  KS=' ||  "КодСодержания" || ', Примечание=' || "Примечание" || ', кол-во=' || "НаСкладе" - COALESCE("Рез", 0)
+                             FROM "vwСкладВсеПодробно"
+                             WHERE
+                                "КодСклада" = 2
+                                AND "КодСодержания" = KS
+                                -- AND "Примечание" <> ''
+          LOOP
+            INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, vw_notice, CreateResult);
+          END LOOP;
           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
             'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, KS, oi."Количество", loc_in_stock
           ), CreateResult );
