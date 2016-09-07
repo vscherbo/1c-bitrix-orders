@@ -22,7 +22,8 @@ DECLARE
    KPP VARCHAR;
    VAT numeric;
    bill_no INTEGER;
-   Price numeric;
+   Price NUMERIC;
+   PriceVAT NUMERIC; 
    bx_sum NUMERIC;
    EmpRec RECORD;
    loc_OrderItemProcessingTime varchar;
@@ -34,6 +35,7 @@ DECLARE
    ourFirm VARCHAR;
    debug_rec RECORD;
    loc_in_stock NUMERIC; 
+   dlr_discount INTEGER;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -160,6 +162,16 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             -- SELECT devmod.get_def_time_delivery(oi.mod_id) INTO loc_OrderItemProcessingTime;
             SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = item.ks;
             Price := soderg."Цена"*100/(100 + VAT);
+
+            SELECT c."СкидкаДилеру" INTO dlr_discount FROM "Предприятия" c 
+             JOIN "СоотношениеСтатуса" ON c."Код" = "СоотношениеСтатуса"."КодПредприятия"
+              WHERE "СоотношениеСтатуса"."СтатусПредприятия" = 3
+              AND c."Код" = EmpRec."Код";
+            IF FOUND THEN
+                PriceVAT := soderg."Цена"*(100-dlr_discount)/100;
+            ELSE 
+                PriceVAT := soderg."Цена";
+            END IF;
             --
             RAISE NOTICE 'bill_no=%, item.ks=%', bill."№ счета", item.ks;
             -- TODO Выявлять услугу "Оплата доставки"
@@ -178,7 +190,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
                     item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
                     loc_orderitemprocessingtime,
                     npp, soderg."НазваниевСчет",
-                    round(price, 2), soderg."Цена",
+                    round(Price, 2), PriceVAT, -- soderg."Цена",
                     'Рез.склада') 
              RETURNING * 
              ) SELECT * INTO inserted_bill_item FROM inserted;
