@@ -46,11 +46,11 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
             END IF; -- 'Курьерская служба'
         ELSE
            RAISE NOTICE 'Автосчёт юр. лица.';
-           IF delivery_mode IN ('Деловые Линии', 'ПЭК', 'Байкал Сервис') THEN -- широко используемые ТК
+           IF delivery_mode IN ('Самовывоз', 'Деловые Линии', 'ПЭК', 'Байкал Сервис') THEN -- широко используемые ТК или Самовывоз
                -- формируем текст письма (счёт-факс)
                mstr := mstr || E'\nВо вложении находится счёт для оплаты. Счёт действителен в течение 5 дней.';
                loc_msg_type := 4; -- счёт-факс
-            END IF; -- широко используемые ТК
+            END IF; -- широко используемые ТК или Самовывоз
         END IF; -- физлицо
 
         IF length(mstr) > 0 AND loc_msg_type IS NOT NULL THEN -- помещаем письмо в очередь сообщений
