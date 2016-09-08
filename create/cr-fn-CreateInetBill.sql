@@ -133,7 +133,7 @@ UNION
                                          JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
                                          WHERE
                                             v."КодСклада" In (2,5) AND
-                                            "КодСодержания" = 133010020
+                                            "КодСодержания" = KS
                                             -- AND "Примечание" <> ''
           LOOP
             INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, vw_notice, CreateResult);
