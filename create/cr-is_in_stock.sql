@@ -12,7 +12,7 @@ BEGIN
  SELECT "НаСкладе" - COALESCE("Рез", 0) INTO loc_in_stock
    FROM "vwСкладВсеПодробно"
    WHERE "КодСодержания" = "KS"
-   AND "КодСклада" = 2 -- Ясная
+   AND "КодСклада" IN (2, 5) -- Ясная, Выставка
    AND "Примечание" = '';
 
    RETURN COALESCE(loc_in_stock, 0);
