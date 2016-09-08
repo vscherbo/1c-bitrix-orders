@@ -124,6 +124,9 @@ UNION
        ELSE
           CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
           RAISE NOTICE 'Для KS=% нет достаточного количества=%', KS, oi."Количество";
+          INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
+            'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, KS, oi."Количество", loc_in_stock
+          ), CreateResult );
           FOR vw_notice IN SELECT '  KS=' ||  "КодСодержания" || ', Примечание=' || "Примечание" || ', кол-во=' || "НаСкладе" - COALESCE("Рез", 0)
                              FROM "vwСкладВсеПодробно"
                              WHERE
@@ -133,9 +136,6 @@ UNION
           LOOP
             INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, vw_notice, CreateResult);
           END LOOP;
-          INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-            'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, KS, oi."Количество", loc_in_stock
-          ), CreateResult );
           -- не прерываем обработку! EXIT; -- дальше не проверяем
        END IF;    
     END IF;    
