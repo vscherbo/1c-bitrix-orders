@@ -127,12 +127,14 @@ UNION
           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
             'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, KS, oi."Количество", loc_in_stock
           ), CreateResult );
-          FOR vw_notice IN SELECT '  KS=' ||  "КодСодержания" || ', Примечание=' || "Примечание" || ', кол-во=' || "НаСкладе" - COALESCE("Рез", 0)
-                             FROM "vwСкладВсеПодробно"
-                             WHERE
-                                "КодСклада" IN (2,5) -- Ясная, Выставка
-                                AND "КодСодержания" = KS
-                                -- AND "Примечание" <> ''
+          FOR vw_notice IN SELECT ' Склад=' || wh."Склад" || ', KS=' ||  "КодСодержания" || ', Примечание=' || "Примечание" 
+                                   || ', кол-во=' || "НаСкладе" - COALESCE("Рез", 0)
+                                         FROM "vwСкладВсеПодробно" v
+                                         JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
+                                         WHERE
+                                            v."КодСклада" In (2,5) AND
+                                            "КодСодержания" = 133010020
+                                            -- AND "Примечание" <> ''
           LOOP
             INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, vw_notice, CreateResult);
           END LOOP;
