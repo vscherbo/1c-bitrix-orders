@@ -50,6 +50,9 @@ BEGIN
     
     -- SELECT Order_ProcessingTime() INTO loc_OrderProcessingTime;
     inet_bill_owner := get_bill_owner_by_entcode(aCode);
+    -- если не назначен заместитель ? Арутюн
+    inet_bill_owner := COALESCE(inet_bill_owner, 38);
+ 
     bill_no := fn_GetNewBillNo(inet_bill_owner);
     WITH inserted AS (
         INSERT INTO "Счета"
