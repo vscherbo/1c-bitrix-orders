@@ -37,6 +37,8 @@ DECLARE
    loc_in_stock NUMERIC; 
    dlr_discount INTEGER;
    vw_notice VARCHAR;
+   mstr VARCHAR;
+   message_id INTEGER;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -216,6 +218,17 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, format(
             'Автосчёт создан {%s}', bill."№ счета"
         ), CreateResult, -1);
+        /**/
+        mstr := E'Создан автосчёт '|| to_char(bill."№ счета", 'FM9999-9999') || E'. Проверьте его, пожалуйста!';
+        WITH inserted AS (
+            INSERT INTO СчетОчередьСообщений ("№ счета", msg_to, msg, msg_type)
+                   values (bill."№ счета", 1, mstr, 9) RETURNING id
+        )
+        SELECT id INTO message_id FROM inserted;
+        PERFORM fn_sendbillsinglemsg(message_id);
+        /**/
+ 
+                        
 
     ELSE -- Код IS NULL
         CreateResult := 9; -- bad Firm
