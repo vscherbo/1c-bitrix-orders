@@ -54,12 +54,14 @@ begin
     
     IF (INN IS NOT NULL) AND (KPP IS NOT NULL) THEN -- юр. лицо
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', INN, KPP;
+        -- !!! found -> DeliveryAddress
         IF not found THEN DeliveryAddress := ''; 
         ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 100);
         END IF;
 
     	SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
 	    IF NOT FOUND THEN -- создание предприятия
+            -- TODO re-check KPP via 1C, call get_reqs_by_INN(INN), than parse_KPP(chk_result)
             SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
             -- SELECT fvalue INTO FirmName FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Название компании';
             SELECT fvalue
@@ -133,8 +135,11 @@ Fax
         SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Местоположение';
         IF NOT found THEN PersonLocation := ''; END IF;
         EmpNotice := SUBSTRING(concat_ws(', ', ZipCode, PersonLocation, DeliveryAddress) from 1 for 255);
-    ELSIF (INN IS NULL) OR (KPP IS NULL) THEN -- юр. лицо, неполная информация
-        RAISE NOTICE 'Юр. лицо, неполная информация ИНН=%, КПП=%', coalesce(INN, 'не определён'), coalesce(KPP, 'не определён');
+    ELSIF (INN IS not NULL) AND (KPP IS NULL) THEN -- юр. лицо, нет КПП, поиск через Интернет в 1С
+        -- arc_energo.parse_KPP(chk_result)
+        RAISE NOTICE 'Юр. лицо, неполная информация ИНН=%, КПП=найти через 1С', INN;
+    ELSIF (INN IS NULL) AND (KPP IS not NULL) THEN -- юр. лицо, неполная информация
+        RAISE NOTICE 'Юр. лицо, неполная информация ИНН=_не_задан_, КПП=%', KPP;
     END IF;
 
     WITH inserted AS (
