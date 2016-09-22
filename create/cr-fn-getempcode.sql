@@ -31,6 +31,7 @@ declare
     person VARCHAR;
     phone VARCHAR;
     EmpNotice VARCHAR;
+    chk_KPP VARCHAR;
 begin
   SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
   SELECT "КодРаботника", "Код", "ЕАдрес" into emp from "Работники" where bx_buyer_id = buyer_id;
@@ -52,16 +53,16 @@ begin
 
     SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
     
-    IF (INN IS NOT NULL) AND (KPP IS NOT NULL) THEN -- юр. лицо
+    IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) THEN -- юр. лицо
+        KPP := COALESCE(KPP, '_не_задан_');
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', INN, KPP;
         -- !!! found -> DeliveryAddress
         IF not found THEN DeliveryAddress := ''; 
         ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 100);
         END IF;
 
-    	SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
-	    IF NOT FOUND THEN -- создание предприятия
-            -- TODO re-check KPP via 1C, call get_reqs_by_INN(INN), than parse_KPP(chk_result)
+        Firm := fn_find_enterprise(INN, KPP);
+	    IF Firm IS NULL THEN -- создание предприятия
             SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
             -- SELECT fvalue INTO FirmName FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Название компании';
             SELECT fvalue
@@ -135,9 +136,6 @@ Fax
         SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Местоположение';
         IF NOT found THEN PersonLocation := ''; END IF;
         EmpNotice := SUBSTRING(concat_ws(', ', ZipCode, PersonLocation, DeliveryAddress) from 1 for 255);
-    ELSIF (INN IS not NULL) AND (KPP IS NULL) THEN -- юр. лицо, нет КПП, поиск через Интернет в 1С
-        -- arc_energo.parse_KPP(chk_result)
-        RAISE NOTICE 'Юр. лицо, неполная информация ИНН=%, КПП=найти через 1С', INN;
     ELSIF (INN IS NULL) AND (KPP IS not NULL) THEN -- юр. лицо, неполная информация
         RAISE NOTICE 'Юр. лицо, неполная информация ИНН=_не_задан_, КПП=%', KPP;
     END IF;
@@ -152,7 +150,7 @@ Fax
     SELECT inserted."КодРаботника", inserted."Код" INTO emp FROM inserted;
     --
     RAISE NOTICE 'Создан работник Код=%', emp;
-  ELSE -- Если у Работника не заполнен EАдрес, заносим email из заказа
+  ELSE -- Работник найден. Если у Работника не заполнен EАдрес, заносим email из заказа
     IF emp."ЕАдрес" IS NULL THEN
        UPDATE "Работники" SET "ЕАдрес" = email WHERE bx_buyer_id = buyer_id;
     END IF;
