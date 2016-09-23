@@ -53,7 +53,8 @@ begin
 
     SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
     
-    IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) THEN -- юр. лицо
+    IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) -- юр. лицо
+    THEN
         KPP := COALESCE(KPP, '_не_задан_');
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', INN, KPP;
         -- !!! found -> DeliveryAddress
