@@ -199,7 +199,6 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             -- SELECT OrderItem_ProcessingTime() INTO loc_OrderItemProcessingTime; -- by KS
             -- SELECT devmod.get_def_time_delivery(oi.mod_id) INTO loc_OrderItemProcessingTime;
             SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = item.ks;
-            Price := soderg."Цена"*100/(100 + VAT);
 
             SELECT c."СкидкаДилеру" INTO dlr_discount FROM "Предприятия" c 
              JOIN "СоотношениеСтатуса" ON c."Код" = "СоотношениеСтатуса"."КодПредприятия"
@@ -210,6 +209,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             ELSE 
                 PriceVAT := soderg."Цена";
             END IF;
+            Price := PriceVAT*100/(100 + VAT);
             --
             RAISE NOTICE 'bill_no=%, item.ks=%', bill."№ счета", item.ks;
             -- TODO Выявлять услугу "Оплата доставки"
@@ -228,7 +228,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
                     item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
                     loc_orderitemprocessingtime,
                     npp, soderg."НазваниевСчет",
-                    round(Price, 2), PriceVAT, -- soderg."Цена",
+                    round(Price, 2), PriceVAT,
                     'Рез.склада') 
              RETURNING * 
              ) SELECT * INTO inserted_bill_item FROM inserted;
