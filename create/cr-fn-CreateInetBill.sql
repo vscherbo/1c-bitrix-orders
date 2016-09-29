@@ -140,7 +140,7 @@ UNION
                      VALUES (loc_KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                              2, -- Ясная
                              loc_in_stock_wh); -- с Ясной резервируем сколько есть.
-              SELECT SUM(whqnt) INTO loc_in_stock_exh FROM qnt_in_stock WHERE whid=5;
+              SELECT SUM(whqnt) INTO loc_in_stock_exh FROM qnt_in_stock WHERE whid=5 AND qnt_in_stock.ks = loc_KS;
               loc_lack_wh := oi."Количество" - loc_in_stock_wh; -- столько не хватает на Ясной
               IF loc_in_stock_exh >= loc_lack_wh THEN -- кол-ва на Выставке хватает 
                  -- INSERT whid=5, loc_in_stock_exh
