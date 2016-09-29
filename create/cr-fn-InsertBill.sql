@@ -18,7 +18,8 @@ $BODY$ DECLARE
   DeliveryService VARCHAR;
   BillInfo VARCHAR = 'Автосчёт, ' ; -- инфо
  -- Дополнительно
-  ExtraInfo VARCHAR = ' Отгрузка со склада после поступления денег на расчетный счет.'; -- пока только так
+  -- ExtraInfo VARCHAR = ' Отгрузка со склада после поступления денег на расчетный счет.'; -- пока только так
+  ExtraInfo VARCHAR = ' после поступления денег на расчетный счет.'; -- пока только так
   exInfo_truncated VARCHAR;
   inet_bill_owner integer;
   Max_ExtraInfo CONSTANT INTEGER := 250;
@@ -36,19 +37,20 @@ BEGIN
 
     SELECT fvalue INTO DeliveryMode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Способ доставки';
 
+    -- SELECT Order_ProcessingTime(... args ...) INTO loc_OrderProcessingTime;
     IF DeliveryMode = 'Самовывоз' THEN 
        Delivery := 'Самовывоз'; 
        DeliveryMode = NULL; -- Важно! для формирования счёт-факса
+       ExtraInfo := ' Отгрузка со склада' || ExtraInfo;
        loc_OrderProcessingTime := '!Со склада';
     ELSE
        Delivery := 'Отправка';
        loc_OrderProcessingTime := '1...3 рабочих дня'; 
         -- TODO заполняем Дополнительно
-       ExtraInfo := ExtraInfo ||  ' Оплата доставки при получении.';
+       ExtraInfo := ' Срок поставки ' || loc_OrderProcessingTime || ExtraInfo ||  ' Оплата доставки при получении.';
        loc_DeliveryPayer := 'Они';
     END IF;
     
-    -- SELECT Order_ProcessingTime() INTO loc_OrderProcessingTime;
     inet_bill_owner := get_bill_owner_by_entcode(aCode);
     -- если не назначен заместитель ? Арутюн
     inet_bill_owner := COALESCE(inet_bill_owner, 38);
