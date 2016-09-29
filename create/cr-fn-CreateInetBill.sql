@@ -115,7 +115,10 @@ UNION
        END IF;
        
        INSERT INTO qnt_in_stock(ks, whid, whqnt) SELECT loc_KS, (is_in_stock(loc_KS)).* ;
-       SELECT SUM(whqnt) INTO loc_in_stock FROM qnt_in_stock;
+       -- SELECT SUM(whqnt) INTO loc_in_stock FROM qnt_in_stock;
+       loc_in_stock := COALESCE(
+                           (SELECT SUM(whqnt) FROM qnt_in_stock)
+                           , -1);
        -- !!! ВРЕМЕННО без выставки, см. is_in_stock
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
        INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock;
