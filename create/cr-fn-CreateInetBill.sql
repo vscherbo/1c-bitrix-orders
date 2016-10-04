@@ -115,19 +115,19 @@ UNION
        END IF;
        
        INSERT INTO qnt_in_stock(ks, whid, whqnt) SELECT loc_KS, (is_in_stock(loc_KS)).* ;
+       loc_in_stock := 0;
        -- SELECT SUM(whqnt) INTO loc_in_stock FROM qnt_in_stock;
        loc_in_stock := COALESCE(
-                           (SELECT SUM(whqnt) FROM qnt_in_stock)
+                           (SELECT SUM(whqnt) FROM qnt_in_stock WHERE qnt_in_stock.ks = loc_KS)
                            , -1);
        -- !!! ВРЕМЕННО без выставки, см. is_in_stock
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
-       INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock;
        IF loc_in_stock >= oi."Количество" THEN -- достаточно на Ясной+Выставка
           IF CreateResult NOT IN (2,6) THEN 
              CreateResult := 1; -- позиция заказа синхронизирована
           END IF;    
           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-             '%s(KS=%s) синхронизирован и есть на складе', oi.Наименование, loc_KS
+             '%s(KS=%s) синхронизирован и есть на складе [%s]', oi.Наименование, loc_KS, loc_in_stock
           ), 1 ); 
 
           SELECT SUM(whqnt) INTO loc_in_stock_wh FROM qnt_in_stock WHERE whid=2 AND qnt_in_stock.ks = loc_KS; -- только Ясная
@@ -189,6 +189,7 @@ IF (o."Сумма" <> bx_sum) AND (1 = CreateResult) THEN
 END IF;
 -- 
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
+    INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
     EmpRec := fn_GetEmpCode(o.bx_buyer_id, o."Номер");
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
 
