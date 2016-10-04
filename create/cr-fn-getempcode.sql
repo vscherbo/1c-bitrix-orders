@@ -38,7 +38,7 @@ begin
   IF not found THEN -- (emp is null) THEN -- Работник не найден, создаём
     -- 
     RAISE NOTICE 'Работник не найден, создаём. buyer_id=%', buyer_id;
-    SELECT fvalue INTO INN FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'ИНН';
+    SELECT trim(both FROM fvalue) INTO INN FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'ИНН';
     INN := regexp_replace(INN, '[^0-9]*', '', 'g');
     SELECT fvalue INTO KPP FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КПП';
     KPP := regexp_replace(KPP, '[^0-9]*', '', 'g');
@@ -48,19 +48,19 @@ begin
     SELECT fvalue INTO phone  FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный телефон';
     IF NOT FOUND THEN phone := 'н/д'; END IF;
 
-    SELECT fvalue INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
+    SELECT trim(both FROM fvalue) INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
     IF not found THEN ZipCode := ''; END IF;
 
     SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
     
     IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) -- юр. лицо
     THEN
-        KPP := COALESCE(KPP, '_не_задан_');
-        RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', INN, KPP;
         -- !!! found -> DeliveryAddress
         IF not found THEN DeliveryAddress := ''; 
         ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 100);
         END IF;
+        KPP := COALESCE(KPP, '_не_задан_');
+        RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%', INN, KPP;
 
         Firm := fn_find_enterprise(INN, KPP);
 	    IF Firm IS NULL THEN -- создание предприятия
