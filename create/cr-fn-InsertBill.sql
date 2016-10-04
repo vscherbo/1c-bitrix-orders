@@ -30,10 +30,14 @@ $BODY$ DECLARE
 BEGIN
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
     IF found THEN BillInfo := BillInfo || 'Покупатель: ' ||BuyerComment; END IF;
+    /** 2016-09-30 Арутюн Гараханян: 
+       когда создается автосчет в строке Инфо появляется куча информации, которая в целом не нужна. можно ее туда не помещать, 
+       только то, что клиент пишет в графе "комментарий заказчика"
     SELECT fvalue INTO PaymentType FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Метод оплаты';
     IF found THEN BillInfo := BillInfo || ' Метод оплаты:' || PaymentType; END IF;
     SELECT fvalue INTO DeliveryService FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Название службы доставки';
     IF found THEN BillInfo := BillInfo || ' Служба доставки:' || DeliveryService; END IF;
+    **/
 
     SELECT fvalue INTO DeliveryMode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Способ доставки';
 
@@ -47,7 +51,9 @@ BEGIN
        Delivery := 'Отправка';
        loc_OrderProcessingTime := '1...3 рабочих дня'; 
         -- TODO заполняем Дополнительно
-       ExtraInfo := ' Срок поставки ' || loc_OrderProcessingTime || ExtraInfo ||  ' Оплата доставки при получении.';
+       ExtraInfo := ' Срок поставки ' || loc_OrderProcessingTime || ExtraInfo 
+                    ||  ' Доставка продукции компанией ''' || DeliveryMode || '''.' 
+                    ||' Оплата доставки при получении.';
        loc_DeliveryPayer := 'Они';
     END IF;
     
