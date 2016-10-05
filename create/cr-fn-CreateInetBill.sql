@@ -119,7 +119,7 @@ UNION
        -- SELECT SUM(whqnt) INTO loc_in_stock FROM qnt_in_stock;
        loc_in_stock := COALESCE(
                            (SELECT SUM(whqnt) FROM qnt_in_stock WHERE qnt_in_stock.ks = loc_KS)
-                           , -1);
+                           , 0);
        -- !!! ВРЕМЕННО без выставки, см. is_in_stock
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
        IF loc_in_stock >= oi."Количество" THEN -- достаточно на Ясной+Выставка
