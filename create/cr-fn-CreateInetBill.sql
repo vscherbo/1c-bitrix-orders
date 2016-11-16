@@ -29,7 +29,7 @@ DECLARE
    inserted_bill_item RECORD;
    our_emp_id INTEGER;
    vendor_id INTEGER;
-   flgOwen BOOLEAN;
+   flgOwen BOOLEAN := FALSE;
    skipCheckOwen BOOLEAN;
    ourFirm VARCHAR;
    debug_rec RECORD;
@@ -37,7 +37,7 @@ DECLARE
    loc_in_stock_wh NUMERIC; -- склад Ясная
    loc_in_stock_exh NUMERIC; -- склад Выставка
    loc_lack_wh NUMERIC; -- не хватает на Ясной для заказанного количества
-   dlr_discount INTEGER;
+   real_discount INTEGER;
    vw_notice VARCHAR;
    mstr VARCHAR;
    message_id INTEGER;
@@ -110,7 +110,7 @@ UNION
        IF 30049 = vendor_id AND NOT skipCheckOwen THEN
          flgOwen := TRUE;
        ELSE
-         flgOwen := False;
+         flgOwen := FALSE;
          skipCheckOwen := TRUE; -- если встретился 'не Овен', больше не проверяем
        END IF;
        
@@ -208,15 +208,21 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             -- SELECT devmod.get_def_time_delivery(oi.mod_id) INTO loc_OrderItemProcessingTime;
             SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = item.ks;
 
+           /**
             SELECT c."СкидкаДилеру" INTO dlr_discount FROM "Предприятия" c 
-             JOIN "СоотношениеСтатуса" ON c."Код" = "СоотношениеСтатуса"."КодПредприятия"
-              WHERE "СоотношениеСтатуса"."СтатусПредприятия" = 3
-              AND c."Код" = EmpRec."Код";
+                JOIN "СоотношениеСтатуса" ON c."Код" = "СоотношениеСтатуса"."КодПредприятия"
+                WHERE "СоотношениеСтатуса"."СтатусПредприятия" = 3
+                AND c."Код" = EmpRec."Код";
             IF FOUND THEN
                 PriceVAT := soderg."Цена"*(100-dlr_discount)/100;
             ELSE 
                 PriceVAT := soderg."Цена";
             END IF;
+            **/
+
+            real_discount := dlr_discount(EmpRec."Код", item.ks);
+            PriceVAT := soderg."Цена"*(100-real_discount)/100;
+
             Price := PriceVAT*100/(100 + VAT);
             --
             RAISE NOTICE 'bill_no=%, item.ks=%', bill."№ счета", item.ks;
