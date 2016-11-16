@@ -22,7 +22,12 @@ ELSE
     ELSIF flgOwen THEN
         ourFirm = 'ОСЗ';
     ELSE
-        SELECT "фирма" INTO lastFirm FROM "Счета" WHERE "Код" = aCode AND "Дата счета" IS NOT NULL ORDER BY "Дата счета" DESC LIMIT 1;
+        SELECT "фирма" INTO lastFirm FROM "Счета" 
+        WHERE "Код" = aCode 
+              AND "фирма"<>'ОСЗ' 
+              AND "Дата счета" IS NOT NULL 
+        ORDER BY "Дата счета" DESC LIMIT 1;
+
         IF FOUND THEN
             ourFirm := lastFirm; -- see Patch below
         ELSE
