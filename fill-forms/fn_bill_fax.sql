@@ -124,9 +124,22 @@ for r in range(recs.nrows()):
     for cind in range(len(cells)):
         pars = cells[cind].getElementsByType(text.P)
         pars_header = cells_header[cind].getElementsByType(text.P)
-        #plpy.log("cind=" + str(cind) + ", pars_header=" + pars_header[0].firstChild.__unicode__().encode('utf-8', 'ignore'))
-        #plpy.log("cind=" + str(cind) + ", val=" + recs[r][fld_items[cind]].decode('utf-8') )
-        pars[0].addText(recs[r][fld_items[cind]].decode('utf-8'))
+        #if 6 == cind:  # DEBUG period
+        #    plpy.notice("cind=" + str(cind) + ", len(pars)=" + str(len(pars)))
+        #    plpy.notice("cind=" + str(cind) + ", pars_header=" + pars_header[0].firstChild.__unicode__().encode('utf-8', 'ignore'))
+        #    plpy.notice("cind=" + str(cind) + ", val=" + recs[r][fld_items[cind]] )
+        cell_txt = recs[r][fld_items[cind]].decode('utf-8')
+        cell_list = cell_txt.split(';')
+        if len(cell_list) > 0:
+            pars[0].addText(cell_list[-1])
+            for c_i in range(len(cell_list)-1):  # , 0, -1):
+                p_i = text.P()
+                p_i.setAttribute("stylename",pars[0].getAttribute("stylename"))
+                p_i.addText(cell_list[c_i]+';')
+                cells[cind].insertBefore(p_i, pars[0])
+        else:
+            pars[0].addText(cell_txt)
+        # it's work: pars[0].addText(recs[r][fld_items[cind]].decode('utf-8'))
 
 rec_total_in_words = plpy.execute("SELECT propis(" + str(sum_total) +");"  )
 sum_total_in_words = rec_total_in_words[0]["propis"].decode('utf-8')
