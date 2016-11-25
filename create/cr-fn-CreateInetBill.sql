@@ -42,8 +42,6 @@ DECLARE
    mstr VARCHAR;
    message_id INTEGER;
     loc_lack_reserve NUMERIC;
-    loc_article_str TEXT;
-    loc_article_id INTEGER;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -242,22 +240,11 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
             loc_lack_reserve := setup_reserve(bill_no, item.ks, item.oi_quantity);
             IF loc_lack_reserve  > 0 THEN
-                loc_article_str := 'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
-                         ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve;
-                WITH inserted AS (
-                        INSERT INTO "Статьи"("Содержание", "ДатаСтатьи", "Автор", importance)
-                        VALUES (loc_articel_str, clock_timestamp(), 0, 1)
-                        RETURNING "НомерСтатьи"
-                )
-                SELECT "НомерСтатьи" INTO loc_article_id FROM inserted;
-                INSERT INTO "Задания"("НомерСтатей", "Кому") VALUES (loc_article_id, bill."Хозяин");
-
+                PERFORM push_arc_article(bill."Хозяин", 
+                                'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
+                                 ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
+                                importance :=1);
             END IF;
-
-            /**
-            INSERT INTO "Резерв"("Счет", "Резерв", "Подкого_Код", "Когда", "Докуда", "Кем_Номер", "КодПозиции", "КодСодержания", "ПримечаниеСклада", "КодСклада") 
-                          VALUES(bill."№ счета", item.oi_quantity, EmpRec."Код", now(), now()+'10 days'::interval, our_emp_id, inserted_bill_item."КодПозиции", item.ks, NULL, item.whid);
-            **/
         END LOOP;
         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, format(
             'Автосчёт создан {%s}', bill."№ счета"
