@@ -208,18 +208,6 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             -- SELECT devmod.get_def_time_delivery(oi.mod_id) INTO loc_OrderItemProcessingTime;
             SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = item.ks;
 
-           /**
-            SELECT c."СкидкаДилеру" INTO dlr_discount FROM "Предприятия" c 
-                JOIN "СоотношениеСтатуса" ON c."Код" = "СоотношениеСтатуса"."КодПредприятия"
-                WHERE "СоотношениеСтатуса"."СтатусПредприятия" = 3
-                AND c."Код" = EmpRec."Код";
-            IF FOUND THEN
-                PriceVAT := soderg."Цена"*(100-dlr_discount)/100;
-            ELSE 
-                PriceVAT := soderg."Цена";
-            END IF;
-            **/
-
             real_discount := dlr_discount(EmpRec."Код", item.ks);
             PriceVAT := soderg."Цена"*(100-real_discount)/100;
 
