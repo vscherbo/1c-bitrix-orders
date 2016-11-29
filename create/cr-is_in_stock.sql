@@ -1,6 +1,6 @@
 -- Function: is_in_stock(integer, numeric)
 
-DROP FUNCTION is_in_stock(integer);
+-- DROP FUNCTION is_in_stock(integer);
 
 CREATE OR REPLACE FUNCTION is_in_stock(
     "KS" integer)
@@ -11,8 +11,8 @@ BEGIN
  RETURN QUERY SELECT "КодСклада", SUM(("НаСкладе" - COALESCE("Рез", 0))::NUMERIC) -- INTO loc_in_stock
    FROM "vwСкладВсеПодробно"
    WHERE "КодСодержания" = "KS"
-   AND "КодСклада" IN (2) -- Ясная
-   -- AND "КодСклада" IN (2, 5) -- Ясная, Выставка
+   AND "КодСклада" IN (2, 5) -- Ясная, Выставка
+   -- AND "Примечание" = '' -- до завершения перехода на флаг quality
    GROUP BY "КодСклада"
    ;
 END;$BODY$
