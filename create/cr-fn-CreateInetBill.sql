@@ -7,7 +7,6 @@ CREATE OR REPLACE FUNCTION fn_createinetbill(bx_order_no integer)
 $BODY$
 DECLARE
    oi record;
-   o record;
    soderg RECORD;
    bill RECORD;
    loc_KS integer;
@@ -49,31 +48,19 @@ DECLARE
     loc_when TEXT;
     loc_qnt NUMERIC;
     loc_part TEXT;
-
+   loc_sum NUMERIC;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
 
-SELECT bo.*, bb.bx_name, bf.fvalue AS email INTO o
-    FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
-    WHERE 
-        bo."Номер" = bx_order_no
-        AND bo.bx_buyer_id = bb.bx_buyer_id
-        AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'Контактный Email')
-UNION
-SELECT bo.*, bb.bx_name, bf.fvalue AS email
-    FROM vw_bx_actual_order bo, bx_buyer bb, bx_order_feature bf
-    WHERE 
-        bo."Номер" = bx_order_no
-        AND bo.bx_buyer_id = bb.bx_buyer_id
-        AND (bo."Номер" = bf."bx_order_Номер" AND bf.fname = 'EMail');     
-
-IF o IS NULL THEN
-   CreateResult := 4; -- отменённый или неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
-ELSE
-    CreateResult := 3; -- пустой состав заказа
+IF is_bx_order_valid(bx_order_no) THEN
+    CreateResult := 3; -- инициируем значением "пустой состав заказа"
     bx_sum := 0;
+ELSE
+    CreateResult := 4; -- отменённый или неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
+    RETURN CreateResult;
 END IF;
+
 
 CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_okei_code integer, oi_measure_unit character varying(50), whid integer, oi_quantity numeric(18,3), oi_delivery_qnt TEXT);
 TRUNCATE tmp_order_items; -- if exists
@@ -90,13 +77,13 @@ FOR oi in (SELECT bx_order_item.*
             LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
                                     AND bx_order_item_feature."bx_order_Номер" = bx_order_item."bx_order_Номер"
                                     AND bx_order_item_feature.fname = 'КодМодификации'
-            WHERE o."Номер" = bx_order_item."bx_order_Номер" 
+            WHERE bx_order_no = bx_order_item."bx_order_Номер" 
               AND POSITION(':' in bx_order_item."Наименование") = 0
 UNION
-           SELECT bx_order_item.*
+            SELECT bx_order_item.*
                 , regexp_replace(bx_order_item."Наименование", '^.*: ', '')::VARCHAR AS mod_id
            FROM bx_order_item
-           WHERE o."Номер" = bx_order_item."bx_order_Номер" 
+           WHERE bx_order_no = bx_order_item."bx_order_Номер" 
              AND POSITION(':' in bx_order_item."Наименование") > 0
            ORDER BY id 
 ) LOOP
@@ -207,9 +194,10 @@ END LOOP; -- orders item
 
 
 -- Контроль "потерянных" позиций по сумме
-IF (o."Сумма" <> bx_sum) AND (1 = CreateResult) THEN
+SELECT "Сумма" INTO loc_sum FROM bx_order WHERE "Номер" = bx_order_no;
+IF (loc_sum <> bx_sum) AND (1 = CreateResult) THEN
    CreateResult := 5;
-   RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', o."Сумма", bx_sum; 
+   RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', loc_sum, bx_sum; 
 END IF;
 -- 
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
@@ -219,7 +207,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
 
     IF EmpRec."Код" is NOT NULL THEN
         ourFirm := getFirm(EmpRec."Код", flgOwen);
-        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника", ourFirm);
+        bill := fn_InsertBill(loc_sum, bx_order_no, EmpRec."Код", EmpRec."КодРаботника", ourFirm);
         Npp := 1;
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";
@@ -264,9 +252,11 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             IF item.oi_delivery_qnt IS NULL THEN -- нет разбивки по срокам-количеству
                 loc_lack_reserve := setup_reserve(bill_no, item.ks, item.oi_quantity);
                 IF loc_lack_reserve  > 0 THEN
-                    loc_article_str := 'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
-                             ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve;
-                    PERFORM push_arc_article(bill."Хозяин", loc_article_str, 1); -- 1 - importance
+                    PERFORM push_arc_article(bill."Хозяин", 
+                                            'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
+                                            ', нужно: ' || item.oi_quantity || 
+                                            ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
+                                            importance := 1);
                 END IF;
             ELSE -- разбивка по срокам-количеству
                 -- разбор
