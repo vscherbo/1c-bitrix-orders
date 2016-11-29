@@ -41,7 +41,8 @@ DECLARE
    vw_notice VARCHAR;
    mstr VARCHAR;
    message_id INTEGER;
-    loc_lack_reserve NUMERIC;
+   loc_lack_reserve NUMERIC;
+   loc_delivery_quantity TEXT;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -67,7 +68,7 @@ ELSE
     bx_sum := 0;
 END IF;
 
-CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_okei_code integer, oi_measure_unit character varying(50), whid integer, oi_quantity numeric(18,3), oi_delivery_qnt TEXT);
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_id TEXT, oi_okei_code integer, oi_measure_unit character varying(50), whid integer, oi_quantity numeric(18,3), oi_delivery_qnt TEXT);
 TRUNCATE tmp_order_items; -- if exists
 
 CREATE temporary TABLE IF NOT EXISTS qnt_in_stock (ks INTEGER, whid INTEGER, whqnt NUMERIC) ON COMMIT DROP;
@@ -82,13 +83,13 @@ FOR oi in (SELECT bx_order_item.*
             LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
                                     AND bx_order_item_feature."bx_order_Номер" = bx_order_item."bx_order_Номер"
                                     AND bx_order_item_feature.fname = 'КодМодификации'
-            WHERE o."Номер" = bx_order_item."bx_order_Номер" 
+            WHERE bx_order_no = bx_order_item."bx_order_Номер" 
               AND POSITION(':' in bx_order_item."Наименование") = 0
 UNION
            SELECT bx_order_item.*
                 , regexp_replace(bx_order_item."Наименование", '^.*: ', '')::VARCHAR AS mod_id
            FROM bx_order_item
-           WHERE o."Номер" = bx_order_item."bx_order_Номер" 
+           WHERE bx_order_no = bx_order_item."bx_order_Номер" 
              AND POSITION(':' in bx_order_item."Наименование") > 0
            ORDER BY id 
 ) LOOP
@@ -117,11 +118,9 @@ UNION
        
        INSERT INTO qnt_in_stock(ks, whid, whqnt) SELECT loc_KS, (is_in_stock(loc_KS)).* ;
        loc_in_stock := 0;
-       -- SELECT SUM(whqnt) INTO loc_in_stock FROM qnt_in_stock;
        loc_in_stock := COALESCE(
                            (SELECT SUM(whqnt) FROM qnt_in_stock WHERE qnt_in_stock.ks = loc_KS)
                            , 0);
-       -- !!! ВРЕМЕННО без выставки, см. is_in_stock
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
        IF loc_in_stock >= oi."Количество" THEN -- достаточно на Ясной+Выставка
           IF CreateResult NOT IN (2,6) THEN 
@@ -131,6 +130,11 @@ UNION
              '%s(KS=%s) синхронизирован и есть на складе [%s]', oi.Наименование, loc_KS, loc_in_stock
           ), 1 ); 
 
+          INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity)
+                              VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
+                                      2, -- Ясная
+                                      oi."Количество");
+        /**
           SELECT SUM(whqnt) INTO loc_in_stock_wh FROM qnt_in_stock WHERE whid=2 AND qnt_in_stock.ks = loc_KS; -- только Ясная
           RAISE NOTICE 'KS=%, loc_in_stock_wh2=%, нужно=%', loc_KS, loc_in_stock_wh, oi."Количество";
           IF loc_in_stock_wh >= oi."Количество" THEN -- на Ясной хватает
@@ -139,7 +143,7 @@ UNION
                              2, -- Ясная
                              oi."Количество");
           ELSE -- на Ясной НЕ хватает
-              RAISE NOTICE '*** Выставка (склад 5) отключена, в эту ветку не должны попадать ***';
+              RAISE NOTICE 'На Ясной не хватило, берём с  Выставки (склад 5)';
               INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, whid, oi_quantity)
                      VALUES (loc_KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                              2, -- Ясная
@@ -154,25 +158,42 @@ UNION
                                  loc_lack_wh); -- с Выставки резервируем остаток.
               END IF; -- кол-ва на Выставке хватает
           END IF; -- на Ясной хватает
+        **/
        ELSE -- недостаточно Ясная+Выставка
-          CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
-          RAISE NOTICE 'Для KS=% нет достаточного количества=%', loc_KS, oi."Количество";
-          INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-            'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, loc_KS, oi."Количество", loc_in_stock
-          ), CreateResult );
-          FOR vw_notice IN SELECT ' Склад=' || wh."Склад" || ', KS=' ||  "КодСодержания" || ', Примечание=' || "Примечание" 
-                                   || ', кол-во=' || "НаСкладе" - COALESCE("Рез", 0)
-                                         FROM "vwСкладВсеПодробно" v
-                                         JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
-                                         WHERE
-                                            v."КодСклада" In (2,5) AND
-                                            "КодСодержания" = loc_KS
-                                            -- AND "Примечание" <> ''
-          LOOP
-            INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, vw_notice, CreateResult);
-          END LOOP;
+          /**/
+          loc_delivery_quantity := get_delivery_quantity(oi."Ид");
+          IF loc_delivery_quantity IS NOT NULL THEN
+            CreateResult := 1; -- позиция заказа синхронизирована
+            -- часть со склада
+            -- часть/части из идущих
+            -- часть в сроки стандартной поставки
+            -- loc_parts :=
+            INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt)
+                   VALUES (loc_KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
+                           2, -- Ясная
+                           oi."Количество", loc_delivery_quantity);
+          ELSE
+              /**/
+              CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
+              RAISE NOTICE 'Для KS=% нет достаточного количества=%', loc_KS, oi."Количество";
+              INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
+                'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, loc_KS, oi."Количество", loc_in_stock
+              ), CreateResult );
+              /** DEBUG only **/
+              FOR vw_notice IN SELECT ' Склад=' || wh."Склад" || ', KS=' ||  "КодСодержания" || ', Примечание=' || "Примечание" 
+                                       || ', кол-во=' || "НаСкладе" - COALESCE("Рез", 0)
+                                             FROM "vwСкладВсеПодробно" v
+                                             JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
+                                             WHERE
+                                                v."КодСклада" In (2,5) AND
+                                                "КодСодержания" = loc_KS
+              LOOP
+                INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, vw_notice, CreateResult);
+              END LOOP;
+              /** end of DEBUG **/
           -- не прерываем обработку! EXIT; -- дальше не проверяем
-       END IF;    
+          END IF; -- loc_delivery_quantity IS NOT NULL
+       END IF; -- достаточно на Ясной+Выставка
     END IF; -- loc_KS is not null
     -- Для контроля "потерянных" позиций
     bx_sum := bx_sum + oi."Сумма";
@@ -191,13 +212,13 @@ END IF;
 -- 
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
     INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
-    EmpRec := fn_GetEmpCode(o.bx_buyer_id, o."Номер");
+    EmpRec := fn_GetEmpCode(o.bx_buyer_id, bx_order_no);
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
 
     IF EmpRec."Код" is NOT NULL THEN
         ourFirm := getFirm(EmpRec."Код", flgOwen);
         loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
-        bill := fn_InsertBill(o."Сумма", o."Номер", EmpRec."Код", EmpRec."КодРаботника", ourFirm);
+        bill := fn_InsertBill(o."Сумма", bx_order_no, EmpRec."Код", EmpRec."КодРаботника", ourFirm);
         Npp := 1;
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";
@@ -238,12 +259,19 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
              Npp := Npp+1;
 
             SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
-            loc_lack_reserve := setup_reserve(bill_no, item.ks, item.oi_quantity);
-            IF loc_lack_reserve  > 0 THEN
-                PERFORM push_arc_article(bill."Хозяин", 
-                                'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
-                                 ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
-                                importance :=1);
+            IF item.oi_delivery_qnt IS NOT NULL THEN -- разбивка сроки-количество
+                PERFORM reserve_partly(item.oi_delivery_qnt, bill_no, item.ks);
+            ELSE -- без разбивки сроки-количество
+                loc_lack_reserve := setup_reserve(bill_no, item.ks, item.oi_quantity);
+                IF loc_lack_reserve  > 0 THEN
+                    INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, format(
+                          'Для [%s] не удалось поставить в резерв %s из %s', soderg."НазваниевСчет", loc_lack_reserve, item.oi_quantity
+                    ));
+                    PERFORM push_arc_article(bill."Хозяин", 
+                                    'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
+                                     ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
+                                    importance :=1);
+                END IF;
             END IF;
         END LOOP;
         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, format(
