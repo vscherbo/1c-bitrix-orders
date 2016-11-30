@@ -44,6 +44,7 @@ DECLARE
    loc_lack_reserve NUMERIC;
    loc_delivery_quantity TEXT;
    loc_lack_reason TEXT;
+   loc_aub_msg TEXT;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -282,9 +283,12 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
                                 -- ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
             END IF;
         END LOOP;
-        INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, format(
-            'Автосчёт создан {%s}', bill."№ счета"
-        ), CreateResult, -1);
+        IF CreateResult = 7 THEN
+            loc_aub_msg := format('Автосчёт {%s} создан, но не удалось поставить все резервы', bill."№ счета");
+        ELSE 
+            loc_aub_msg := format('Автосчёт создан {%s}', bill."№ счета");
+        END IF;
+        INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_aub_msg, CreateResult, -1);
 
     ELSE -- Код IS NULL
         CreateResult := 9; -- bad Firm
