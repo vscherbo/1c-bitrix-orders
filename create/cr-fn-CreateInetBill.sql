@@ -43,6 +43,7 @@ DECLARE
    message_id INTEGER;
    loc_lack_reserve NUMERIC;
    loc_delivery_quantity TEXT;
+   loc_lack_reason TEXT;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -180,13 +181,15 @@ UNION
                 'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, loc_KS, oi."Количество", loc_in_stock
               ), CreateResult );
               /** DEBUG only **/
-              FOR vw_notice IN SELECT ' Склад=' || wh."Склад" || ', KS=' ||  "КодСодержания" || ', Примечание=' || "Примечание" 
-                                       || ', кол-во=' || "НаСкладе" - COALESCE("Рез", 0)
-                                             FROM "vwСкладВсеПодробно" v
-                                             JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
-                                             WHERE
-                                                v."КодСклада" In (2,5) AND
-                                                "КодСодержания" = loc_KS
+              FOR vw_notice IN SELECT ' Склад=' || wh."Склад" || ', KS=' ||  "КодСодержания" 
+                                        || ', qaulity=' || CASE quality WHEN 0 THEN 'надлежащее' ELSE 'некондиция' END --CASE
+                                        || ', кол-во=' || SUM("НаСкладе" - COALESCE("Рез", 0))
+                               FROM "vwСкладВсеПодробно" v
+                               JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
+                               WHERE
+                                    v."КодСклада" In (2,5) AND
+                                    "КодСодержания" = loc_KS
+                                    GROUP BY wh."Склад", "КодСодержания", quality
               LOOP
                 INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, vw_notice, CreateResult);
               END LOOP;
@@ -258,20 +261,25 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
              ) SELECT * INTO inserted_bill_item FROM inserted;
              Npp := Npp+1;
 
+            loc_lack_reserve := 0;
             SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
             IF item.oi_delivery_qnt IS NOT NULL THEN -- разбивка сроки-количество
-                PERFORM reserve_partly(item.oi_delivery_qnt, bill_no, item.ks);
+                SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, bill_no, item.ks);
+                RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
             ELSE -- без разбивки сроки-количество
                 loc_lack_reserve := setup_reserve(bill_no, item.ks, item.oi_quantity);
-                IF loc_lack_reserve  > 0 THEN
-                    INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, format(
-                          'Для [%s] не удалось поставить в резерв %s из %s', soderg."НазваниевСчет", loc_lack_reserve, item.oi_quantity
-                    ));
-                    PERFORM push_arc_article(bill."Хозяин", 
-                                    'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
-                                     ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
-                                    importance :=1);
-                END IF;
+                RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
+            END IF;
+
+            -- Извещение о неудачном резерве
+            IF loc_lack_reserve  > 0 THEN
+                CreateResult := 7; -- не удалось создать резерв
+                loc_lack_reason := format('Счёт %s: для KS=%s не удалось поставить в резерв %s из %s, причина: %s',
+                       bill_no, item.ks, loc_lack_reserve, item.oi_quantity, quote_nullable(loc_lack_reason) );
+                INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, loc_lack_reason);
+                PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
+                                --'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
+                                -- ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
             END IF;
         END LOOP;
         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, format(
