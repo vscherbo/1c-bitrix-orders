@@ -164,18 +164,19 @@ UNION
        ELSE -- недостаточно Ясная+Выставка
           /**/
           loc_delivery_quantity := get_delivery_quantity(oi."Ид");
-          IF loc_delivery_quantity IS NOT NULL THEN
-            CreateResult := 1; -- позиция заказа синхронизирована
-            -- часть со склада
-            -- часть/части из идущих
-            -- часть в сроки стандартной поставки
-            -- loc_parts :=
-            INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt)
-                   VALUES (loc_KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
-                           2, -- Ясная
-                           oi."Количество", loc_delivery_quantity);
+          IF loc_delivery_quantity IS NOT NULL AND loc_delivery_quantity <> '' THEN
+              CreateResult := 8; -- если есть разбивка сроки-количество, создаём автосчёт
+              RAISE NOTICE 'Для mod_id=% есть сроки-количество=%', oi."Ид", loc_delivery_quantity;
+              -- часть со склада
+              -- часть/части из идущих
+              -- часть в сроки стандартной поставки
+              -- loc_parts :=
+              INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt)
+                     VALUES (loc_KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
+                             2, -- Ясная
+                             oi."Количество", loc_delivery_quantity);
           ELSE
-              /**/
+               /**/
               CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
               RAISE NOTICE 'Для KS=% нет достаточного количества=%', loc_KS, oi."Количество";
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
@@ -195,8 +196,8 @@ UNION
                 INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, vw_notice, CreateResult);
               END LOOP;
               /** end of DEBUG **/
-          -- не прерываем обработку! EXIT; -- дальше не проверяем
-          END IF; -- loc_delivery_quantity IS NOT NULL
+              -- не прерываем обработку! EXIT; -- дальше не проверяем
+            END IF; -- loc_delivery_quantity IS NOT NULL
        END IF; -- достаточно на Ясной+Выставка
     END IF; -- loc_KS is not null
     -- Для контроля "потерянных" позиций
@@ -264,7 +265,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
 
             loc_lack_reserve := 0;
             SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
-            IF item.oi_delivery_qnt IS NOT NULL THEN -- разбивка сроки-количество
+            IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN -- разбивка сроки-количество
                 SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, bill_no, item.ks);
                 RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
             ELSE -- без разбивки сроки-количество
