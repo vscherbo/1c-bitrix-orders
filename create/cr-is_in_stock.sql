@@ -10,6 +10,7 @@ BEGIN
  RETURN QUERY SELECT "КодСклада", SUM(("НаСкладе" - COALESCE("Рез", 0))::NUMERIC) -- INTO loc_in_stock
    FROM "vwСкладВсеПодробно"
    WHERE "КодСодержания" = "KS"
+   AND quality = 0
    AND "КодСклада" IN (2, 5) -- Ясная, Выставка
    GROUP BY "КодСклада"
    ;
