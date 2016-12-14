@@ -23,9 +23,19 @@ BEGIN
             cr_bill_result := fn_createinetbill(o."Номер");
             IF 1 = cr_bill_result THEN -- автосчёт создан
                 msg_id := "fnCreateAutoBillMessage"(o."Номер");
-                PERFORM sendbillsinglemsg(msg_id);
+                -- клиенту
+                IF msg_id IS NOT NULL THEN
+                    PERFORM sendbillsinglemsg(msg_id);
+                ELSE
+                    RAISE NOTICE 'ERROR: не создано сообщение клиенту для заказа=%', o."Номер";
+                END IF;
+                -- менеджеру 
                 msg_id := "fnCreateAutoBillNotification"(o."Номер");
-                PERFORM sendbillsinglemsg(msg_id);
+                IF msg_id IS NOT NULL THEN
+                    PERFORM sendbillsinglemsg(msg_id);
+                ELSE
+                    RAISE NOTICE 'ERROR: не создано сообщение менеджеру для заказа=%', o."Номер";
+                END IF;
             END IF; -- 1 = cr_bill_result
         ELSE
             RAISE NOTICE 'Пропускаем заказ: of_Site_found=%, is_kipspb=%', of_Site_found, is_kipspb;
