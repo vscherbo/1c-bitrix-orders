@@ -22,6 +22,7 @@ BEGIN
             RAISE NOTICE 'Создаём счёт для заказа=%', o."Номер";
             cr_bill_result := fn_createinetbill(o."Номер");
             IF 1 = cr_bill_result THEN -- автосчёт создан
+                RAISE NOTICE 'Создаём сообщение клиенту для заказа=%', o."Номер";
                 msg_id := "fnCreateAutoBillMessage"(o."Номер");
                 -- клиенту
                 IF msg_id IS NOT NULL THEN
@@ -30,6 +31,7 @@ BEGIN
                     RAISE NOTICE 'ERROR: не создано сообщение клиенту для заказа=%', o."Номер";
                 END IF;
                 -- менеджеру 
+                RAISE NOTICE 'Создаём сообщение менеджеру для заказа=%', o."Номер";
                 msg_id := "fnCreateAutoBillNotification"(o."Номер");
                 IF msg_id IS NOT NULL THEN
                     PERFORM sendbillsinglemsg(msg_id);
