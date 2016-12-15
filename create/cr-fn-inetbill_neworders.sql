@@ -28,7 +28,7 @@ BEGIN
                 IF msg_id IS NOT NULL THEN
                     PERFORM sendbillsinglemsg(msg_id);
                 ELSE
-                    RAISE NOTICE 'ERROR: не создано сообщение клиенту для заказа=%', o."Номер";
+                    RAISE NOTICE 'не создано сообщение клиенту для заказа=%', o."Номер";
                 END IF;
                 -- менеджеру 
                 RAISE NOTICE 'Создаём сообщение менеджеру для заказа=%', o."Номер";
