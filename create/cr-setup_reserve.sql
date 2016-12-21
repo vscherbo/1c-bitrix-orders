@@ -14,14 +14,17 @@ BEGIN
 
 SELECT Coalesce(ОКЕИ,796) INTO loc_okei FROM arc_energo."Содержание" WHERE "КодСодержания"=ks;
 	
-IF loc_okei <>6 THEN  -- не мерный товар
+IF 796 == loc_okei THEN  -- штучный
     RAISE NOTICE 'ШТУЧНЫЙ %', loc_okei;
     loc_qnt := setup_reserve_item(bill_no, ks, qnt);
+    RAISE NOTICE 'отработала setup_reserve_item, не удалось поставить в резерв %', loc_qnt;
 ELSE 
     RAISE NOTICE 'МЕРНЫЙ %', loc_okei;
     loc_qnt := setup_reserve_measured(bill_no, ks, qnt);
+    RAISE NOTICE 'отработала setup_reserve_measured, не удалось поставить в резерв %', loc_qnt;
 END IF;
 
+RAISE NOTICE 'Возвращаем loc_qnt=%', loc_qnt;
 RETURN loc_qnt;
 END
 $BODY$

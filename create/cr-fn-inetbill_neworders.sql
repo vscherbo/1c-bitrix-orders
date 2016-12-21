@@ -21,6 +21,7 @@ BEGIN
         IF of_Site_found AND is_kipspb THEN
             RAISE NOTICE 'Создаём счёт для заказа=%', o."Номер";
             cr_bill_result := fn_createinetbill(o."Номер");
+            RAISE NOTICE 'Результат создания счёта=% для заказа=%', cr_bill_result, o."Номер";
             IF 1 = cr_bill_result THEN -- автосчёт создан
                 RAISE NOTICE 'Создаём сообщение клиенту для заказа=%', o."Номер";
                 msg_id := "fnCreateAutoBillMessage"(o."Номер");
