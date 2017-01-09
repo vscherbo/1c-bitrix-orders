@@ -58,8 +58,8 @@
      id="namedview4"
      showgrid="false"
      inkscape:zoom="2.8284271"
-     inkscape:cx="298.21573"
-     inkscape:cy="54.725333"
+     inkscape:cx="298.92284"
+     inkscape:cy="464.84727"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -416,7 +416,8 @@
        style="font-size:12.80000013px;-inkscape-font-specification:Liberation Serif;font-family:Liberation Serif;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
-         id="tspan3179" template-id="mgr_name">Фамилия-Имя</tspan></text>
+         id="tspan3179"
+         template-id="mgr_name">Фамилия-Имя</tspan></text>
 <g
        id="g336"><path
          inkscape:connector-curvature="0"
@@ -430,7 +431,8 @@
        style="font-size:12.80000013px;-inkscape-font-specification:Liberation Serif;font-family:Liberation Serif;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;text-anchor:start;text-align:start;writing-mode:lr;line-height:125%"
        sodipodi:linespacing="125%"><tspan
          sodipodi:role="line"
-         id="tspan3171" template-id="email">email@kipspb.ru</tspan></text>
+         id="tspan3171"
+         template-id="email">email@kipspb.ru</tspan></text>
 <text
        xml:space="preserve"
        style="font-size:12.80000019px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:1000%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif Bold"
@@ -751,4 +753,16 @@
          x="301.51031"
          y="-88.246925"
          template-id="phone">999</tspan></text>
+<text
+       xml:space="preserve"
+       style="font-size:22px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:1000%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Serif;-inkscape-font-specification:Liberation Serif"
+       x="90.156113"
+       y="537.37268"
+       id="text3153"
+       sodipodi:linespacing="1000%"
+       transform="matrix(0.8,0,0,-0.8,0,842)"><tspan
+         sodipodi:role="line"
+         id="tspan3155"
+         x="90.156113"
+         y="537.37268">Внимание! Только для оплаты физлицами!</tspan></text>
 </g></svg>
