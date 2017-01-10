@@ -61,7 +61,7 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
             SELECT id INTO message_id FROM inserted;
         END IF;
     ELSE -- there is buyer_comment
-        RAISE NOTICE 'Автосчёт с комментариями, пропускаем.';
+        RAISE NOTICE 'Автосчёт с комментариями, пропускаем, bx_order_id=%', order_id;
     END IF; -- NO buyer_comment
 
 

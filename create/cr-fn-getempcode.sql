@@ -32,6 +32,7 @@ declare
     phone VARCHAR;
     EmpNotice VARCHAR;
     chk_KPP VARCHAR;
+    do_insert_emp BOOLEAN := False;
 begin
   SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
   SELECT "КодРаботника", "Код", "ЕАдрес" into emp from "Работники" where bx_buyer_id = buyer_id;
@@ -52,8 +53,7 @@ begin
     IF not found THEN ZipCode := ''; END IF;
 
     SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
-    
-    IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) -- юр. лицо
+    IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) -- юр. лицо, у ИП нет КПП
     THEN
         -- !!! found -> DeliveryAddress
         IF not found THEN DeliveryAddress := ''; 
@@ -89,30 +89,30 @@ begin
             LegalAddress := substring(LegalAddress from 1 for 250);
             -- DEBUG
             RAISE NOTICE 'FirmNameRE=(%)%, FirmName=(%)%, ZipCode=(%)%, INN=(%)%, KPP=(%)%, Consignee=(%)%, DeliveryAddress=(%)%, R_account_complex=(%)%, K_account=(%)%, LegalAddress=(%)%, Fax=(%)%',
-char_length(FirmNameRE),
-FirmNameRE,
-char_length(FirmName),
-FirmName,
-char_length(ZipCode),
-ZipCode,
-char_length(INN),
-INN,
-char_length(KPP),
-KPP,
-char_length(Consignee),
-Consignee,
-char_length(DeliveryAddress),
-DeliveryAddress,
-char_length(R_account_complex),
-R_account_complex,
-char_length(K_account),
-K_account,
-char_length(LegalAddress),
-LegalAddress,
-char_length(Fax),
-Fax
-;
--- END of DEBUG
+            char_length(FirmNameRE),
+            FirmNameRE,
+            char_length(FirmName),
+            FirmName,
+            char_length(ZipCode),
+            ZipCode,
+            char_length(INN),
+            INN,
+            char_length(KPP),
+            KPP,
+            char_length(Consignee),
+            Consignee,
+            char_length(DeliveryAddress),
+            DeliveryAddress,
+            char_length(R_account_complex),
+            R_account_complex,
+            char_length(K_account),
+            K_account,
+            char_length(LegalAddress),
+            LegalAddress,
+            char_length(Fax),
+            Fax
+            ;
+            -- END of DEBUG
 
             WITH inserted AS (   
                 INSERT INTO "Предприятия"("Предприятие", "ЮрНазвание", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес", "Факс") 
@@ -124,6 +124,7 @@ Fax
         ELSE
             FirmCode := Firm."Код";
 	    END IF; -- if found
+        do_insert_emp := True;
     ELSIF (INN IS NULL) AND (KPP IS NULL) THEN -- физ. лицо
         RAISE NOTICE 'Физ. лицо';
         FirmCode := 223719;
@@ -137,20 +138,23 @@ Fax
         SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Местоположение';
         IF NOT found THEN PersonLocation := ''; END IF;
         EmpNotice := SUBSTRING(concat_ws(', ', ZipCode, PersonLocation, DeliveryAddress) from 1 for 255);
+        do_insert_emp := True;
     ELSIF (INN IS NULL) AND (KPP IS not NULL) THEN -- юр. лицо, неполная информация
         RAISE NOTICE 'Юр. лицо, неполная информация ИНН=_не_задан_, КПП=%', KPP;
-    END IF;
+    END IF; -- IF INN, KPP
 
-    WITH inserted AS (
-       insert INTO "Работники" ("КодРаботника", "Код", bx_buyer_id, 
-                                "Дата", "ФИО", "Телефон", "ЕАдрес", "Примечание")  
-                                values ((SELECT MAX("КодРаботника")+1 FROM "Работники"), FirmCode, buyer_id, 
-                                now(), person, phone, email, EmpNotice) 
-                                RETURNING "КодРаботника", "Код"
-    )
-    SELECT inserted."КодРаботника", inserted."Код" INTO emp FROM inserted;
-    --
-    RAISE NOTICE 'Создан работник Код=%', emp;
+    IF do_insert_emp THEN
+        WITH inserted AS (
+           insert INTO "Работники" ("КодРаботника", "Код", bx_buyer_id, 
+                                    "Дата", "ФИО", "Телефон", "ЕАдрес", "Примечание")  
+                                    values ((SELECT MAX("КодРаботника")+1 FROM "Работники"), FirmCode, buyer_id, 
+                                    now(), person, phone, email, EmpNotice) 
+                                    RETURNING "КодРаботника", "Код"
+        )
+        SELECT inserted."КодРаботника", inserted."Код" INTO emp FROM inserted;
+        --
+        RAISE NOTICE 'Создан работник Код=%', emp;
+    END IF; -- do_insert_emp
   ELSE -- Работник найден. Если у Работника не заполнен EАдрес, заносим email из заказа
     IF emp."ЕАдрес" IS NULL THEN
        UPDATE "Работники" SET "ЕАдрес" = email WHERE bx_buyer_id = buyer_id;

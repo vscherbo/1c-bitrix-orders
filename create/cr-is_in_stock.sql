@@ -1,10 +1,9 @@
--- Function: is_in_stock(integer, numeric)
+-- Function: is_in_stock(integer)
 
 -- DROP FUNCTION is_in_stock(integer);
 
-CREATE OR REPLACE FUNCTION is_in_stock(
-    "KS" integer)
-  RETURNS TABLE(wh_id INTEGER, wh_qnt NUMERIC(18,3)) AS
+CREATE OR REPLACE FUNCTION is_in_stock(IN "KS" integer)
+  RETURNS TABLE(wh_id integer, wh_qnt numeric) AS
 $BODY$
 DECLARE loc_in_stock numeric;
 BEGIN
@@ -12,9 +11,13 @@ BEGIN
    FROM "vwСкладВсеПодробно"
    WHERE "КодСодержания" = "KS"
    AND "КодСклада" IN (2, 5) -- Ясная, Выставка
-   -- AND "Примечание" = '' -- до завершения перехода на флаг quality
+   AND quality = 0
    GROUP BY "КодСклада"
    ;
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
-  COST 100;
+  COST 100
+  ROWS 2;
+ALTER FUNCTION is_in_stock(integer)
+  OWNER TO arc_energo;
+

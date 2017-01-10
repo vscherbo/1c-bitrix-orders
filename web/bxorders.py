@@ -39,7 +39,8 @@ def bxorders_list():
     ('"Валюта"', u"Валюта"),
     ('billcreated', u"Статус")
     ])
-    order_where = 'dt_insert > CURRENT_DATE'
+    #order_where = 'dt_insert > CURRENT_DATE - 1'
+    order_where = 'dt_insert > CURRENT_DATE - 2'
     order_qry = 'SELECT ' + ','.join(Fields.keys()) + ' FROM bx_order WHERE ' + order_where + ' ORDER BY id;'
     curs = conn.cursor()
     # curs.execute('SELECT id, dt_insert, bx_buyer_id, "Номер", "Сумма", "Валюта", billcreated FROM bx_order WHERE dt_insert > CURRENT_DATE-1 ORDER BY id;')

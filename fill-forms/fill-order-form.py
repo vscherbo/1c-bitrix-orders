@@ -54,21 +54,6 @@ for row in range(len(recs)+1, len(rows)):
 
 doc.save(outfile)
 
-""" Search and Replace example
-textdoc = load("myfile.odt")
-texts = textdoc.getElementsByType(text.P)
-s = len(texts)
-for i in range(s):
-    old_text = teletype.extractText(texts[i])
-    new_text = old_text.replace('something','something else')
-    new_S = text.P()
-    new_S.setAttribute("stylename",texts[i].getAttribute("stylename"))
-    new_S.addText(new_text)
-    texts[i].parentNode.insertBefore(new_S,texts[i])
-    texts[i].parentNode.removeChild(texts[i])
-textdoc.save('myfile.odt')
-"""
-
 order_fields_query = """
 SELECT
 r."Ф_НазваниеКратко" pg_firm

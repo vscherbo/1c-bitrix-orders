@@ -1,6 +1,6 @@
--- Function: orderitem_processingtime()
+-- Function: orderitem_processingtime(integer)
 
--- DROP FUNCTION orderitem_processingtime();
+-- DROP FUNCTION orderitem_processingtime(integer);
 
 CREATE OR REPLACE FUNCTION orderitem_processingtime(ks integer)
   RETURNS character varying AS
