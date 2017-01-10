@@ -99,10 +99,10 @@ while [ $intrflag -eq 0 ] ; do
               logmsg INFO "Create $ORDERS_FIXED_SQL from $ORDERS_FIXED_XML"
               $BIN_DIR/bitrix-orders-to-pg.py $ORDERS_FIXED_XML $ORDERS_FIXED_SQL $PG_SRV
               logmsg $? "Finish create SQL-file $ORDERS_FIXED_SQL"
-              logmsg INFO "Load $ORDERS_FIXED_SQL into PG server $PG_SRV"
-              $PSQL $PG_CONNECT $PG_STRONG_OPTS -f $ORDERS_FIXED_SQL
-              logmsg $? "Finish run SQL-file $ORDERS_FIXED_SQL"
-              $PSQL $PG_CONNECT -c "SELECT fn_inetbill4neworders()"
+              #logmsg INFO "Load $ORDERS_FIXED_SQL into PG server $PG_SRV"
+              #$PSQL $PG_CONNECT $PG_STRONG_OPTS -f $ORDERS_FIXED_SQL
+              #logmsg $? "Finish run SQL-file $ORDERS_FIXED_SQL"
+              #$PSQL $PG_CONNECT -c "SELECT fn_inetbill4neworders()"
           fi
        else
           logmsg ERROR "### Move $ORDERS_FILE to $FAIL_DIR"

@@ -105,6 +105,23 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
                 if (int(sb_id), ) in db_buyers:
                     outf.write(u"-- UPDATE bx_buyer SET bx_logname='" + buyer[1] + u"', bx_name='" + buyer[2] + u"'\n")
                     outf.write(u"-- WHERE bx_buyer_id=" + buyer[0] +";\n")
+
+                    upd_zip = zip(sql_flds, sql_vals)
+
+                    pairs = []
+                    for i in upd_zip[1:]:
+                        pairs.append(u"{0}={1}".format(i[0], i[1]) )
+                    pairs.append(' dt_update=now()');
+
+                    """
+                    print "UPDATE bx_buyer"
+                    print "SET " + ', '.join(pairs)
+                    print "WHERE " + u"{0}={1};".format(upd_zip[0][0], upd_zip[0][1])
+                    """
+                    outf.write(u"UPDATE bx_buyer\n")
+                    outf.write(u"SET " + u",".join(pairs) + "\n")
+                    outf.write(u"WHERE bx_buyer_id=" + buyer[0] +";\n\n")
+
                 else:
                     db_buyers.append( (int(sb_id), ) )
                     #print "after append db_buyers=", db_buyers

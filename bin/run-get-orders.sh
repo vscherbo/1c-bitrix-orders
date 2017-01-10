@@ -10,5 +10,5 @@ do
       echo `date "+%F_%H-%M-%S"`
    fi
    bin/get-orders.py --log DEBUG &
-   sleep 60
+   sleep 180
 done
