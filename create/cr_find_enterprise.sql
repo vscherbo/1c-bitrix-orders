@@ -37,7 +37,7 @@ begin
             END IF; -- КПП с сайта ИТС 1С отличается от КПП из заказа
         ELSE
            RAISE NOTICE 'fn_find_enterprise: Нет ответа с сайта ИТС 1С по INN=%, KPP=%', INN, chk_KPP;
-        END IF; -- получен ответ с сайте ИТС 1С
+        END IF; -- получен ответ с сайта ИТС 1С
     END IF; -- if found
     RETURN Firm;
 end
