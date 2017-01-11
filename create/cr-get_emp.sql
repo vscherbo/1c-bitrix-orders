@@ -31,7 +31,7 @@ BEGIN
         Firm := fn_find_enterprise(INN, KPP);
         FirmCode := COALESCE(Firm."Код", create_firm(bx_order_id, INN, KPP));
         -- Ищем Работника с loc_buyer_id
-        SELECT ec."КодРаботника", ec."Код" INTO emp-- , f."ИНН" 
+        SELECT ec."КодРаботника", ec."Код", '-1' AS "ЕАдрес" INTO emp 
         FROM emp_company ec
             JOIN "Предприятия" f ON f."Код"=ec."Код"
             WHERE ec.bx_buyer_id=loc_buyer_id
@@ -52,7 +52,7 @@ BEGIN
         RAISE NOTICE 'Физ. лицо';
         FirmCode := 223719;
         -- Ищем Работника с loc_buyer_id
-        SELECT ec."КодРаботника", ec."Код" INTO emp 
+        SELECT ec."КодРаботника", ec."Код", '-1' AS "ЕАдрес" INTO emp 
         FROM emp_company ec
             WHERE ec.bx_buyer_id=loc_buyer_id
             AND ec."Код" = FirmCode;
