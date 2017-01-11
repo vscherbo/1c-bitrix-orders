@@ -11,8 +11,6 @@ DECLARE
    bill RECORD;
    loc_KS integer;
    CreateResult integer;
-   -- arrOrderItems varchar[];
-   -- arr_OrderItems t_order_item[];
    item RECORD;
    item_id integer;
    Npp INTEGER;
