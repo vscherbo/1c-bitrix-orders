@@ -107,7 +107,7 @@ UNION
        IF 30049 = vendor_id AND NOT skipCheckOwen THEN
          flgOwen := TRUE;
        ELSE
-         flgOwen := False;
+         flgOwen := FALSE;
          skipCheckOwen := TRUE; -- если встретился 'не Овен', больше не проверяем
        END IF;
        
@@ -175,7 +175,6 @@ UNION
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                 'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, loc_KS, oi."Количество", loc_in_stock
               ), CreateResult );
-
               /** DEBUG only **/
               FOR vw_notice IN SELECT ' Склад=' || wh."Склад" || ', KS=' ||  "КодСодержания" 
                                         || ', qaulity=' || CASE quality WHEN 0 THEN 'надлежащее' ELSE 'некондиция' END --CASE
