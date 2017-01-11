@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION fn_createinetbill(bx_order_no integer)
   RETURNS integer AS
 $BODY$
 DECLARE
-   oi record;
+   oi RECORD;
    soderg RECORD;
    bill RECORD;
    loc_KS integer;
@@ -51,11 +51,17 @@ DECLARE
    loc_lack_reserve NUMERIC;
    loc_lack_reason TEXT;
    loc_aub_msg TEXT;
+   loc_buyer_id INTEGER;
+   loc_buyer_name VARCHAR;
+   loc_email VARCHAR;
+   loc_is_valid BOOLEAN := FALSE;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
 
-IF is_bx_order_valid(bx_order_no) THEN
+SELECT * INTO loc_buyer_id, loc_buyer_name, loc_email, loc_is_valid FROM get_bx_order_ids(bx_order_no) ;
+-- IF is_bx_order_valid(bx_order_no) THEN
+IF loc_is_valid THEN
     CreateResult := 3; -- инициируем значением "пустой состав заказа"
     bx_sum := 0;
 ELSE
@@ -211,7 +217,7 @@ END IF;
 -- 
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
     INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
-    EmpRec := get_emp(bx_order_no);
+    EmpRec := get_emp(bx_order_no, loc_email);
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
 
     IF EmpRec."Код" IS NOT NULL THEN
