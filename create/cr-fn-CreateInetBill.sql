@@ -211,13 +211,13 @@ END IF;
 -- 
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
     INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
-    EmpRec := fn_GetEmpCode(o.bx_buyer_id, bx_order_no);
+    EmpRec := get_emp(bx_order_no);
     RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
 
-    IF EmpRec."Код" is NOT NULL THEN
+    IF EmpRec."Код" IS NOT NULL THEN
         ourFirm := getFirm(EmpRec."Код", flgOwen);
         loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
-        bill := fn_InsertBill(o."Сумма", bx_order_no, EmpRec."Код", EmpRec."КодРаботника", ourFirm);
+        bill := fn_InsertBill(loc_sum, bx_order_no, EmpRec."Код", EmpRec."КодРаботника", ourFirm);
         Npp := 1;
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";

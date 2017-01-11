@@ -1,9 +1,8 @@
--- FUNCTION: arc_energo.get_emp(integer, integer)
+-- FUNCTION: arc_energo.get_emp(integer)
 
--- DROP FUNCTION arc_energo.get_emp(integer, integer);
+-- DROP FUNCTION arc_energo.get_emp(integer);
 
 CREATE OR REPLACE FUNCTION arc_energo.get_emp(
-    buyer_id integer,
     bx_order_id integer)
     RETURNS record
     LANGUAGE 'plpgsql'
@@ -18,8 +17,11 @@ DECLARE
     KPP VARCHAR;
     FirmCode INTEGER;
     email VARCHAR;
+    loc_buyer_id INTEGER;
 BEGIN
-    SELECT trim(both FROM fvalue) INTO INN FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'ИНН';
+    SELECT bx_buyer_id INTO loc_buyer_id FROM bx_order WHERE "Номер" = bx_order_id;
+
+	SELECT trim(both FROM fvalue) INTO INN FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'ИНН';
     INN := digits_only(INN);
     SELECT fvalue INTO KPP FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КПП';
     KPP := digits_only(KPP);
@@ -60,7 +62,8 @@ END
 
 $function$;
 
-ALTER FUNCTION arc_energo.get_emp(integer, integer)
+ALTER FUNCTION arc_energo.get_emp(integer)
     OWNER TO arc_energo;
+
 
 
