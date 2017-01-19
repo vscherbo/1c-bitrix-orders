@@ -12,8 +12,10 @@ declare
     chk_KPP VARCHAR;
     len_inn INTEGER;
 begin
-    IF INN IS NULL THEN RAISE 'fn_find_enterprise: INN is NULL'; END IF;
-    IF KPP IS NULL THEN RAISE 'fn_find_enterprise: KPP is NULL'; END IF;
+    -- была проверка перед вызовом 
+    -- IF INN IS NULL THEN RAISE 'fn_find_enterprise: INN is NULL'; END IF;
+
+    IF KPP IS NULL THEN RAISE NOTICE 'fn_find_enterprise: KPP is NULL'; END IF;
     len_inn := length(INN);
     IF 10 = len_inn THEN
         SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
