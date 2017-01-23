@@ -3,44 +3,62 @@
 -- DROP FUNCTION fn_find_enterprise(character varying, character varying);
 
 CREATE OR REPLACE FUNCTION fn_find_enterprise(
-    inn character varying,
-    kpp character varying)
+    arg_order_id INTEGER, 
+    INN character varying,
+    KPP character varying)
   RETURNS record AS
 $BODY$
 declare
     Firm RECORD;
     chk_KPP VARCHAR;
     len_inn INTEGER;
+    FirmCode INTEGER;
+    do_verify BOOLEAN := FALSE;
 begin
--- была проверка перед вызовом 
--- IF INN IS NULL THEN RAISE 'fn_find_enterprise: INN is NULL'; END IF;
-
-IF KPP IS NULL THEN RAISE NOTICE 'fn_find_enterprise: KPP is NULL'; END IF;
 len_inn := length(INN);
 IF 10 = len_inn THEN
-    SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
+    IF KPP IS NULL THEN RAISE NOTICE 'fn_find_enterprise: KPP is NULL';
+        do_verify := TRUE;
+    ELSE
+        SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = KPP;
+        IF NOT FOUND THEN -- проверка КПП по ИНН
+            RAISE NOTICE 'fn_find_enterprise: Предприятие не найдено INN=%, KPP=%', INN, KPP;
+            do_verify := TRUE;
+        END IF;
+    END IF;
+
+    IF do_verify THEN
+        chk_KPP := verify_KPP_by_INN(INN);
+        IF KPP = chk_KPP OR chk_KPP = 'N/A' THEN -- КПП с сайта 1С равен КПП из заказа ИЛИ нет ответа 1С
+            RAISE NOTICE 'fn_find_enterprise: получен КПП с сайта ИТС 1С по INN=%, KPP=%', INN, chk_KPP;
+            SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN;
+            /** IF FOUND THEN -- TODO IF FOUND -> исправить КПП в базе?
+            
+            END IF; **/
+        ELSE
+            RAISE NOTICE 'fn_find_enterprise: Предприятие найдено в Инете по INN=%, с другим chk_KPP=%', INN, chk_KPP;
+            SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = chk_KPP;
+            /** IF FOUND THEN -- TODO IF FOUND -> исправить КПП на сайте?
+               RAISE NOTICE 'fn_find_enterprise: Предприятие найдено в БД по INN=%, chk_KPP=%', INN, chk_KPP;
+            END IF; **/
+        END IF; -- KPP = chk_KPP
+        
+        IF Firm IS NULL THEN
+            FirmCode := create_firm(arg_order_id, INN, KPP);
+            SELECT * INTO Firm FROM "Предприятия" WHERE "Код" = FirmCode ;
+        END IF; -- Firm IS NULL
+    END IF; -- do_verify
+
 ELSIF 12 = len_inn THEN
     SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN;
+    IF NOT FOUND THEN
+        FirmCode := create_firm(arg_order_id, INN, KPP);
+        SELECT * INTO Firm FROM "Предприятия" WHERE "Код" = FirmCode ;
+    END IF; -- создали ненайденного ИП
 ELSE
     RAISE 'Непредвиденная длина ИНН=%, ИНН=% ', len_inn, INN;
 END IF; -- length(INN)
-IF NOT FOUND THEN -- проверка КПП по ИНН
-    RAISE NOTICE 'fn_find_enterprise: Предприятие не найдено INN=%, KPP=%', INN, KPP;
-    chk_KPP := verify_KPP_by_INN(INN);
-    IF chk_KPP <> 'N/A' THEN -- получен ответ с сайте ИТС 1С
-        IF chk_KPP <> KPP THEN -- КПП с сайта ИТС 1С отличается от КПП из заказа
-           RAISE NOTICE 'fn_find_enterprise: Предприятие найдено в Инете по INN=%, chk_KPP=%', INN, chk_KPP;
-           SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = chk_KPP;
-           IF FOUND THEN -- TODO IF FOUND -> исправить КПП на сайте?
-               RAISE NOTICE 'fn_find_enterprise: Предприятие найдено в БД по INN=%, chk_KPP=%', INN, chk_KPP;
-           END IF;
-        ELSE
-           RAISE NOTICE 'fn_find_enterprise: получен тот же КПП с сайта ИТС 1С по INN=%, KPP=%', INN, chk_KPP;
-        END IF; -- КПП с сайта ИТС 1С отличается от КПП из заказа
-    ELSE
-       RAISE NOTICE 'fn_find_enterprise: Нет ответа с сайта ИТС 1С по INN=%, KPP=%', INN, chk_KPP;
-    END IF; -- получен ответ с сайта ИТС 1С
-END IF; -- if found
+
 RETURN Firm;
 end
 $BODY$
