@@ -4,8 +4,8 @@
 
 CREATE OR REPLACE FUNCTION arc_energo.create_firm(
     bx_order_id integer,
-    inn character varying,
-    kpp character varying)
+    INN character varying,
+    KPP character varying)
     RETURNS integer
     LANGUAGE 'plpgsql'
     COST 100.0
@@ -54,7 +54,7 @@ R_account_complex := R_account || ' ' || Bank ;
 R_account_complex := substring(R_account_complex from 1 for 100);
 LegalAddress := substring(LegalAddress from 1 for 250);
 -- DEBUG
-/** Прерывается имполнение, если есть NULL. TODO quote_nullable
+/** Прерывается исполнение, если есть NULL. TODO quote_nullable
 RAISE NOTICE 'FirmNameRE=(%)%, FirmName=(%)%, ZipCode=(%)%, INN=(%)%, KPP=(%)%, Consignee=(%)%, DeliveryAddress=(%)%, R_account_complex=(%)%, K_account=(%)%, LegalAddress=(%)%, Fax=(%)%',
 char_length(FirmNameRE),
 FirmNameRE,
@@ -87,7 +87,7 @@ WITH inserted AS (
     RETURNING "Код"
 )
 SELECT inserted."Код" INTO FirmCode FROM inserted;
-RAISE NOTICE 'Создано предприятие Код=%, Предприятие=%, ИНН=%, КПП=%', FirmCode, FirmName, INN, KPP;
+RAISE NOTICE 'Создано предприятие Код=%, Предприятие=%, ИНН=%, КПП=%', FirmCode, FirmName, INN, quote_nullable(KPP);
 
 RETURN FirmCode;
 END
