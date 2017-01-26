@@ -216,7 +216,7 @@ END IF;
 IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
     INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
     EmpRec := get_emp(bx_order_no, loc_email);
-    RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", EmpRec."КодРаботника" ;
+    RAISE NOTICE 'FirmCode=%, EmpCode=%', EmpRec."Код", quote_nullable(EmpRec."КодРаботника") ;
 
     IF EmpRec."Код" IS NOT NULL THEN
         ourFirm := getFirm(EmpRec."Код", flgOwen);
