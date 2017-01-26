@@ -28,7 +28,7 @@ BEGIN
     IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) -- юр. лицо, у ИП нет КПП
     THEN
         RAISE NOTICE 'Юр. лицо, ИНН=%, КПП=%. Ищем Работника с loc_buyer_id=%', INN, COALESCE(KPP, '_не_задан_'), loc_buyer_id;
-        Firm := fn_find_enterprise(INN, KPP);
+        Firm := fn_find_enterprise(bx_order_id, INN, KPP);
         -- moved into fn_find_enterprise
         -- FirmCode := COALESCE(Firm."Код", create_firm(bx_order_id, INN, KPP));
         FirmCode := Firm."Код";
@@ -45,10 +45,10 @@ BEGIN
             SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
         ELSIF email IS NOT NULL THEN -- ищем Работника по email
             RAISE NOTICE 'покупатель для предприятия=% по loc_buyer_id=% не найден. Ищем по email=%', FirmCode, loc_buyer_id, email;
-            SELECT "КодРаботника", "Код", "ЕАдрес" INTO emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email;
+            SELECT "КодРаботника", "Код", "ЕАдрес" INTO emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email AND "Код" <> 223719;
             IF FOUND THEN
                 new_emp := False;
-                RAISE NOTICE 'Найден Работник по email=%. Регистрируем для предприятия=% в emp_company', FirmCode, email;
+                RAISE NOTICE 'Найден Работник по email=%. Регистрируем для предприятия=% в emp_company', email, FirmCode;
                 INSERT INTO emp_company VALUES(FirmCode, emp."КодРаботника", loc_buyer_id)
                     ON CONFLICT ("Код", "КодРаботника") -- ON CONSTRAINT  "emp_company_PK" 
                     DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
@@ -73,10 +73,10 @@ BEGIN
             SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
         ELSIF email IS NOT NULL THEN -- ищем Работника по email
             RAISE NOTICE 'покупатель по loc_buyer_id=% не найден. Ищем по email=%', loc_buyer_id, email;
-            SELECT "КодРаботника", "Код", "ЕАдрес" INTO emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email;
+            SELECT "КодРаботника", "Код", "ЕАдрес" INTO emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email AND "Код" = 223719;
             IF FOUND THEN
                 new_emp := False;
-                RAISE NOTICE 'Найден Работник по email=%. Регистрируем в emp_company', email;
+                RAISE NOTICE 'Найден Работник-физ.лицо по email=%. Регистрируем в emp_company', email;
                 INSERT INTO emp_company VALUES(FirmCode, emp."КодРаботника", loc_buyer_id)
                     ON CONFLICT ("Код", "КодРаботника") -- ON CONSTRAINT  "emp_company_PK" 
                     DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
