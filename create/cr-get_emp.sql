@@ -45,7 +45,18 @@ BEGIN
             SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
         ELSIF email IS NOT NULL THEN -- ищем Работника по email
             RAISE NOTICE 'покупатель для предприятия=% по loc_buyer_id=% не найден. Ищем по email=%', FirmCode, loc_buyer_id, email;
-            SELECT "КодРаботника", "Код", "ЕАдрес" INTO emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email AND "Код" <> 223719;
+            BEGIN
+                SELECT "КодРаботника", "Код", "ЕАдрес" INTO STRICT emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email AND "Код" = FirmCode;
+                EXCEPTION
+                    /**
+                    WHEN NO_DATA_FOUND THEN
+                        RAISE EXCEPTION 'Сотрудник % не найден', myname;
+                    **/
+                    WHEN TOO_MANY_ROWS THEN
+                        new_emp := False;
+                        -- emp."Код" = NULL;
+                        RAISE NOTICE 'ТУПИК: найдено более одного Работника по email=% для Предприятия=%', email, FirmCode;
+            END;
             IF FOUND THEN
                 new_emp := False;
                 RAISE NOTICE 'Найден Работник по email=%. Регистрируем для предприятия=% в emp_company', email, FirmCode;
@@ -73,7 +84,18 @@ BEGIN
             SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
         ELSIF email IS NOT NULL THEN -- ищем Работника по email
             RAISE NOTICE 'покупатель по loc_buyer_id=% не найден. Ищем по email=%', loc_buyer_id, email;
-            SELECT "КодРаботника", "Код", "ЕАдрес" INTO emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email AND "Код" = 223719;
+            BEGIN
+                SELECT "КодРаботника", "Код", "ЕАдрес" INTO STRICT emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email AND "Код" = 223719;
+                EXCEPTION
+                    /**
+                    WHEN NO_DATA_FOUND THEN
+                        RAISE EXCEPTION 'Сотрудник % не найден', myname;
+                    **/
+                    WHEN TOO_MANY_ROWS THEN
+                        new_emp := False;
+                        -- emp."Код" = NULL;
+                        RAISE NOTICE 'ТУПИК: найдено более одного Работника-физ.лица по email=%', email;
+            END;
             IF FOUND THEN
                 new_emp := False;
                 RAISE NOTICE 'Найден Работник-физ.лицо по email=%. Регистрируем в emp_company', email;
