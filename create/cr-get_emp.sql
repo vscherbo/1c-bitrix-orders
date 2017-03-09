@@ -1,10 +1,12 @@
--- FUNCTION: arc_energo.get_emp(integer, character varying)
+-- FUNCTION: arc_energo.get_emp(integer)
 
--- DROP FUNCTION arc_energo.get_emp(integer, character varying);
+DROP FUNCTION arc_energo.get_emp(integer);
 
 CREATE OR REPLACE FUNCTION arc_energo.get_emp(
     bx_order_id integer,
-    email character varying)
+    OUT "out_КодРаботника" INTEGER,
+    OUT "out_Код" INTEGER,
+    OUT "out_ЕАдрес" VARCHAR)
     RETURNS record
     LANGUAGE 'plpgsql'
     COST 100.0
@@ -19,11 +21,24 @@ DECLARE
     FirmCode INTEGER;
     loc_buyer_id INTEGER;
     new_emp BOOLEAN;
+    loc_email VARCHAR;
+    loc_email1 VARCHAR;
+    text_var1 text;
+    text_var2 text;
+    text_var3 text;
 BEGIN
     SELECT bx_buyer_id INTO loc_buyer_id FROM bx_order WHERE "Номер" = bx_order_id;
 
     SELECT digits_only(trim(both FROM fvalue)) INTO INN FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'ИНН';
     SELECT digits_only(trim(both FROM fvalue)) INTO KPP FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КПП';
+
+    SELECT fvalue INTO loc_email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
+    SELECT fvalue INTO loc_email1 FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'EMail';
+    IF 'siteorders@kipspb.ru' <> loc_email1 AND loc_email <> loc_email1 THEN
+        loc_email := loc_email1;
+        RAISE NOTICE 'заменяем _контактный email_ на EMail';
+    END IF;
+
 
     IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) -- юр. лицо, у ИП нет КПП
     THEN
@@ -43,31 +58,31 @@ BEGIN
             new_emp := False;
             RAISE NOTICE 'такой покупатель с сайта для предприятия найден.';
             SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
-        ELSIF email IS NOT NULL THEN -- ищем Работника по email
-            RAISE NOTICE 'покупатель для предприятия=% по loc_buyer_id=% не найден. Ищем по email=%', FirmCode, loc_buyer_id, email;
+        ELSIF loc_email IS NOT NULL THEN -- ищем Работника по email
+            RAISE NOTICE 'покупатель для предприятия=% по loc_buyer_id=% не найден. Ищем по email=%', FirmCode, loc_buyer_id, loc_email;
             BEGIN
-                SELECT "КодРаботника", "Код", "ЕАдрес" INTO STRICT emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email AND "Код" = FirmCode;
+                SELECT "КодРаботника", "Код", "ЕАдрес" INTO STRICT emp FROM "Работники" WHERE "Работники"."ЕАдрес" = loc_email AND "Код" = FirmCode;
+                IF FOUND THEN
+                    new_emp := False;
+                    RAISE NOTICE 'Найден Работник по email=%. Регистрируем для предприятия=% в emp_company', loc_email, FirmCode;
+                    INSERT INTO emp_company VALUES(FirmCode, emp."КодРаботника", loc_buyer_id)
+                        ON CONFLICT ("Код", "КодРаботника") -- ON CONSTRAINT  "emp_company_PK" 
+                        DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
+                END IF; -- найден Работник по email
                 EXCEPTION
-                    /**
                     WHEN NO_DATA_FOUND THEN
-                        RAISE EXCEPTION 'Сотрудник % не найден', myname;
-                    **/
+                        RAISE NOTICE 'Работник с email=% не найден', loc_email;
                     WHEN TOO_MANY_ROWS THEN
                         new_emp := False;
-                        -- emp."Код" = NULL;
-                        RAISE NOTICE 'ТУПИК: найдено более одного Работника по email=% для Предприятия=%', email, FirmCode;
+                        RAISE NOTICE 'ТУПИК: найдено более одного Работника по email=% для Предприятия=%', loc_email, FirmCode;
+                    WHEN OTHERS THEN
+                        GET STACKED DIAGNOSTICS text_var1 = MESSAGE_TEXT, text_var2 = PG_EXCEPTION_DETAIL, text_var3 = PG_EXCEPTION_HINT;
+                        RAISE NOTICE 'MESSAGE_TEXT=%, PG_EXCEPTION_DETAIL=%, PG_EXCEPTION_HINT=%', text_var1, text_var2, text_var3;
             END;
-            IF FOUND THEN
-                new_emp := False;
-                RAISE NOTICE 'Найден Работник по email=%. Регистрируем для предприятия=% в emp_company', email, FirmCode;
-                INSERT INTO emp_company VALUES(FirmCode, emp."КодРаботника", loc_buyer_id)
-                    ON CONFLICT ("Код", "КодРаботника") -- ON CONSTRAINT  "emp_company_PK" 
-                    DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
-            END IF; -- найден Работник по email
         END IF;
 
         IF new_emp THEN
-            -- emp := create_emp(bx_order_id, FirmCode);
+            RAISE NOTICE 'Создаём Работника bx_order_id=%, FirmCode=%', bx_order_id, FirmCode;
             SELECT * FROM create_emp(bx_order_id, FirmCode) AS fileds("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
         END IF;
     ELSIF (INN IS NULL) AND (KPP IS NULL) THEN -- физ. лицо
@@ -82,31 +97,31 @@ BEGIN
             new_emp := False;
             RAISE NOTICE 'такой покупатель с сайта уже зарегистрирован';
             SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
-        ELSIF email IS NOT NULL THEN -- ищем Работника по email
-            RAISE NOTICE 'покупатель по loc_buyer_id=% не найден. Ищем по email=%', loc_buyer_id, email;
+        ELSIF loc_email IS NOT NULL THEN -- ищем Работника по email
+            RAISE NOTICE 'покупатель по loc_buyer_id=% не найден. Ищем по email=%', loc_buyer_id, loc_email;
             BEGIN
-                SELECT "КодРаботника", "Код", "ЕАдрес" INTO STRICT emp FROM "Работники" WHERE "Работники"."ЕАдрес" = email AND "Код" = 223719;
+                SELECT "КодРаботника", "Код", "ЕАдрес" INTO STRICT emp FROM "Работники" WHERE "Работники"."ЕАдрес" = loc_email AND "Код" = 223719;
+                IF FOUND THEN
+                    new_emp := False;
+                    RAISE NOTICE 'Найден Работник-физ.лицо по email=%. Регистрируем в emp_company', loc_email;
+                    INSERT INTO emp_company VALUES(FirmCode, emp."КодРаботника", loc_buyer_id)
+                        ON CONFLICT ("Код", "КодРаботника") -- ON CONSTRAINT  "emp_company_PK" 
+                        DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
+                END IF; -- найден Работник по email
                 EXCEPTION
-                    /**
                     WHEN NO_DATA_FOUND THEN
-                        RAISE EXCEPTION 'Сотрудник % не найден', myname;
-                    **/
+                        RAISE NOTICE 'Работник с email=% не найден', loc_email;
                     WHEN TOO_MANY_ROWS THEN
                         new_emp := False;
-                        -- emp."Код" = NULL;
-                        RAISE NOTICE 'ТУПИК: найдено более одного Работника-физ.лица по email=%', email;
+                        RAISE NOTICE 'ТУПИК: найдено более одного Работника-физ.лица по email=%', loc_email;
+                    WHEN OTHERS THEN
+                        GET STACKED DIAGNOSTICS text_var1 = MESSAGE_TEXT, text_var2 = PG_EXCEPTION_DETAIL, text_var3 = PG_EXCEPTION_HINT;
+                        RAISE NOTICE 'MESSAGE_TEXT=%, PG_EXCEPTION_DETAIL=%, PG_EXCEPTION_HINT=%', text_var1, text_var2, text_var3;
             END;
-            IF FOUND THEN
-                new_emp := False;
-                RAISE NOTICE 'Найден Работник-физ.лицо по email=%. Регистрируем в emp_company', email;
-                INSERT INTO emp_company VALUES(FirmCode, emp."КодРаботника", loc_buyer_id)
-                    ON CONFLICT ("Код", "КодРаботника") -- ON CONSTRAINT  "emp_company_PK" 
-                    DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
-            END IF; -- найден Работник по email
         END IF;
 
         IF new_emp THEN
-            -- emp := create_emp(bx_order_id, FirmCode);
+            RAISE NOTICE 'Создаём Работника-физ.лицо bx_order_id=%, FirmCode=%', bx_order_id, FirmCode;
             SELECT * FROM create_emp(bx_order_id, FirmCode) AS fileds("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
 
         END IF;
@@ -114,17 +129,19 @@ BEGIN
         RAISE NOTICE 'Юр. лицо, неполная информация ИНН=_не_задан_, КПП=%', KPP;
     END IF; -- IF INN, KPP
 
-    IF emp."ЕАдрес" IS NULL THEN
-        SELECT fvalue INTO email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
-        UPDATE "Работники" SET "ЕАдрес" = email WHERE bx_buyer_id = loc_buyer_id;
+    IF emp."ЕАдрес" IS NULL THEN -- delete this code ???
+        UPDATE "Работники" SET "ЕАдрес" = loc_email WHERE bx_buyer_id = loc_buyer_id;
     END IF;
 
 RAISE NOTICE 'КодРаботника=%, Код=%, ЕАдрес=%', emp."КодРаботника", emp."Код", emp."ЕАдрес";
-RETURN emp;
+"out_КодРаботника" := emp."КодРаботника";
+"out_Код" := emp."Код";
+"out_ЕАдрес" := emp."ЕАдрес";
+RETURN;
 END
 
 $function$;
 
-ALTER FUNCTION arc_energo.get_emp(integer, character varying)
+ALTER FUNCTION arc_energo.get_emp(integer)
     OWNER TO arc_energo;
 
