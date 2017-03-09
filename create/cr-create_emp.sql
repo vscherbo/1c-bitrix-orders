@@ -21,6 +21,7 @@ declare
     person VARCHAR;
     phone VARCHAR;
     EmpNotice VARCHAR;
+    loc_buyer_id INTEGER;
 begin
 RAISE NOTICE 'Создаём работника';
 
@@ -54,6 +55,8 @@ WITH inserted AS (
 SELECT inserted."КодРаботника", inserted."Код", inserted."ЕАдрес" INTO emp FROM inserted;
 --
 RAISE NOTICE 'Создан работник КодРаботника=%', emp."КодРаботника";
+SELECT bx_buyer_id INTO loc_buyer_id FROM bx_order WHERE "Ид" = bx_order_id;
+UPDATE emp_company SET bx_buyer_id = loc_buyer_id WHERE "КодРаботника" = emp."КодРаботника" AND "Код" = emp."Код";
 
 RETURN emp;
 end
