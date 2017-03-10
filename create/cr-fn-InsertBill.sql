@@ -16,7 +16,7 @@ $BODY$ DECLARE
   Delivery VARCHAR;
   PaymentType VARCHAR;
   DeliveryService VARCHAR;
-  BillInfo VARCHAR = 'Автосчёт, ' ; -- инфо
+  BillInfo VARCHAR = 'Автосчёт' ; -- инфо
  -- Дополнительно
   -- ExtraInfo VARCHAR = ' Отгрузка со склада после поступления денег на расчетный счет.'; -- пока только так
   ExtraInfo VARCHAR = ' после поступления денег на расчетный счет.'; -- пока только так
@@ -27,9 +27,12 @@ $BODY$ DECLARE
   bill_no INTEGER;
   loc_OrderProcessingTime VARCHAR;
   loc_DeliveryPayer VARCHAR := '';
+  PaymentGuarantee VARCHAR;
 BEGIN
+    SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Гарантия оплаты дилером';
+    IF found THEN BillInfo := BillInfo || ', Гарантия оплаты: ' ||PaymentGuarantee; END IF;
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
-    IF found THEN BillInfo := BillInfo || 'Покупатель: ' ||BuyerComment; END IF;
+    IF found THEN BillInfo := BillInfo || ', Покупатель: ' ||BuyerComment; END IF;
     /** 2016-09-30 Арутюн Гараханян: 
        когда создается автосчет в строке Инфо появляется куча информации, которая в целом не нужна. можно ее туда не помещать, 
        только то, что клиент пишет в графе "комментарий заказчика"
