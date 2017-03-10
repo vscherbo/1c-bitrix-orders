@@ -49,7 +49,7 @@ BEGIN
         FirmCode := Firm."Код";
         new_emp := True;
         -- Ищем Работника с loc_buyer_id
-        SELECT ec."КодРаботника", ec."Код", '-1' AS "ЕАдрес" INTO emp 
+        SELECT ec."КодРаботника", ec."Код", '-1'::VARCHAR AS "ЕАдрес" INTO emp 
         FROM emp_company ec
             JOIN "Предприятия" f ON f."Код"=ec."Код"
             WHERE ec.bx_buyer_id=loc_buyer_id
@@ -133,7 +133,7 @@ BEGIN
         UPDATE "Работники" SET "ЕАдрес" = loc_email WHERE bx_buyer_id = loc_buyer_id;
     END IF;
 
-RAISE NOTICE 'КодРаботника=%, Код=%, ЕАдрес=%', emp."КодРаботника", emp."Код", emp."ЕАдрес";
+RAISE NOTICE 'Заполняем выходные параметры КодРаботника=%, Код=%, ЕАдрес=%', emp."КодРаботника", emp."Код", emp."ЕАдрес";
 "out_КодРаботника" := emp."КодРаботника";
 "out_Код" := emp."Код";
 "out_ЕАдрес" := emp."ЕАдрес";
