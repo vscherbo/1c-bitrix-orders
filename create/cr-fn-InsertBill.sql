@@ -30,7 +30,7 @@ $BODY$ DECLARE
   PaymentGuarantee VARCHAR;
 BEGIN
     SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Гарантия оплаты дилером';
-    IF found THEN BillInfo := BillInfo || ', Гарантия оплаты: ' ||PaymentGuarantee; END IF;
+    IF found THEN BillInfo := BillInfo || ', ' ||PaymentGuarantee; END IF;
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
     IF found THEN BillInfo := BillInfo || ', Покупатель: ' ||BuyerComment; END IF;
     /** 2016-09-30 Арутюн Гараханян: 
