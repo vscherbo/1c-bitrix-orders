@@ -56,7 +56,7 @@ ELSIF 12 = len_inn THEN
         SELECT * INTO Firm FROM "Предприятия" WHERE "Код" = FirmCode ;
     END IF; -- создали ненайденного ИП
 ELSE
-    RAISE 'Непредвиденная длина ИНН=%, ИНН=% ', len_inn, INN;
+    RAISE NOTICE 'Непредвиденная длина ИНН=%, ИНН=% ', len_inn, INN;
 END IF; -- length(INN)
 
 RETURN Firm;
