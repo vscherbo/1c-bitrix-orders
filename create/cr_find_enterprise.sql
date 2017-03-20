@@ -38,6 +38,7 @@ IF 10 = len_inn THEN
         ELSE
             RAISE NOTICE 'fn_find_enterprise: Предприятие найдено в Инете по INN=%, с другим chk_KPP=%', INN, chk_KPP;
             SELECT * INTO Firm FROM "Предприятия" WHERE "ИНН" = INN AND "КПП" = chk_KPP;
+            KPP := chk_KPP;
             /** IF FOUND THEN -- TODO IF FOUND -> исправить КПП на сайте?
                RAISE NOTICE 'fn_find_enterprise: Предприятие найдено в БД по INN=%, chk_KPP=%', INN, chk_KPP;
             END IF; **/
