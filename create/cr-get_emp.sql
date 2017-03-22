@@ -30,6 +30,7 @@ BEGIN
     SELECT bx_buyer_id INTO loc_buyer_id FROM bx_order WHERE "Номер" = bx_order_id;
 
     SELECT digits_only(trim(both FROM fvalue)) INTO INN FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'ИНН';
+    IF '' == INN THEN INN := NULL; END IF;
     SELECT digits_only(trim(both FROM fvalue)) INTO KPP FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'КПП';
 
     SELECT fvalue INTO loc_email FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Контактный Email';
@@ -125,8 +126,9 @@ BEGIN
             SELECT * FROM create_emp(bx_order_id, FirmCode) AS fileds("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
 
         END IF;
-    ELSIF (INN IS NULL) AND (KPP IS not NULL) THEN -- юр. лицо, неполная информация
-        RAISE NOTICE 'Юр. лицо, неполная информация ИНН=_не_задан_, КПП=%', KPP;
+    -- ELSIF (INN IS NULL) AND (KPP IS not NULL) THEN -- юр. лицо, неполная информация
+    ELSE -- некорректная информация
+        RAISE NOTICE 'некорректная информация ИНН=%, КПП=%', quote_nullable(INN), quote_nullable(KPP);
     END IF; -- IF INN, KPP
 
     IF emp."ЕАдрес" IS NULL THEN -- delete this code ???
