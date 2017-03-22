@@ -1,6 +1,6 @@
 -- FUNCTION: arc_energo.get_emp(integer)
 
-DROP FUNCTION arc_energo.get_emp(integer);
+-- DROP FUNCTION arc_energo.get_emp(integer);
 
 CREATE OR REPLACE FUNCTION arc_energo.get_emp(
     bx_order_id integer,
