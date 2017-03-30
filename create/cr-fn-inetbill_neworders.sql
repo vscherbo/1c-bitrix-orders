@@ -35,10 +35,10 @@ BEGIN
                     IF msg_id IS NOT NULL AND msg_id > 0 THEN
                         PERFORM sendbillsinglemsg(msg_id);
                         -- В очередь обновления статуса для Инет заказов с нашего сайта
-                        /**/
+                        /** изменение статуса заказа на сайте на "Ожидает оплату"
+                         * после появления квитанции (статус 999) в СчётОчередьСообщений по этому счёту
                         PERFORM "fn_InetOrderNewStatus"(0, o."Номер");
-                        /**/
-
+                        **/
                     ELSE
                         RAISE NOTICE 'не создано сообщение клиенту для заказа=%, msg_id=%', o."Номер", quote_nullable(msg_id);
                     END IF;
