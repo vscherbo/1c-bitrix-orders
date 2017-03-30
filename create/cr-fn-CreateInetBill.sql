@@ -28,7 +28,6 @@ DECLARE
    vendor_id INTEGER;
    flgOwen BOOLEAN;
    skipCheckOwen BOOLEAN;
-   ourFirm VARCHAR;
    debug_rec RECORD;
    loc_in_stock NUMERIC; 
    loc_in_stock_wh NUMERIC; -- склад Ясная
@@ -64,6 +63,7 @@ IF loc_is_valid THEN
     bx_sum := 0;
 ELSE
     CreateResult := 4; -- отменённый или неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
+    UPDATE bx_order SET billcreated = CreateResult, "Счет" = bill_no WHERE "Номер" = bx_order_no ;
     RETURN CreateResult;
 END IF;
 
@@ -133,33 +133,7 @@ UNION
                               VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                                       2, -- Ясная
                                       oi."Количество");
-        /**
-          SELECT SUM(whqnt) INTO loc_in_stock_wh FROM qnt_in_stock WHERE whid=2 AND qnt_in_stock.ks = loc_KS; -- только Ясная
-          RAISE NOTICE 'KS=%, loc_in_stock_wh2=%, нужно=%', loc_KS, loc_in_stock_wh, oi."Количество";
-          IF loc_in_stock_wh >= oi."Количество" THEN -- на Ясной хватает
-              INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, whid, oi_quantity)
-                     VALUES (loc_KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
-                             2, -- Ясная
-                             oi."Количество");
-          ELSE -- на Ясной НЕ хватает
-              RAISE NOTICE 'На Ясной не хватило, берём с  Выставки (склад 5)';
-              INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, whid, oi_quantity)
-                     VALUES (loc_KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
-                             2, -- Ясная
-                             loc_in_stock_wh); -- с Ясной резервируем сколько есть.
-              SELECT SUM(whqnt) INTO loc_in_stock_exh FROM qnt_in_stock WHERE whid=5 AND qnt_in_stock.ks = loc_KS;
-              loc_lack_wh := oi."Количество" - loc_in_stock_wh; -- столько не хватает на Ясной
-              IF loc_in_stock_exh >= loc_lack_wh THEN -- кол-ва на Выставке хватает 
-                 -- INSERT whid=5, loc_in_stock_exh
-                  INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, whid, oi_quantity)
-                         VALUES (loc_KS, oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
-                                 5, -- Выставка
-                                 loc_lack_wh); -- с Выставки резервируем остаток.
-              END IF; -- кол-ва на Выставке хватает
-          END IF; -- на Ясной хватает
-        **/
        ELSE -- недостаточно Ясная+Выставка
-          /**/
           loc_delivery_quantity := get_delivery_quantity(oi."Ид");
           IF loc_delivery_quantity IS NOT NULL AND loc_delivery_quantity <> '' THEN
               CreateResult := 8; -- если есть разбивка сроки-количество, создаём автосчёт
@@ -173,7 +147,6 @@ UNION
                              2, -- Ясная
                              oi."Количество", loc_delivery_quantity);
           ELSE
-               /**/
               CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
               RAISE NOTICE 'Для KS=% нет достаточного количества=%', loc_KS, oi."Количество";
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
@@ -221,9 +194,8 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
     RAISE NOTICE 'Получили для счёта Код=%, КодРаботника=%, ЕАдрес=%', EmpRec."Код", quote_nullable(EmpRec."КодРаботника"), quote_nullable(EmpRec."ЕАдрес") ;
 
     IF EmpRec."Код" IS NOT NULL THEN
-        ourFirm := getFirm(EmpRec."Код", flgOwen);
         loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
-        bill := fn_InsertBill(loc_sum, bx_order_no, EmpRec."Код", EmpRec."КодРаботника", ourFirm);
+        bill := fn_InsertBill(loc_sum, bx_order_no, EmpRec."Код", EmpRec."КодРаботника", flgOwen);
         Npp := 1;
         VAT := bill."ставкаНДС";
         bill_no := bill."№ счета";

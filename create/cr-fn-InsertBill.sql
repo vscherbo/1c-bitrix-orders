@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION fn_insertbill(
     bx_order integer,
     acode integer,
     aempcode integer,
-    ourfirm character varying)
+    flgOwen boolean)
   RETURNS record AS
 $BODY$ DECLARE
   ret_bill RECORD;
@@ -28,6 +28,8 @@ $BODY$ DECLARE
   loc_OrderProcessingTime VARCHAR;
   loc_DeliveryPayer VARCHAR := '';
   PaymentGuarantee VARCHAR;
+  ourFirm VARCHAR;
+  locVAT NUMERIC;
 BEGIN
     SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Гарантия оплаты дилером';
     IF found THEN BillInfo := BillInfo || ', ' ||PaymentGuarantee; END IF;
@@ -65,6 +67,8 @@ BEGIN
     inet_bill_owner := COALESCE(inet_bill_owner, 38);
  
     bill_no := fn_GetNewBillNo(inet_bill_owner);
+    ourFirm := getFirm(acode, flgOwen);
+
     WITH inserted AS (
         INSERT INTO "Счета"
             ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "Статус", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата") 
@@ -75,6 +79,12 @@ BEGIN
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
+
+    locVAT := getVAT(acode);
+    IF locVAT IS NOT NULL THEN
+       UPDATE "Счета" SET "ставкаНДС" = locVAT WHERE "№ счета" = ret_bill."№ счета";
+       ret_bill."ставкаНДС" := locVAT;
+    END IF; -- locVAT
 
     RETURN ret_bill;
 END
