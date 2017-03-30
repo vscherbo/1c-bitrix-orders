@@ -13,10 +13,18 @@ DECLARE
   lastFirm VARCHAR;
 BEGIN
 
-IF aCode = 223719 THEN
+PERFORM 1
+FROM "Предприятия"
+     JOIN "СоотношениеСтатуса" ON "Предприятия"."Код" = "СоотношениеСтатуса"."КодПредприятия"
+WHERE 
+    acode = "Предприятия"."Код"
+    AND "СоотношениеСтатуса"."СтатусПредприятия" = 12;
+IF FOUND THEN
+    ourFirm = 'АРКОМ';
+ELSIF aCode = 223719 THEN
     ourFirm = 'АРКОМ';
 ELSE 
-    select INTO flgDealer exists(select 1 from vwДилеры WHERE "Код"= aCode);
+    SELECT INTO flgDealer exists(select 1 from vwДилеры WHERE "Код"= aCode);
     IF flgDealer THEN
         ourFirm = 'КИПСПБ';
     ELSIF flgOwen THEN
