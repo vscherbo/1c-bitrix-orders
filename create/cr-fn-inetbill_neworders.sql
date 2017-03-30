@@ -32,14 +32,19 @@ BEGIN
                     RAISE NOTICE 'Создаём сообщение клиенту для заказа=%', o."Номер";
                     msg_id := "fnCreateAutoBillMessage"(o."Номер");
                     -- клиенту
-                    IF msg_id IS NOT NULL THEN
+                    IF msg_id IS NOT NULL AND msg_id > 0 THEN
                         PERFORM sendbillsinglemsg(msg_id);
+                        -- В очередь обновления статуса для Инет заказов с нашего сайта
+                        /**/
+                        PERFORM "fn_InetOrderNewStatus"(0, o."Номер");
+                        /**/
+
                     ELSE
-                        RAISE NOTICE 'не создано сообщение клиенту для заказа=%', o."Номер";
+                        RAISE NOTICE 'не создано сообщение клиенту для заказа=%, msg_id=%', o."Номер", quote_nullable(msg_id);
                     END IF;
                     -- менеджеру 
                     RAISE NOTICE 'Создаём сообщение менеджеру для заказа=%', o."Номер";
-                    msg_id := "fnCreateAutoBillNotification"(o."Номер");
+                    msg_id := "fnCreateAutoBillNotification"(o."Номер", msg_id);
                     IF msg_id IS NOT NULL THEN
                         PERFORM sendbillsinglemsg(msg_id);
                     ELSE

@@ -8,7 +8,7 @@ $BODY$DECLARE
 mstr varchar(255);
 -- loc_msg_to integer = 2; -- в файл, если ниже не заданое иное
 loc_msg_to integer = 0; -- клиенту, если ниже не заданое иное
-message_id integer;
+loc_message_id integer;
 bill_no INTEGER;
 enterprise_code INTEGER;
 payment_method_id INTEGER;
@@ -43,15 +43,17 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
                 END IF; -- 25, Квитанция
             ELSE
                 RAISE NOTICE 'Автосчёт с доставкой курьерской службой, пропускаем.';
+                loc_message_id := -2; -- обработать в CreateAutoBillNotification
             END IF; -- 'Курьерская служба'
         ELSE
            RAISE NOTICE 'Автосчёт юр. лица.';
-           IF delivery_mode IN ('Самовывоз', 'Деловые Линии', 'ПЭК', 'Байкал Сервис', 'ТК КИТ') THEN -- широко используемые ТК или Самовывоз
+           IF delivery_mode IN ('Самовывоз', 'Курьерская служба', 'Деловые Линии', 'ПЭК', 'Байкал Сервис', 'ТК КИТ') THEN -- Курьерская служба, широко используемые ТК или Самовывоз
                -- формируем текст письма (счёт-факс)
                mstr := mstr || E'\nВо вложении находится счёт для оплаты. Счёт действителен в течение 5 дней.';
                loc_msg_type := 4; -- счёт-факс
             ELSE
                RAISE NOTICE 'Доставка не совместимая с авточётом. Пропускаем извещение для клиента.';
+               loc_message_id := -3; -- обработать в CreateAutoBillNotification
             END IF; -- широко используемые ТК или Самовывоз
         END IF; -- физлицо
 
@@ -60,21 +62,14 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
             INSERT INTO СчетОчередьСообщений ("№ счета", msg_to, msg, msg_type) 
                     values (bill_no, loc_msg_to, mstr, loc_msg_type) 
                     RETURNING id)
-            SELECT id INTO message_id FROM inserted;
+            SELECT id INTO loc_message_id FROM inserted;
         END IF;
     ELSE -- there is buyer_comment
         RAISE NOTICE 'Автосчёт с комментариями, пропускаем, bx_order_id=%', order_id;
+        loc_message_id := -1; -- обработать в CreateAutoBillNotification
     END IF; -- NO buyer_comment
 
-
--- В очередь обновления статуса для Инет заказов с нашего сайта
-/**
-IF NEW."ИнтернетЗаказ" > 7000 AND NEW."ИнтернетЗаказ" < 19999 THEN -- грубое отсечение нашего сайта от других площадок
-    -- RAISE NOTICE 'NEW."ИнтернетЗаказ"=%', NEW."ИнтернетЗаказ"  ; 
-    PERFORM "fn_InetOrderNewStatus"(NEW."Статус", NEW."ИнтернетЗаказ");
-END IF;
-**/
-    RETURN message_id;
+    RETURN loc_message_id;
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
