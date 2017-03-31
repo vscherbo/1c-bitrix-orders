@@ -7,22 +7,18 @@ CREATE OR REPLACE FUNCTION getVAT(acode integer)
 $BODY$
 DECLARE
   locVAT NUMERIC;
-  locCountry VARCHAR;
   locEntStatus INTEGER;
 BEGIN
 
-SELECT "Республика", "СоотношениеСтатуса"."СтатусПредприятия" INTO locCountry, locEntStatus
+PERFORM 1
 FROM "Предприятия"
      JOIN "СоотношениеСтатуса" ON "Предприятия"."Код" = "СоотношениеСтатуса"."КодПредприятия"
-WHERE 
-    acode = "Предприятия"."Код";
+WHERE
+    acode = "Предприятия"."Код"
+    AND "СоотношениеСтатуса"."СтатусПредприятия" = 12;
 
-IF 12 = locEntStatus THEN
+IF FOUND THEN
     locVAT = 0.0;
-/**
-ELSIF 'Россия' <> locCountry THEN
-    locVAT = 0.0;
-**/
 END IF;
 
 RETURN locVAT;
