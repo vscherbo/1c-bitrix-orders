@@ -71,8 +71,8 @@ BEGIN
 
     WITH inserted AS (
         INSERT INTO "Счета"
-            ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "Статус", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата") 
-        VALUES (acode, ourFirm, inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode, 0, 
+            ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата") 
+        VALUES (acode, ourFirm, inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode,
                 rtrim(rpad(BillInfo, Max_BillInfo)),
                 rtrim(rpad(ExtraInfo, Max_ExtraInfo)),
                 Delivery, DeliveryMode, loc_OrderProcessingTime, loc_DeliveryPayer)
