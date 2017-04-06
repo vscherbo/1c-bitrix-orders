@@ -30,6 +30,7 @@ $BODY$ DECLARE
   PaymentGuarantee VARCHAR;
   ourFirm VARCHAR;
   locVAT NUMERIC;
+  locDealerFlag BOOLEAN;
 BEGIN
     SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Гарантия оплаты дилером';
     IF found THEN BillInfo := BillInfo || ', ' ||PaymentGuarantee; END IF;
@@ -68,14 +69,16 @@ BEGIN
  
     bill_no := fn_GetNewBillNo(inet_bill_owner);
     ourFirm := getFirm(acode, flgOwen);
+    PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
+    locDealerFlag := FOUND;
 
     WITH inserted AS (
         INSERT INTO "Счета"
-            ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата") 
+            ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата", "Дилерский") 
         VALUES (acode, ourFirm, inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode,
                 rtrim(rpad(BillInfo, Max_BillInfo)),
                 rtrim(rpad(ExtraInfo, Max_ExtraInfo)),
-                Delivery, DeliveryMode, loc_OrderProcessingTime, loc_DeliveryPayer)
+                Delivery, DeliveryMode, loc_OrderProcessingTime, loc_DeliveryPayer, locDealerFlag)
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
