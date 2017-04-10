@@ -24,7 +24,7 @@ $BODY$ DECLARE
   inet_bill_owner integer;
   Max_ExtraInfo CONSTANT INTEGER := 250;
   Max_BillInfo CONSTANT INTEGER := 500;
-  bill_no INTEGER;
+  loc_bill_no INTEGER;
   loc_OrderProcessingTime VARCHAR;
   loc_DeliveryPayer VARCHAR := '';
   PaymentGuarantee VARCHAR;
@@ -67,7 +67,7 @@ BEGIN
     -- если не назначен заместитель ? Арутюн
     inet_bill_owner := COALESCE(inet_bill_owner, 38);
  
-    bill_no := fn_GetNewBillNo(inet_bill_owner);
+    loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
     ourFirm := getFirm(acode, flgOwen);
     PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
     locDealerFlag := FOUND;
@@ -75,7 +75,7 @@ BEGIN
     WITH inserted AS (
         INSERT INTO "Счета"
             ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата", "Дилерский") 
-        VALUES (acode, ourFirm, inet_bill_owner, bill_no, bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode,
+        VALUES (acode, ourFirm, inet_bill_owner, loc_bill_no, loc_bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode,
                 rtrim(rpad(BillInfo, Max_BillInfo)),
                 rtrim(rpad(ExtraInfo, Max_ExtraInfo)),
                 Delivery, DeliveryMode, loc_OrderProcessingTime, loc_DeliveryPayer, locDealerFlag)
