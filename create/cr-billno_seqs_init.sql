@@ -10,14 +10,14 @@ sql_str TEXT;
 loc_bill_no INTEGER;
 last_bill_no INTEGER;
 BEGIN
-	FOR manager_id IN SELECT "Менеджер" FROM vwbillcreator
+	FOR manager_id IN SELECT bc_list."Менеджер" FROM (SELECT "Менеджер" FROM vwbillcreator UNION SELECT 66) bc_list
 	LOOP
         SELECT "№ счета" into loc_bill_no From Счета
                   WHERE "№ счета"
                     Between (manager_id * 100 + extract(Year from now()) - 1996) * 10000
                         and (manager_id + 1) * 1000000
                   ORDER BY "№ счета" DESC limit 1;
-        last_bill_no := COALESCE(bloc_ill_no % 10000, 0);
+        last_bill_no := COALESCE(loc_bill_no % 10000, 0);
         -- RAISE NOTICE 'manager_id=%, loc_bill_no=%, last_bill_no=%', manager_id, loc_bill_no, last_bill_no;
 
         sql_str := format('ALTER SEQUENCE IF EXISTS billno_%s_%s_seq RESTART WITH %s;', manager_id, extract(Year from now()), last_bill_no +1);
