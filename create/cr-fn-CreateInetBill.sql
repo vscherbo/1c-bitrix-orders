@@ -17,7 +17,7 @@ DECLARE
    INN VARCHAR;
    KPP VARCHAR;
    VAT numeric;
-   bill_no INTEGER;
+   loc_bill_no INTEGER;
    Price NUMERIC;
    PriceVAT NUMERIC; 
    bx_sum NUMERIC;
@@ -63,7 +63,7 @@ IF loc_is_valid THEN
     bx_sum := 0;
 ELSE
     CreateResult := 4; -- отменённый или неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
-    UPDATE bx_order SET billcreated = CreateResult, "Счет" = bill_no WHERE "Номер" = bx_order_no ;
+    UPDATE bx_order SET billcreated = CreateResult, "Счет" = loc_bill_no WHERE "Номер" = bx_order_no ;
     RETURN CreateResult;
 END IF;
 
@@ -198,7 +198,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
         bill := fn_InsertBill(loc_sum, bx_order_no, EmpRec."Код", EmpRec."КодРаботника", flgOwen);
         Npp := 1;
         VAT := bill."ставкаНДС";
-        bill_no := bill."№ счета";
+        loc_bill_no := bill."№ счета";
 
         FOR item in SELECT * FROM tmp_order_items LOOP
             IF item.oi_delivery_qnt IS NOT NULL THEN
@@ -214,7 +214,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
 
             Price := PriceVAT*100/(100 + VAT);
             --
-            RAISE NOTICE 'bill_no=%, item.ks=%', bill."№ счета", item.ks;
+            RAISE NOTICE 'loc_bill_no=%, item.ks=%', bill."№ счета", item.ks;
             -- TODO Выявлять услугу "Оплата доставки"
 
             WITH inserted AS (
@@ -227,7 +227,7 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
                     "Цена", "ЦенаНДС",
                     "Гдезакупать")
                     VALUES ((SELECT max("КодПозиции")+1 FROM "Содержание счета"),
-                    bill_no,
+                    loc_bill_no,
                     item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
                     loc_orderitemprocessingtime,
                     npp, soderg."НазваниевСчет",
@@ -240,10 +240,10 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             loc_lack_reserve := 0;
             SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
             IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN -- разбивка сроки-количество
-                SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, bill_no, item.ks);
+                SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
                 RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
             ELSE -- без разбивки сроки-количество
-                loc_lack_reserve := setup_reserve(bill_no, item.ks, item.oi_quantity);
+                loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
                 RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
             END IF;
 
@@ -251,10 +251,10 @@ IF (CreateResult = 1) THEN -- все позиции заказа синхрон�
             IF loc_lack_reserve  > 0 THEN
                 CreateResult := 7; -- не удалось создать резерв
                 loc_lack_reason := format('Счёт %s: для KS=%s не удалось поставить в резерв %s из %s, причина: %s',
-                       bill_no, item.ks, loc_lack_reserve, item.oi_quantity, quote_nullable(loc_lack_reason) );
+                       loc_bill_no, item.ks, loc_lack_reserve, item.oi_quantity, quote_nullable(loc_lack_reason) );
                 INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, loc_lack_reason);
                 PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
-                                --'Счёт: ' || bill_no || ', КодСодержания: ' || item.ks ||
+                                --'Счёт: ' || loc_bill_no || ', КодСодержания: ' || item.ks ||
                                 -- ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
             END IF;
         END LOOP;
@@ -275,7 +275,7 @@ END IF; -- CreateResult = 1
 
 
 
-UPDATE bx_order SET billcreated = CreateResult, "Счет" = bill_no WHERE "Номер" = bx_order_no ;
+UPDATE bx_order SET billcreated = CreateResult, "Счет" = loc_bill_no WHERE "Номер" = bx_order_no ;
 
 TRUNCATE tmp_order_items;
 

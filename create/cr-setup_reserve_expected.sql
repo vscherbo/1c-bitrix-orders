@@ -1,9 +1,9 @@
 -- Function: setup_reserve_expected(integer, integer, double precision, timestamp without time zone)
 
--- DROP FUNCTION setup_reserve_expected(integer, integer, double precision, timestamp without time zone);
+DROP FUNCTION setup_reserve_expected(integer, integer, double precision, timestamp without time zone);
 
 CREATE OR REPLACE FUNCTION setup_reserve_expected(
-    IN bill_no integer,
+    IN a_bill_no integer,
     IN ks integer,
     IN kol double precision,
     IN expected_date timestamp without time zone,
@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION setup_reserve_expected(
 $BODY$DECLARE
 
 	rs RECORD;
-	--bill_no INTEGER; 
+	--a_bill_no INTEGER; 
 	--ks INTEGER;
 	kol0 DOUBLE PRECISION;
 	--kol DOUBLE PRECISION;
@@ -26,7 +26,7 @@ $BODY$DECLARE
 BEGIN
 -- SELECT * FROM setup_reserve_expected (12201063,108004471,2, null)
 kol0:= kol;
-SELECT Код INTO kod FROM arc_energo.Счета WHERE "№ счета"= bill_no;
+SELECT Код INTO kod FROM arc_energo.Счета WHERE "№ счета"= a_bill_no;
 
 IF  expected_date IS NULL THEN
 	condition:= '';
@@ -61,7 +61,7 @@ LOOP
 		IF kol <= coalesce(rs.Идет-rs.Рез,0) THEN
 			INSERT INTO arc_energo.РезервИдущий (КодРезерва, КодСпискаЗаказа, Резерв, КодСодержания, Счет ,Когда, Докуда, Кем, Подкого, "Подкого_Код" , "Кем_Номер")
 			VALUES (
-			kr, rs.КодСпискаЗаказа, kol, ks, bill_no, now(), now()+'10 days'::interval,'PG auto',
+			kr, rs.КодСпискаЗаказа, kol, ks, a_bill_no, now(), now()+'10 days'::interval,'PG auto',
 			coalesce((SELECT Предприятие FROM arc_energo.Предприятия WHERE Код=kod),Null),kod,0);
 
 			RAISE NOTICE 'R. Поставили на резерв в ид.: % ', kol;
@@ -71,7 +71,7 @@ LOOP
 		ELSE --kol > 0 THEN
 			INSERT INTO arc_energo.Резерв (КодРезерва, Резерв, КодКоличества, КодСодержания, Счет, КодСклада, ПримечаниеСклада,Когда, Докуда, Кем, Подкого, "Подкого_Код", "Кем_Номер")
 			VALUES 
-			(kr ,rs.КодСпискаЗаказа,rs.Идет-rs.Рез, ks, bill_no,now(), now()+'10 days'::interval,'PG auto',
+			(kr ,rs.КодСпискаЗаказа,rs.Идет-rs.Рез, ks, a_bill_no,now(), now()+'10 days'::interval,'PG auto',
 			coalesce((SELECT Предприятие FROM arc_energo.Предприятия WHERE Код=kod), Null ),kod,0);
 			
 			

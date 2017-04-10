@@ -5,7 +5,6 @@ $BODY$ DECLARE
   o RECORD;
   cr_bill_result INTEGER;
   msg_id INTEGER;
-  bill_no INTEGER;
   enterprise_code INTEGER;
   payment_method_id INTEGER;
   delivery_service VARCHAR;

@@ -7,14 +7,14 @@ CREATE OR REPLACE FUNCTION "fnCreateAutoBillNotification"(order_id integer, a_re
 $BODY$DECLARE 
 mstr varchar(255);
 message_id integer;
-bill_no INTEGER;
+loc_bill_no INTEGER;
 ord_date timestamp without time zone;
 ord_time VARCHAR;
 loc_str VARCHAR;
 BEGIN 
-    SELECT "Счет", "Дата", "Время" INTO bill_no, ord_date, ord_time FROM bx_order WHERE "Номер" = order_id;
+    SELECT "Счет", "Дата", "Время" INTO loc_bill_no, ord_date, ord_time FROM bx_order WHERE "Номер" = order_id;
 
-    mstr := E'Создан автосчёт '|| to_char(bill_no, 'FM9999-9999') 
+    mstr := E'Создан автосчёт '|| to_char(loc_bill_no, 'FM9999-9999') 
             || E' по заказу ' || order_id::VARCHAR || ' на kipspb.ru'
             || E'. Проверьте его, пожалуйста!';
     IF a_reason = -1 THEN
@@ -30,7 +30,7 @@ BEGIN
 
     WITH inserted AS (
         INSERT INTO СчетОчередьСообщений ("№ счета", msg_to, msg, msg_type)
-               values (bill_no, 1, mstr, 9) RETURNING id
+               values (loc_bill_no, 1, mstr, 9) RETURNING id
     )
     SELECT id INTO message_id FROM inserted;
 

@@ -4,7 +4,7 @@
 
 CREATE OR REPLACE FUNCTION reserve_partly(
     IN delivery_qnt text,
-    IN bill_no integer,
+    IN a_bill_no integer,
     IN ks integer,
     OUT out_lack numeric,
     OUT out_reason text)
@@ -35,12 +35,12 @@ LOOP
     RAISE NOTICE 'Срок-количество: {%}-{%}', loc_when, loc_qnt;
 
     IF position('со склада' in loc_when) > 0 THEN
-        loc_lack := setup_reserve(bill_no, ks, loc_qnt);
+        loc_lack := setup_reserve(a_bill_no, ks, loc_qnt);
         RAISE NOTICE '->нехватка со склада=%', loc_lack;
     ELSIF regexp_matches(loc_when, '.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT) IS NOT NULL THEN
         loc_res := regexp_matches(loc_when, '.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT);
         RAISE NOTICE 'parsed expected=%', loc_res[1];
-        SELECT * INTO loc_lack, loc_reason FROM setup_reserve_expected(bill_no, ks, loc_qnt, loc_res[1]::timestamp without time zone);
+        SELECT * INTO loc_lack, loc_reason FROM setup_reserve_expected(a_bill_no, ks, loc_qnt, loc_res[1]::timestamp without time zone);
         RAISE NOTICE '-->нехватка идущих={%}, причина={%}', loc_lack, loc_reason;
     ELSIF regexp_matches(loc_when, '.*\d+.*\d+ недел.*', 'g'::TEXT) IS NOT NULL THEN -- m-n недель
         loc_res := regexp_matches(loc_when, '.*(\d+.*\d+) недел.*', 'g'::TEXT);

@@ -1,27 +1,36 @@
--- Function: setup_reserve_measured(integer, integer, double precision)
+-- Function: setup_reserve_measured(integer, integer, double precision, integer, integer)
 
--- DROP FUNCTION setup_reserve_measured(integer, integer, double precision);
+-- DROP FUNCTION setup_reserve_measured(integer, integer, double precision, integer, integer);
 
 CREATE OR REPLACE FUNCTION setup_reserve_measured(
-    bill_no integer,
+    a_bill_no integer,
     ks integer,
-    kol double precision)
+    kol double precision,
+    usr integer,
+    code_position integer DEFAULT NULL::integer)
   RETURNS double precision AS
 $BODY$
 DECLARE
 --SELECT setup_reserve_measured(13200056,100001775,140)
 --110021098
---	bill_no integer;
+--	a_bill_no integer;
 --	ks integer;
 --	kol0 double precision;
 --	kol double precision;
 	rs record;
 	rez double precision default 0;
 	kod integer default 0;
+	usr_name character varying;
+	loc_code_position integer;
 BEGIN
 RAISE NOTICE 'К резервированию: %', kol;
 
-SELECT Код INTO kod FROM arc_energo.Счета WHERE "№ счета"= bill_no;
+SELECT Имя INTO usr_name FROM Сотрудники WHERE Номер = usr;
+SELECT Код INTO kod FROM arc_energo.Счета WHERE "№ счета"= a_bill_no;
+
+If NOT code_position IS NULL THEN
+loc_code_position =code_position;
+END IF;
 -----------------------------------------------------------------------------------------------------------------------
 IF kol >=100 THEN
 	FOR rs IN
@@ -41,18 +50,18 @@ IF kol >=100 THEN
 	IF kol <100 THEN EXIT; END IF;
 	RAISE NOTICE 'Мерный. Попали в первый цикл, когда количество мерн. товара больше ста.';
 		IF rs.Свободно - rs.Рез >= kol THEN
-				INSERT INTO arc_energo.Резерв (Резерв, КодКоличества, КодСодержания, Счет, КодСклада, ПримечаниеСклада,Когда, Докуда, Кем, Подкого, "Подкого_Код", Кем_Номер)
+				INSERT INTO arc_energo.Резерв (Резерв, КодКоличества, КодСодержания, Счет, КодСклада, ПримечаниеСклада,Когда, Докуда, Кем, Подкого, "Подкого_Код", Кем_Номер, КодПозиции)
 				VALUES (
-				kol, nullif(rs.kk,0), ks, bill_no, rs.КодСклада, rs.Примечание,now(), now()+'10 days'::interval,'PG auto',
-				(SELECT Предприятие FROM arc_energo.Предприятия WHERE Код =kod),kod,0);
+				kol, nullif(rs.kk,0), ks, a_bill_no, rs.КодСклада, rs.Примечание,now(), now()+'10 days'::interval,usr_name,
+				(SELECT Предприятие FROM arc_energo.Предприятия WHERE Код =kod),kod,usr,loc_code_position);
 			rez:=rez + kol;
 			kol:=0;
 		ELSE
 		RAISE NOTICE 'Мерный. Мерный больше ста.Резервируем бухту';
-				INSERT INTO arc_energo.Резерв (Резерв, КодКоличества, КодСодержания, Счет, КодСклада, ПримечаниеСклада,Когда, Докуда, Кем, Подкого, "Подкого_Код", Кем_Номер)
+				INSERT INTO arc_energo.Резерв (Резерв, КодКоличества, КодСодержания, Счет, КодСклада, ПримечаниеСклада,Когда, Докуда, Кем, Подкого, "Подкого_Код", Кем_Номер, КодПозиции)
 				VALUES (
-				rs.Свободно - rs.Рез , nullif(rs.kk,0), ks, bill_no, rs.КодСклада, rs.Примечание,now(), now()+'10 days'::interval,'PG auto',
-				(SELECT Предприятие FROM arc_energo.Предприятия WHERE Код =kod),kod,0);
+				rs.Свободно - rs.Рез , nullif(rs.kk,0), ks, a_bill_no, rs.КодСклада, rs.Примечание,now(), now()+'10 days'::interval,usr_name,
+				(SELECT Предприятие FROM arc_energo.Предприятия WHERE Код =kod),kod,usr,loc_code_position);
 
 			rez:=rez + rs.Свободно - rs.Рез;	
 			kol:= kol-(rs.Свободно - rs.Рез);
@@ -82,10 +91,10 @@ IF kol > 0 THEN
 		RAISE NOTICE 'Зарезервировано: % Остаток: % На месте: %', rez, kol, rs.Свободно;
 		IF kol <=(rs.Свободно - rs.Рез) THEN
 
-				INSERT INTO arc_energo.Резерв (Резерв, КодКоличества, КодСодержания, Счет, КодСклада, ПримечаниеСклада,Когда, Докуда, Кем, Подкого,"Подкого_Код", Кем_Номер)
+				INSERT INTO arc_energo.Резерв (Резерв, КодКоличества, КодСодержания, Счет, КодСклада, ПримечаниеСклада,Когда, Докуда, Кем, Подкого,"Подкого_Код", Кем_Номер, КодПозиции)
 				VALUES (
-				kol , nullif(rs.kk,0), ks, bill_no, rs.КодСклада, rs.Примечание,now(), now()+'10 days'::interval,'PG auto',
-				(SELECT Предприятие FROM arc_energo.Предприятия WHERE Код=kod),kod,0);
+				kol , nullif(rs.kk,0), ks, a_bill_no, rs.КодСклада, rs.Примечание,now(), now()+'10 days'::interval,usr_name,
+				(SELECT Предприятие FROM arc_energo.Предприятия WHERE Код=kod),kod,usr,loc_code_position);
 
 				rez:=rez + kol ;
 				kol:=0;
@@ -104,5 +113,5 @@ END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION setup_reserve_measured(integer, integer, double precision)
+ALTER FUNCTION setup_reserve_measured(integer, integer, double precision, integer, integer)
   OWNER TO arc_energo;

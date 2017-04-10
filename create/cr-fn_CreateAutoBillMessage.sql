@@ -9,7 +9,7 @@ mstr varchar(255);
 -- loc_msg_to integer = 2; -- в файл, если ниже не заданое иное
 loc_msg_to integer = 0; -- клиенту, если ниже не заданое иное
 loc_message_id integer;
-bill_no INTEGER;
+loc_bill_no INTEGER;
 enterprise_code INTEGER;
 payment_method_id INTEGER;
 delivery_mode VARCHAR;
@@ -18,12 +18,12 @@ ord_date timestamp without time zone;
 ord_time VARCHAR;
 loc_msg_type INTEGER;
 BEGIN 
-SELECT "Счет", "Дата", "Время" INTO bill_no, ord_date, ord_time FROM bx_order WHERE "Номер" = order_id;
-SELECT "Код" INTO enterprise_code FROM "Счета" WHERE "№ счета" = bill_no;
+SELECT "Счет", "Дата", "Время" INTO loc_bill_no, ord_date, ord_time FROM bx_order WHERE "Номер" = order_id;
+SELECT "Код" INTO enterprise_code FROM "Счета" WHERE "№ счета" = loc_bill_no;
 SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Комментарий покупателя';
     if buyer_comment IS NULL THEN
         mstr := E'Ваш заказ '|| order_id::VARCHAR || ' от '|| ord_date + ord_time::INTERVAL || ' на сайте kipspb.ru '
-               || E'\nобработан и сформирован счёт №' || to_char(bill_no, '9999-9999') || E'.\n';
+               || E'\nобработан и сформирован счёт №' || to_char(loc_bill_no, '9999-9999') || E'.\n';
         RAISE NOTICE 'Извещение для Автосчёта=%', mstr;
         SELECT fvalue INTO payment_method_id FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Метод оплаты ИД';
         -- 21 - Наличные
@@ -60,7 +60,7 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
         IF length(mstr) > 0 AND loc_msg_type IS NOT NULL THEN -- помещаем письмо в очередь сообщений
             WITH inserted AS (
             INSERT INTO СчетОчередьСообщений ("№ счета", msg_to, msg, msg_type) 
-                    values (bill_no, loc_msg_to, mstr, loc_msg_type) 
+                    values (loc_bill_no, loc_msg_to, mstr, loc_msg_type) 
                     RETURNING id)
             SELECT id INTO loc_message_id FROM inserted;
         END IF;

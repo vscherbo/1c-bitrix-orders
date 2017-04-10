@@ -3,7 +3,7 @@
 -- DROP FUNCTION setup_reserve_bill(integer, boolean);
 
 CREATE OR REPLACE FUNCTION setup_reserve_bill(
-    bill_no integer,
+    a_bill_no integer,
     on_go boolean)
   RETURNS character varying AS
 $BODY$DECLARE
@@ -39,7 +39,7 @@ For rs IN
 	LEFT JOIN (
 		-- обзор стоящих по счету резервов
 		SELECT КодСодержания, Sum(Резерв) as Рез2 FROM arc_energo.Резерв 
-		WHERE Счет = bill_no
+		WHERE Счет = a_bill_no
 		AND КогдаСнял IS NULL
 		GROUP BY КодСодержания) r
 	ON ss.КодСодержания = r.КодСодержания
@@ -48,7 +48,7 @@ For rs IN
 		(SELECT k.КодСодержания, Sum(Отгружено) Отгр2 
 		FROM Расход 
 		JOIN Количество k ON Расход.КодКоличества=k.КодКоличества
-		WHERE Счет=bill_no
+		WHERE Счет=a_bill_no
 		GROUP BY k.КодСодержания ) pcx
 	ON ss.КодСодержания=pcx.КодСодержания
 
@@ -62,7 +62,7 @@ For rs IN
 		JOIN Содержание s
 	ON ss.КодСодержания=s.КодСодержания
 	
-	WHERE ss."№ счета"= bill_no --13200056
+	WHERE ss."№ счета"= a_bill_no --13200056
 	AND Not (coalesce(ss.Готов,'f') ='t' or coalesce(ss.НеЗаказывать,'f') = 't') --исключаем подобные позиции
 	AND Not ss.КодСодержания Is Null 
 	AND (coalesce(ss.Гдезакупать,'')='' OR ss.Гдезакупать LIKE 'Рез%склада' ) --Or coalesce(sz.Раб,0) >0
@@ -79,13 +79,13 @@ LOOP
 			RAISE NOTICE 'КодСодержания %, Кол-во: %;  Отгружено: %, Резерв: %, Поставить: %', ks, rs."Кол-во"::double precision, rs.Отгр, rs.Рез, stockpile ;
 		IF rs.КодОКЕИ <>6 THEN  -- если к резервированию больше нуля и не мерный товар
 			RAISE NOTICE 'ШТУЧНЫЙ %!',rs.КодОКЕИ;
-			ostatok:= setup_reserve_item(bill_no, ks, stockpile);
+			ostatok:= setup_reserve_item(a_bill_no, ks, stockpile);
 		ELSIF rs.КодОКЕИ = 6 THEN  -- если к резервированию больше нуля и немерный товар
 			RAISE NOTICE 'МЕРНЫЙ %!',rs.КодОКЕИ;
 			-- напишем процедуру постановки на резерв мерного товара
-			 ostatok:= setup_reserve_measured(bill_no, ks, stockpile);
+			 ostatok:= setup_reserve_measured(a_bill_no, ks, stockpile);
 		END IF;
-			-- PERFORM setup_reserve_expected (bill_no, ks, stockpile);
+			-- PERFORM setup_reserve_expected (a_bill_no, ks, stockpile);
 	ELSE
 	END IF;
 -- Если количество после резервирования больше нуля - ставим резерв в идущих
