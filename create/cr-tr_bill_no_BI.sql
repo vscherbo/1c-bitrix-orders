@@ -1,0 +1,3 @@
+CREATE TRIGGER "tr_bill_no_BI" BEFORE INSERT
+ON "Счета" FOR EACH ROW EXECUTE PROCEDURE fntr_new_bill_no();
+
