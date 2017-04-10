@@ -1,8 +1,4 @@
--- Function: fn_getnewbillno(integer)
-
--- DROP FUNCTION fn_getnewbillno(integer);
-
-CREATE OR REPLACE FUNCTION get_new_loc_bill_no(manager_id integer)
+CREATE OR REPLACE FUNCTION get_new_bill_no(manager_id integer)
   RETURNS integer AS
 $BODY$
 DECLARE
