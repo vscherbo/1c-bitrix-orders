@@ -137,20 +137,20 @@ UNION
        ELSE -- недостаточно Ясная+Выставка
           loc_delivery_quantity := get_delivery_quantity(oi."Ид");
           IF loc_delivery_quantity IS NOT NULL AND loc_delivery_quantity <> '' THEN
-              CreateResult := 8; -- если есть разбивка сроки-количество, создаём автосчёт
+              CreateResult := 1; -- если есть разбивка сроки-количество, создаём автосчёт
               -- DEBUG only
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                  '%s(KS=%s) синхронизирован и ЧАСТИЧНО есть на складе [%s]', oi.Наименование, loc_KS, loc_in_stock
               ), CreateResult ); 
-              RAISE NOTICE 'Для mod_id=% есть сроки-количество=%', oi."Ид", loc_delivery_quantity;
+              RAISE NOTICE 'Для Ид строки заказа=% есть сроки-количество=%', oi."Ид", loc_delivery_quantity;
               -- часть со склада
               -- часть/части из идущих
               -- часть в сроки стандартной поставки
               -- loc_parts :=
-              INSERT INTO tmp_order_items(ks, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt)
+              INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt)
                      VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                              2, -- Ясная
-                             loc_delivery_quantity);
+                             oi."Количество", loc_delivery_quantity);
           ELSE
               CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
               RAISE NOTICE 'Для KS=% нет достаточного количества=%', loc_KS, oi."Количество";
@@ -191,8 +191,7 @@ IF (loc_sum <> bx_sum) AND (1 = CreateResult) THEN
    RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', loc_sum, bx_sum; 
 END IF;
 -- 
--- IF (CreateResult = 1) OR (CreateResult = 8) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
-IF (CreateResult = 1) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
+IF (1 = CreateResult) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
     INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
     -- EmpRec := get_emp(bx_order_no);
     SELECT "out_КодРаботника" AS "КодРаботника", "out_Код" AS "Код", "out_ЕАдрес" AS "ЕАдрес" FROM get_emp(bx_order_no) INTO EmpRec;
