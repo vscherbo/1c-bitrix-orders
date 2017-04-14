@@ -215,7 +215,7 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
                             sale_item_features_insert += '\'' + elem.text + '\', '
                         for elem in req.iterfind(u'Значение'):
                             if elem.text:
-                                elem_text = elem.text
+                                elem_text = elem.text.replace('&nbsp;', ' ')
                             else:
                                 elem_text = u""
                             str1 = str1 + u'=' + elem_text+'\n'
@@ -380,7 +380,6 @@ try:
                     parse_xml_insert_into_db(conf['site'], el, con, sql_outfile_name)
                     logging.info("sql-file created: %s", sql_outfile_name)
                     cur = con.cursor()
-                    #cur.callproc('fn_inetbill4neworders')
                     cur.callproc('fn_inetbill_neworders')
                     con.commit()
                     cur.close()
