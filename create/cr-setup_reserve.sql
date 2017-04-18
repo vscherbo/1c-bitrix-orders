@@ -15,19 +15,21 @@ $BODY$DECLARE
 --   usr_name character varying;
    loc_usr integer;	
 BEGIN
+IF ks IS NULL THEN
+   loc_qnt := 0; -- для несинхронизированных товаров
+ELSE
+    loc_usr = usr;
 
---SELECT Имя INTO usr_name FROM Сотрудники WHERE Номер = usr;
-loc_usr = usr;
+    SELECT Coalesce(ОКЕИ,796) INTO loc_okei FROM arc_energo."Содержание" WHERE "КодСодержания"=ks;
 
-SELECT Coalesce(ОКЕИ,796) INTO loc_okei FROM arc_energo."Содержание" WHERE "КодСодержания"=ks;
-	
-IF loc_okei <>6 THEN  -- не мерный товар
-    RAISE NOTICE 'ШТУЧНЫЙ %', loc_okei;
-    loc_qnt := setup_reserve_item(a_bill_no, ks, qnt, loc_usr,code_position);
-ELSE 
-    RAISE NOTICE 'МЕРНЫЙ %', loc_okei;
-    loc_qnt := setup_reserve_measured(a_bill_no, ks, qnt, loc_usr,code_position);
-END IF;
+    IF loc_okei <>6 THEN  -- не мерный товар
+        RAISE NOTICE 'ШТУЧНЫЙ %', loc_okei;
+        loc_qnt := setup_reserve_item(a_bill_no, ks, qnt, loc_usr,code_position);
+    ELSE
+        RAISE NOTICE 'МЕРНЫЙ %', loc_okei;
+        loc_qnt := setup_reserve_measured(a_bill_no, ks, qnt, loc_usr,code_position);
+    END IF;
+END IF; -- ks is not null
 
 RETURN loc_qnt;
 END
