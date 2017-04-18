@@ -46,7 +46,7 @@ BEGIN
         loc_email := loc_email2;
         RAISE NOTICE 'get_emp: заменяем _контактный email_ на EMail покупателя';
     END IF;
-
+    loc_email := COALESCE(loc_email, '');
 
     IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) -- юр. лицо, у ИП нет КПП
     THEN
