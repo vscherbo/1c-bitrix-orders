@@ -1,7 +1,7 @@
 -- Function: setup_reserve_bill(integer, boolean)
 
 -- DROP FUNCTION setup_reserve_bill(integer, boolean);
-
+-- 2017-04.10
 CREATE OR REPLACE FUNCTION setup_reserve_bill(
     a_bill_no integer,
     on_go boolean)
@@ -79,11 +79,11 @@ LOOP
 			RAISE NOTICE 'КодСодержания %, Кол-во: %;  Отгружено: %, Резерв: %, Поставить: %', ks, rs."Кол-во"::double precision, rs.Отгр, rs.Рез, stockpile ;
 		IF rs.КодОКЕИ <>6 THEN  -- если к резервированию больше нуля и не мерный товар
 			RAISE NOTICE 'ШТУЧНЫЙ %!',rs.КодОКЕИ;
-			ostatok:= setup_reserve_item(a_bill_no, ks, stockpile);
+			ostatok:= setup_reserve_item(a_bill_no, ks, stockpile,-1);
 		ELSIF rs.КодОКЕИ = 6 THEN  -- если к резервированию больше нуля и немерный товар
 			RAISE NOTICE 'МЕРНЫЙ %!',rs.КодОКЕИ;
 			-- напишем процедуру постановки на резерв мерного товара
-			 ostatok:= setup_reserve_measured(a_bill_no, ks, stockpile);
+			 ostatok:= setup_reserve_measured(a_bill_no, ks, stockpile,-1);
 		END IF;
 			-- PERFORM setup_reserve_expected (a_bill_no, ks, stockpile);
 	ELSE
