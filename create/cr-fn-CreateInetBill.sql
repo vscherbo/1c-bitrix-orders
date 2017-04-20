@@ -266,24 +266,27 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
 
             loc_lack_reserve := 0;
             SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
-            IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN -- разбивка сроки-количество
-                SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
-                RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
-            ELSE -- без разбивки сроки-количество
-                loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
-                RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
-            END IF;
 
-            -- Извещение о неудачном резерве
-            IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
-                CreateResult := 7; -- не удалось создать резерв
-                loc_lack_reason := format('Счёт %s: для KS=%s не удалось поставить в резерв %s из %s, причина: %s',
-                       loc_bill_no, item.ks, loc_lack_reserve, item.oi_quantity, quote_nullable(loc_lack_reason) );
-                INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, loc_lack_reason);
-                PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
-                                --'Счёт: ' || loc_bill_no || ', КодСодержания: ' || item.ks ||
-                                -- ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
-            END IF;
+            IF item.ks IS NOT NULL THEN -- резервы, только для товаров с КС
+                IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN -- разбивка сроки-количество
+                    SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
+                    RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
+                ELSE -- без разбивки сроки-количество
+                    loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
+                    RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
+                END IF;
+
+                -- Извещение о неудачном резерве
+                IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
+                    CreateResult := 7; -- не удалось создать резерв
+                    loc_lack_reason := format('Счёт %s: для KS=%s не удалось поставить в резерв %s из %s, причина: %s',
+                           loc_bill_no, item.ks, loc_lack_reserve, item.oi_quantity, quote_nullable(loc_lack_reason) );
+                    INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, loc_lack_reason);
+                    PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
+                                    --'Счёт: ' || loc_bill_no || ', КодСодержания: ' || item.ks ||
+                                    -- ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
+                END IF; -- loc_lack_reserve <> 0
+            END IF; -- locKS IS NOT NULL
         END LOOP;
         IF CreateResult = 7 THEN
             loc_aub_msg := format('Автосчёт {%s} создан, но не удалось поставить все резервы', bill."№ счета");
@@ -299,8 +302,6 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
 ELSE
     INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, 'Автосчёт не создан', CreateResult, -1);
 END IF; -- CreateResult = 1
-
-
 
 UPDATE bx_order SET billcreated = CreateResult, "Счет" = loc_bill_no WHERE "Номер" = bx_order_no ;
 
