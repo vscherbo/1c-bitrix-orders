@@ -51,15 +51,20 @@ BEGIN
     IF DeliveryMode = 'Самовывоз' THEN 
        Delivery := 'Самовывоз'; 
        DeliveryMode = NULL; -- Важно! для формирования счёт-факса
+       /** 2017-04-19 ВВ для автосчетов отключаем **/
        ExtraInfo := ' Отгрузка со склада' || ExtraInfo;
+       /**/
        loc_OrderProcessingTime := '!Со склада';
     ELSE
        Delivery := 'Отправка';
        loc_OrderProcessingTime := '1...3 рабочих дня'; 
         -- TODO заполняем Дополнительно
+       /** 2017-04-19 ВВ для автосчетов отключаем **/
        ExtraInfo := ' Срок поставки ' || loc_OrderProcessingTime || ExtraInfo 
                     ||  ' Доставка продукции компанией ''' || DeliveryMode || '''.' 
                     ||' Оплата доставки при получении.';
+       /**/
+       -- ExtraInfo := 'Доставка продукции компанией ''' || DeliveryMode || '''. Оплата доставки при получении.';
        loc_DeliveryPayer := 'Они';
     END IF;
     
