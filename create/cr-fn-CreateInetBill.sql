@@ -52,6 +52,8 @@ DECLARE
    loc_buyer_name VARCHAR;
    loc_email VARCHAR;
    loc_is_valid BOOLEAN := FALSE;
+dbg_order_items_count INTEGER;
+loc_where_buy VARCHAR;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -67,7 +69,7 @@ ELSE
     RETURN CreateResult;
 END IF;
 
-CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_id TEXT, oi_okei_code integer, oi_measure_unit character varying(50), whid integer, oi_quantity numeric(18,3), oi_delivery_qnt TEXT);
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_id TEXT, oi_okei_code integer, oi_measure_unit character varying(50), whid integer, oi_quantity numeric(18,3), oi_delivery_qnt TEXT, oi_name VARCHAR);
 TRUNCATE tmp_order_items; -- if exists
 
 CREATE temporary TABLE IF NOT EXISTS qnt_in_stock (ks INTEGER, whid INTEGER, whqnt NUMERIC) ON COMMIT DROP;
@@ -105,7 +107,7 @@ UNION
        INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id,  format(
         '%s - не синхронизированная позиция', oi.Наименование
        ), CreateResult );
-       -- не прерываем обработку! EXIT; -- дальше не проверяем
+       -- не прерываем обработку!
     ELSE
        -- если Овен, "Поставщик" = 30049
        IF 30049 = vendor_id AND NOT skipCheckOwen THEN
@@ -122,7 +124,7 @@ UNION
                            , 0);
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
        IF loc_in_stock >= oi."Количество" THEN -- достаточно на Ясной+Выставка
-          IF CreateResult NOT IN (2,6) THEN 
+          IF CreateResult NOT IN (2,6) THEN -- если не было несинхронизированных (2) или нехватки (6)
              CreateResult := 1; -- позиция заказа синхронизирована
           END IF;    
           -- DEBUG only
@@ -130,12 +132,14 @@ UNION
              '%s(KS=%s) синхронизирован и есть на складе [%s]', oi.Наименование, loc_KS, loc_in_stock
           ), 1 ); 
 
+          /*** общий INSERT для 1, 2, 6 ***
           INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity)
                               VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                                       2, -- Ясная
                                       oi."Количество");
+          ***/
        ELSE -- недостаточно Ясная+Выставка
-          loc_delivery_quantity := get_delivery_quantity(oi."Ид");
+          loc_delivery_quantity := get_delivery_quantity(bx_order_no, oi."Ид");
           IF loc_delivery_quantity IS NOT NULL AND loc_delivery_quantity <> '' THEN
               CreateResult := 1; -- если есть разбивка сроки-количество, создаём автосчёт
               -- DEBUG only
@@ -147,12 +151,16 @@ UNION
               -- часть/части из идущих
               -- часть в сроки стандартной поставки
               -- loc_parts :=
+              /*** общий INSERT для 1, 2, 6 ***
               INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt)
                      VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                              2, -- Ясная
                              oi."Количество", loc_delivery_quantity);
+              ***/
           ELSE
               CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
+              -- TODO CreateResult := 1; -- из идущих, т.к. позиция заказа синхронизирована, но недостаточно количества
+              -- TODO loc_delivery_quantity := format('со склада: %s; : %s',  loc_in_stock, oi."Количество"-loc_in_stock); -- , get_expected_shipment(loc_KS, False));
               RAISE NOTICE 'Для KS=% нет достаточного количества=%', loc_KS, oi."Количество";
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                 'Для %s(KS=%s) нужно [%s], доступно [%s]', oi.Наименование, loc_KS, oi."Количество", loc_in_stock
@@ -175,6 +183,12 @@ UNION
             END IF; -- loc_delivery_quantity IS NOT NULL
        END IF; -- достаточно на Ясной+Выставка
     END IF; -- loc_KS is not null
+
+    INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt, oi_name)
+                        VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
+                                2, -- Ясная
+                                oi."Количество", loc_delivery_quantity, oi."Наименование");
+
     -- Для контроля "потерянных" позиций
     bx_sum := bx_sum + oi."Сумма";
     RAISE NOTICE 'CreateResult = %', CreateResult;
@@ -191,7 +205,8 @@ IF (loc_sum <> bx_sum) AND (1 = CreateResult) THEN
    RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', loc_sum, bx_sum; 
 END IF;
 -- 
-IF (1 = CreateResult) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
+IF (CreateResult = 1 ) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
+-- IF (CreateResult IN (1,2,6) ) THEN -- включая частичный автосчёт
     INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
     -- EmpRec := get_emp(bx_order_no);
     SELECT "out_КодРаботника" AS "КодРаботника", "out_Код" AS "Код", "out_ЕАдрес" AS "ЕАдрес" FROM get_emp(bx_order_no) INTO EmpRec;
@@ -205,10 +220,12 @@ IF (1 = CreateResult) THEN -- все позиции заказа синхрон�
         VAT := bill."ставкаНДС";
         loc_bill_no := bill."№ счета";
 
+        SELECT count(*) INTO dbg_order_items_count FROM tmp_order_items ;
+        RAISE NOTICE 'строк для счёта=%', dbg_order_items_count;
         FOR item in SELECT * FROM tmp_order_items LOOP
+            RAISE NOTICE 'tmp_order_items=%', item;
             IF item.oi_delivery_qnt IS NOT NULL THEN
-               -- loc_OrderItemProcessingTime := OrderItem_ProcessingTime(item.ks);
-               loc_OrderItemProcessingTime := item.oi_delivery_qnt; -- TODO разбить по ';'
+               loc_OrderItemProcessingTime := item.oi_delivery_qnt; -- разбиение по ';' в заполнении шаблона libreoffice
             ELSE
                loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
             END IF;
@@ -221,6 +238,12 @@ IF (1 = CreateResult) THEN -- все позиции заказа синхрон�
             --
             RAISE NOTICE 'loc_bill_no=%, item.ks=%', bill."№ счета", item.ks;
             -- TODO Выявлять услугу "Оплата доставки"
+
+            IF item.ks IS NOT NULL THEN
+                loc_where_buy := 'Рез.склада';
+            ELSE
+                loc_where_buy := 'TODO';
+            END IF;
 
             WITH inserted AS (
                INSERT INTO "Содержание счета"
@@ -235,9 +258,9 @@ IF (1 = CreateResult) THEN -- все позиции заказа синхрон�
                     loc_bill_no,
                     item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
                     loc_orderitemprocessingtime,
-                    npp, soderg."НазваниевСчет",
+                    npp, COALESCE(soderg."НазваниевСчет",item.oi_name), -- для несинхронизированных позиций имя с сайта
                     round(Price, 2), PriceVAT,
-                    'Рез.склада') 
+                    loc_where_buy) 
              RETURNING * 
              ) SELECT * INTO inserted_bill_item FROM inserted;
              Npp := Npp+1;
@@ -253,7 +276,7 @@ IF (1 = CreateResult) THEN -- все позиции заказа синхрон�
             END IF;
 
             -- Извещение о неудачном резерве
-            IF loc_lack_reserve  > 0 THEN
+            IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
                 CreateResult := 7; -- не удалось создать резерв
                 loc_lack_reason := format('Счёт %s: для KS=%s не удалось поставить в резерв %s из %s, причина: %s',
                        loc_bill_no, item.ks, loc_lack_reserve, item.oi_quantity, quote_nullable(loc_lack_reason) );
