@@ -204,11 +204,10 @@ IF (loc_sum <> bx_sum) AND (1 = CreateResult) THEN
    CreateResult := 5;
    RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', loc_sum, bx_sum; 
 END IF;
+-- IF (CreateResult = 1 ) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
 -- 
-IF (CreateResult = 1 ) THEN -- все позиции заказа синхронизированы и достаточное количество на складе
--- IF (CreateResult IN (1,2,6) ) THEN -- включая частичный автосчёт
+IF (CreateResult IN (1,2,6) ) THEN -- включая частичный автосчёт
     INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
-    -- EmpRec := get_emp(bx_order_no);
     SELECT "out_КодРаботника" AS "КодРаботника", "out_Код" AS "Код", "out_ЕАдрес" AS "ЕАдрес" FROM get_emp(bx_order_no) INTO EmpRec;
 
     RAISE NOTICE 'Получили для счёта Код=%, КодРаботника=%, ЕАдрес=%', EmpRec."Код", quote_nullable(EmpRec."КодРаботника"), quote_nullable(EmpRec."ЕАдрес") ;
