@@ -40,7 +40,7 @@ BEGIN
                     END IF;
                 END IF; -- 1 = loc_cr_bill_result
                 -- менеджеру 
-                IF loc_cr_bill_result IN (1,2,6,7) THEN -- автосчёт создан частично
+                IF loc_cr_bill_result IN (1,2,6,7) THEN -- включая частичный автосчёт
                     RAISE NOTICE 'Создаём сообщение менеджеру для заказа=%', o."Номер";
                     -- loc_msg_id, которое вернула "fnCreateAutoBillMessage", содержит код_причины неотправки письма клиенту об автосчёте
                     loc_msg_id := "fnCreateAutoBillNotification"(o."Номер", COALESCE(loc_msg_id, loc_cr_bill_result));
