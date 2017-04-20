@@ -14,7 +14,7 @@ $BODY$DECLARE
 BEGIN
 -- libreoffice --headless --convert-to pdf /opt/autobill/data/39200389-Бланк-заказа.odt
 basename = regexp_replace(input_file, '^.+[/\\]', '');
-cmd := E'libreoffice --headless --convert-to pdf -outdir ' || outdir || ' ' || indir || '/' || basename;
+cmd := E'libreoffice --headless --convert-to pdf --outdir ' || outdir || ' ' || indir || '/' || basename;
 RAISE NOTICE 'odt2pdf cmd=%', cmd;
 res_exec := public.exec_paramiko('ct-apps01.arc.world', 22, 'autobill'::VARCHAR, cmd);
 
