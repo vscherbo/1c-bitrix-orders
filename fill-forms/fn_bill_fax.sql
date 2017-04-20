@@ -101,7 +101,6 @@ home = expanduser("~")
 doc = load(home + u'/fill-forms/bill_fax_template-'+ upd_dict["pg_firm_key"]  +u'.odt')
 rv = plpy.execute("SELECT const_value FROM arc_energo.arc_constants WHERE const_name='autobill_out_dir'")
 out_dir = rv[0]["const_value"]
-#out_dir = '/mnt/nfs/autobill'
 outfile=out_dir + '/db/'+ str(bill_no)[:4] + '-' + str(bill_no)[4:] + '-Счет-факс.odt'.decode('utf-8')
 
 
@@ -132,14 +131,14 @@ for r in range(recs.nrows()):
         cell_list = cell_txt.split(';')
         if len(cell_list) > 0:
             pars[0].addText(cell_list[-1])
-            for c_i in range(len(cell_list)-1):  # , 0, -1):
+            for c_i in range(len(cell_list)-1):
                 p_i = text.P()
                 p_i.setAttribute("stylename",pars[0].getAttribute("stylename"))
-                p_i.addText(cell_list[c_i]+';')
+                p_i.addText(cell_list[c_i]+'\n')
                 cells[cind].insertBefore(p_i, pars[0])
         else:
             pars[0].addText(cell_txt)
-        # it's work: pars[0].addText(recs[r][fld_items[cind]].decode('utf-8'))
+        # it works: pars[0].addText(recs[r][fld_items[cind]].decode('utf-8'))
 
 rec_total_in_words = plpy.execute("SELECT propis(" + str(sum_total) +");"  )
 sum_total_in_words = rec_total_in_words[0]["propis"].decode('utf-8')
