@@ -20,6 +20,12 @@ BEGIN
         last_bill_no := COALESCE(loc_bill_no % 10000, 0);
         -- RAISE NOTICE 'manager_id=%, loc_bill_no=%, last_bill_no=%', manager_id, loc_bill_no, last_bill_no;
 
+        UPDATE "Счета" SET bill_no_seq = NULL
+        WHERE "Хозяин" = manager_id
+          AND "Дата счета" IS NOT NULL
+          AND bill_no_seq IS NOT NULL
+          AND bill_no_seq <> "№ счета";
+
         sql_str := format('ALTER SEQUENCE IF EXISTS billno_%s_%s_seq RESTART WITH %s;', manager_id, extract(Year from now()), last_bill_no +1);
         RAISE NOTICE 'sql_str=%', sql_str;
         EXECUTE sql_str;
