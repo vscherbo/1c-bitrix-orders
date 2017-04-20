@@ -20,6 +20,7 @@ $BODY$
                 )
             ORDER BY "Приоритет" LIMIT 1) d
     UNION
+        -- SELECT 41 as result -- спец. менеджер для ввода автосчетов до 2017-09
         SELECT 38 as result -- Арутюн
             FROM "Предприятия" 
             WHERE entcode NOT IN (SELECT "Код" FROM "vwДилеры");
