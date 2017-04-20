@@ -3,12 +3,8 @@ CREATE OR REPLACE FUNCTION fn_inetbill_neworders()
   RETURNS void AS
 $BODY$ DECLARE
   o RECORD;
-  cr_bill_result INTEGER;
-  msg_id INTEGER;
-  enterprise_code INTEGER;
-  payment_method_id INTEGER;
-  delivery_service VARCHAR;
-  buyer_comment VARCHAR;
+  loc_cr_bill_result INTEGER;
+  loc_msg_id INTEGER;
   SiteID VARCHAR;
   of_Site_found BOOLEAN;
   is_kipspb BOOLEAN;
@@ -25,14 +21,14 @@ BEGIN
                 RAISE NOTICE 'Для заказа с номером % уже создан счёт=%', o."Номер", loc_bill_no;
             ELSE
                 RAISE NOTICE 'Создаём счёт для заказа=%', o."Номер";
-                cr_bill_result := fn_createinetbill(o."Номер");
-                RAISE NOTICE 'Результат создания счёта=% для заказа=%', cr_bill_result, o."Номер";
-                IF 1 = cr_bill_result THEN -- автосчёт создан
+                loc_cr_bill_result := fn_createinetbill(o."Номер");
+                RAISE NOTICE 'Результат создания счёта=% для заказа=%', loc_cr_bill_result, o."Номер";
+                IF 1 = loc_cr_bill_result THEN -- автосчёт создан полностью
                     RAISE NOTICE 'Создаём сообщение клиенту для заказа=%', o."Номер";
-                    msg_id := "fnCreateAutoBillMessage"(o."Номер");
+                    loc_msg_id := "fnCreateAutoBillMessage"(o."Номер");
                     -- клиенту
-                    IF msg_id IS NOT NULL AND msg_id > 0 THEN
-                        PERFORM sendbillsinglemsg(msg_id);
+                    IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
+                        PERFORM sendbillsinglemsg(loc_msg_id);
                         UPDATE "Счета" SET "Статус"=0 WHERE "№ счета" = loc_bill_no; -- вызовет регистрацию в bill_status_history
                         -- В очередь обновления статуса для Инет заказов с нашего сайта
                         /** изменение статуса заказа на сайте на "Ожидает оплату"
@@ -40,17 +36,20 @@ BEGIN
                         PERFORM "fn_InetOrderNewStatus"(0, o."Номер");
                         **/
                     ELSE
-                        RAISE NOTICE 'не создано сообщение клиенту для заказа=%, msg_id=%', o."Номер", quote_nullable(msg_id);
+                        RAISE NOTICE 'не создано сообщение клиенту для заказа=%, loc_msg_id=%', o."Номер", quote_nullable(loc_msg_id);
                     END IF;
-                    -- менеджеру 
+                END IF; -- 1 = loc_cr_bill_result
+                -- менеджеру 
+                IF loc_cr_bill_result IN (1,2,6,7) THEN -- автосчёт создан частично
                     RAISE NOTICE 'Создаём сообщение менеджеру для заказа=%', o."Номер";
-                    msg_id := "fnCreateAutoBillNotification"(o."Номер", msg_id);
-                    IF msg_id IS NOT NULL THEN
-                        PERFORM sendbillsinglemsg(msg_id);
+                    -- loc_msg_id, которое вернула "fnCreateAutoBillMessage", содержит код_причины неотправки письма клиенту об автосчёте
+                    loc_msg_id := "fnCreateAutoBillNotification"(o."Номер", COALESCE(loc_msg_id, loc_cr_bill_result));
+                    IF loc_msg_id IS NOT NULL THEN
+                        PERFORM sendbillsinglemsg(loc_msg_id);
                     ELSE
                         RAISE NOTICE 'ERROR: не создано сообщение менеджеру для заказа=%', o."Номер";
                     END IF;
-                END IF; -- 1 = cr_bill_result
+                END IF; -- loc_cr_bill_result IN (...)
             END IF; -- FOUND "№ счета"
         ELSE
             RAISE NOTICE 'Пропускаем заказ: of_Site_found=%, is_kipspb=%', of_Site_found, is_kipspb;
