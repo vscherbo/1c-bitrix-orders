@@ -119,6 +119,7 @@ UNION
        
        INSERT INTO qnt_in_stock(ks, whid, whqnt) SELECT loc_KS, (is_in_stock(loc_KS)).* ;
        loc_in_stock := 0;
+       loc_delivery_quantity := '';
        loc_in_stock := COALESCE(
                            (SELECT SUM(whqnt) FROM qnt_in_stock WHERE qnt_in_stock.ks = loc_KS)
                            , 0);
