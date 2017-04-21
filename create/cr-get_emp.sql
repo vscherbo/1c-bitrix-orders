@@ -27,6 +27,7 @@ DECLARE
     text_var1 text;
     text_var2 text;
     text_var3 text;
+loc_aub_msg TEXT;
 BEGIN
     SELECT bx_buyer_id INTO loc_buyer_id FROM bx_order WHERE "Номер" = bx_order_id;
 
@@ -82,7 +83,9 @@ BEGIN
                         RAISE NOTICE 'get_emp: Работник с email=% не найден', loc_email;
                     WHEN TOO_MANY_ROWS THEN
                         new_emp := False;
-                        RAISE NOTICE 'get_emp: ТУПИК: найдено более одного Работника по email=% для Предприятия=%', loc_email, FirmCode;
+                        loc_aub_msg := format('ТУПИК: найдено более одного Работника по email=%s для Предприятия=%s', loc_email, FirmCode);
+                        INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_id, loc_aub_msg, 9, -1);
+                        RAISE NOTICE 'get_emp: %', loc_aub_msg;
                     WHEN OTHERS THEN
                         GET STACKED DIAGNOSTICS text_var1 = MESSAGE_TEXT, text_var2 = PG_EXCEPTION_DETAIL, text_var3 = PG_EXCEPTION_HINT;
                         RAISE NOTICE 'get_emp: MESSAGE_TEXT=%, PG_EXCEPTION_DETAIL=%, PG_EXCEPTION_HINT=%', text_var1, text_var2, text_var3;
@@ -121,7 +124,9 @@ BEGIN
                         RAISE NOTICE 'get_emp: Работник с email=% не найден', loc_email;
                     WHEN TOO_MANY_ROWS THEN
                         new_emp := False;
-                        RAISE NOTICE 'get_emp: ТУПИК: найдено более одного Работника-физ.лица по email=%', loc_email;
+                        loc_aub_msg := format('ТУПИК: найдено более одного Работника-физ.лица по email=%s', loc_email);
+                        INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_id, loc_aub_msg, 9, -1);
+                        RAISE NOTICE 'get_emp: %', loc_aub_msg;
                     WHEN OTHERS THEN
                         GET STACKED DIAGNOSTICS text_var1 = MESSAGE_TEXT, text_var2 = PG_EXCEPTION_DETAIL, text_var3 = PG_EXCEPTION_HINT;
                         RAISE NOTICE 'get_emp: MESSAGE_TEXT=%, PG_EXCEPTION_DETAIL=%, PG_EXCEPTION_HINT=%', text_var1, text_var2, text_var3;
@@ -135,7 +140,9 @@ BEGIN
         END IF;
     -- ELSIF (INN IS NULL) AND (KPP IS not NULL) THEN -- юр. лицо, неполная информация
     ELSE -- некорректная информация
-        RAISE NOTICE 'get_emp: некорректная информация ИНН=%, КПП=%', quote_nullable(INN), quote_nullable(KPP);
+        loc_aub_msg := format('некорректная информация ИНН=%s, КПП=%s', quote_nullable(INN), quote_nullable(KPP));
+        INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_id, loc_aub_msg, 9, -1);
+        RAISE NOTICE 'get_emp: %', loc_aub_msg;
     END IF; -- IF INN, KPP
 
     IF emp."ЕАдрес" IS NULL THEN -- delete this code ???
