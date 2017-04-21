@@ -146,6 +146,9 @@ UNION
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                  '%s(KS=%s) синхронизирован и ЧАСТИЧНО есть на складе [%s]', oi.Наименование, loc_KS, loc_in_stock
               ), CreateResult ); 
+              INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
+                 '%s(KS=%s) указаны срок-количество=[%s]', oi.Наименование, loc_KS, loc_delivery_quantity
+              ), CreateResult ); 
               RAISE NOTICE 'Для Ид строки заказа=% есть сроки-количество=%', oi."Ид", loc_delivery_quantity;
               -- часть со склада
               -- часть/части из идущих
@@ -280,8 +283,8 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
                     CreateResult := 7; -- не удалось создать резерв
                     loc_lack_reason := format('Счёт %s: для KS=%s не удалось поставить в резерв %s из %s, причина: %s',
-                           loc_bill_no, item.ks, loc_lack_reserve, item.oi_quantity, quote_nullable(loc_lack_reason) );
-                    INSERT INTO aub_log(bx_order_no, descr) VALUES(bx_order_no, loc_lack_reason);
+                           loc_bill_no, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
+                    INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
                     PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
                                     --'Счёт: ' || loc_bill_no || ', КодСодержания: ' || item.ks ||
                                     -- ', нужно: ' || item.oi_quantity || ', НЕ удалось поставить в резерв:' || loc_lack_reserve,
@@ -297,6 +300,8 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
 
     ELSE -- Код IS NULL
         CreateResult := 9; -- bad Firm
+        loc_aub_msg := 'Невозможно определить Код Предприятия';
+        INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, 'Автосчёт не создан', CreateResult, -1);
         RAISE NOTICE 'Невозможно определить Код Предприятия. Счёт не создан. bx_order.billcreated=%', CreateResult;
     END IF;
 ELSE
