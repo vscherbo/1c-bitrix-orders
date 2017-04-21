@@ -14,7 +14,9 @@ loc_str VARCHAR := '';
 BEGIN 
     SELECT "Счет", "Дата", "Время" INTO loc_bill_no FROM bx_order WHERE "Номер" = order_id;
 
-    mstr := E'Создан автосчёт '|| to_char(loc_bill_no, 'FM9999-9999')|| E' по заказу ' || order_id::VARCHAR || E' на kipspb.ru\n'; 
+    -- mstr := E'Создан автосчёт '|| to_char(loc_bill_no, 'FM9999-9999')|| E' по заказу ' || order_id::VARCHAR || E' на kipspb.ru\n'; 
+    mstr := format(E'Создан автосчёт %s по заказу %s на kipspb.ru\n', to_char(loc_bill_no, 'FM9999-9999'), order_id); 
+    /**
     IF a_reason = 2 THEN
        loc_str := E'Встретились несинхронизированные позиции.';
     ELSIF a_reason = 6 THEN
@@ -22,7 +24,12 @@ BEGIN
     ELSIF a_reason = 7 THEN
        loc_str := E'Некоторые резервы не удалось поставить.';
     END IF; 
-    -- mstr := E'Создан автосчёт '|| to_char(loc_bill_no, 'FM9999-9999') 
+    **/
+    IF a_reason IN (2,6,7) THEN
+        SELECT string_agg(descr, E'\n') INTO loc_str FROM arc_energo.aub_log
+                            WHERE bx_order_no=order_id and res_code in (2,6,7) and mod_id <>'-1';
+        loc_str := E'При создании были ошибки:\n' || loc_str;                            
+    END IF;
     mstr := mstr || loc_str || E'\nПроверьте его, пожалуйста!';
     loc_str := '';
 
