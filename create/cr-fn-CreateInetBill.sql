@@ -227,7 +227,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
         RAISE NOTICE 'строк для счёта=%', dbg_order_items_count;
         FOR item in SELECT * FROM tmp_order_items LOOP
             RAISE NOTICE 'tmp_order_items=%', item;
-            IF item.oi_delivery_qnt IS NOT NULL THEN
+            IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN
                loc_OrderItemProcessingTime := item.oi_delivery_qnt; -- разбиение по ';' в заполнении шаблона libreoffice
             ELSE
                loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
@@ -246,6 +246,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 loc_where_buy := 'Рез.склада';
             ELSE
                 loc_where_buy := 'TODO';
+                loc_OrderItemProcessingTime := NULL; -- неопределено для несинхронизированных
             END IF;
 
             WITH inserted AS (
@@ -260,7 +261,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     VALUES ((SELECT max("КодПозиции")+1 FROM "Содержание счета"),
                     loc_bill_no,
                     item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
-                    loc_orderitemprocessingtime,
+                    loc_OrderItemProcessingTime,
                     npp, COALESCE(soderg."НазваниевСчет",item.oi_name), -- для несинхронизированных позиций имя с сайта
                     round(Price, 2), PriceVAT,
                     loc_where_buy) 
@@ -277,14 +278,16 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
                 ELSE -- без разбивки сроки-количество
                     loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
+                    loc_lack_reason := NULL;
                     RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
                 END IF;
 
                 -- Извещение о неудачном резерве
                 IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
                     CreateResult := 7; -- не удалось создать резерв
-                    loc_lack_reason := format('Счёт %s: для KS=%s не удалось поставить в резерв %s из %s, причина: %s',
-                           loc_bill_no, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
+                    UPDATE "Содержание счета" SET "Срок2" = NULL WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
+                    loc_lack_reason := format('%s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
+                           item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
                     INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
                     PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
                                     --'Счёт: ' || loc_bill_no || ', КодСодержания: ' || item.ks ||
