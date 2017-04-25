@@ -1,12 +1,20 @@
-\echo 'Несинхронизованные приборы, автосчёт не создан'
+\echo 'Автосчёт не создан'
 \echo
 SELECT bx_order_no AS "Заказ", descr AS "Описание"
-FROM aub_log where res_code=2 AND mod_id <> '-1' AND dt_insert > now()- '1 day'::INTERVAL;
+            FROM aub_log
+            where res_code NOT IN (1,2,6,7) AND mod_id = '-1' AND dt_insert > now()- '1 day'::INTERVAL
+            ORDER BY id;
 
-\echo 'Недостаток на складе, автосчёт не создан'
+\echo 'Создан частичный автосчёт'
 \echo
 SELECT bx_order_no AS "Заказ", descr AS "Описание"
-FROM aub_log where res_code=6 AND mod_id <> '-1' AND dt_insert > now()- '1 day'::INTERVAL;
+FROM aub_log 
+    WHERE bx_order_no IN
+        (SELECT bx_order_no
+            FROM aub_log
+            where res_code IN (2,6,7) AND mod_id <> '-1' AND dt_insert > now()- '1 day'::INTERVAL)
+AND res_code IS NOT NULL            
+ORDER BY id;
 
 \echo 'Автосчёт создан'
 \echo
@@ -20,8 +28,3 @@ FROM aub_log
             AND dt_insert > now()- '1 day'::INTERVAL)
 AND res_code=1
 ORDER BY id;
-/*
-SELECT bx_order_no, descr  FROM aub_log where res_code=1 AND dt_insert > now()- '1 day'::INTERVAL
-AND bx_order_no NOT IN (SELECT bx_order_no FROM aub_log WHERE dt_insert > now()- '1 day'::INTERVAL AND res_code >1);
-*/
-
