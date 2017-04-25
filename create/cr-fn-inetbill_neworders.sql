@@ -1,3 +1,6 @@
+-- Function: fn_inetbill_neworders()
+
+-- DROP FUNCTION fn_inetbill_neworders();
 
 CREATE OR REPLACE FUNCTION fn_inetbill_neworders()
   RETURNS void AS
@@ -59,4 +62,6 @@ BEGIN
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
+ALTER FUNCTION fn_inetbill_neworders()
+  OWNER TO arc_energo;
 COMMENT ON FUNCTION fn_inetbill_neworders() IS 'Пытается создать счета, сформировать документы и отправить их по почте для новых загруженных заказов';

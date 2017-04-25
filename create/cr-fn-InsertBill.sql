@@ -1,13 +1,13 @@
--- Function: fn_insertbill(numeric, integer, integer, integer, character varying, character varying)
+-- Function: fn_insertbill(numeric, integer, integer, integer, boolean)
 
--- DROP FUNCTION fn_insertbill(numeric, integer, integer, integer, character varying, character varying);
+-- DROP FUNCTION fn_insertbill(numeric, integer, integer, integer, boolean);
 
 CREATE OR REPLACE FUNCTION fn_insertbill(
     sum numeric,
     bx_order integer,
     acode integer,
     aempcode integer,
-    flgOwen boolean)
+    flgowen boolean)
   RETURNS record AS
 $BODY$ DECLARE
   ret_bill RECORD;
@@ -99,7 +99,7 @@ END
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION fn_insertbill(numeric, integer, integer, integer, character varying)
+ALTER FUNCTION fn_insertbill(numeric, integer, integer, integer, boolean)
   OWNER TO arc_energo;
 COMMENT ON FUNCTION fn_insertbill(numeric, integer, integer, integer, character varying) IS 'С сайта ''Способ доставки''
 1    Самовывоз

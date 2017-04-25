@@ -1,10 +1,10 @@
--- Function: "fnCreateAutoBillNotification"(integer)
+-- Function: "fnCreateAutoBillNotification"(integer, integer)
 
--- DROP FUNCTION "fnCreateAutoBillNotification"(integer);
+-- DROP FUNCTION "fnCreateAutoBillNotification"(integer, integer);
 
--- a_reason < 0 - причина неотправки письма-извещения клиенту
--- a_reason > 1 - причина неполного автосчёта
-CREATE OR REPLACE FUNCTION "fnCreateAutoBillNotification"(order_id integer, a_reason integer)
+CREATE OR REPLACE FUNCTION "fnCreateAutoBillNotification"(
+    order_id integer,
+    a_reason integer)
   RETURNS integer AS
 $BODY$DECLARE 
 mstr varchar;

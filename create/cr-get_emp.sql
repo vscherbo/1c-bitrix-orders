@@ -1,17 +1,14 @@
--- FUNCTION: arc_energo.get_emp(integer)
+-- Function: get_emp(integer)
 
--- DROP FUNCTION arc_energo.get_emp(integer);
+-- DROP FUNCTION get_emp(integer);
 
-CREATE OR REPLACE FUNCTION arc_energo.get_emp(
-    bx_order_id integer,
-    OUT "out_КодРаботника" INTEGER,
-    OUT "out_Код" INTEGER,
-    OUT "out_ЕАдрес" VARCHAR)
-    RETURNS record
-    LANGUAGE 'plpgsql'
-    COST 100.0
-    VOLATILE NOT LEAKPROOF 
-AS $function$
+CREATE OR REPLACE FUNCTION get_emp(
+    IN bx_order_id integer,
+    OUT "out_КодРаботника" integer,
+    OUT "out_Код" integer,
+    OUT "out_ЕАдрес" character varying)
+  RETURNS record AS
+$BODY$
 
 DECLARE
     emp RECORD;
@@ -156,8 +153,8 @@ RAISE NOTICE 'get_emp: Заполняем выходные параметры К
 RETURN;
 END
 
-$function$;
-
-ALTER FUNCTION arc_energo.get_emp(integer)
-    OWNER TO arc_energo;
-
+$BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+ALTER FUNCTION get_emp(integer)
+  OWNER TO arc_energo;
