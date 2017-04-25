@@ -7,7 +7,7 @@
 CREATE OR REPLACE FUNCTION "fnCreateAutoBillNotification"(order_id integer, a_reason integer)
   RETURNS integer AS
 $BODY$DECLARE 
-mstr varchar(255);
+mstr varchar;
 message_id integer;
 loc_bill_no INTEGER;
 loc_str VARCHAR := '';
