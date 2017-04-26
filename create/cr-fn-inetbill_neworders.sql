@@ -24,7 +24,14 @@ BEGIN
                 RAISE NOTICE 'Для заказа с номером % уже создан счёт=%', o."Номер", loc_bill_no;
             ELSE
                 RAISE NOTICE 'Создаём счёт для заказа=%', o."Номер";
-                loc_cr_bill_result := fn_createinetbill(o."Номер");
+                BEGIN
+                    loc_cr_bill_result := fn_createinetbill(o."Номер");
+                EXCEPTION WHEN OTHERS THEN
+                    loc_cr_bill_result := -2;
+                    UPDATE bx_order SET billcreated = loc_cr_bill_result WHERE "Номер" = bx_order_no ;
+                    RAISE NOTICE 'ОШИБКА при созданн автосчёта по заказу [%]', o."Номер";
+                END; -- cast to numeric
+
                 RAISE NOTICE 'Результат создания счёта=% для заказа=%', loc_cr_bill_result, o."Номер";
                 IF 1 = loc_cr_bill_result THEN -- автосчёт создан полностью
                     RAISE NOTICE 'Создаём сообщение клиенту для заказа=%', o."Номер";
