@@ -28,7 +28,7 @@ BEGIN
                     loc_cr_bill_result := fn_createinetbill(o."Номер");
                 EXCEPTION WHEN OTHERS THEN
                     loc_cr_bill_result := -2;
-                    UPDATE bx_order SET billcreated = loc_cr_bill_result WHERE "Номер" = bx_order_no ;
+                    UPDATE bx_order SET billcreated = loc_cr_bill_result WHERE "Номер" = o."Номер";
                     RAISE NOTICE 'ОШИБКА при созданн автосчёта по заказу [%]', o."Номер";
                 END; -- cast to numeric
 
