@@ -145,7 +145,7 @@ UNION
               CreateResult := 1; -- если есть разбивка сроки-количество, создаём автосчёт
               -- DEBUG only
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-                 '%s(KS=%s) синхронизирован и ЧАСТИЧНО есть на складе [%s]', oi.Наименование, loc_KS, loc_in_stock
+                 '%s(KS=%s) синхронизирован и количества на складе недостаточно [%s]', oi.Наименование, loc_KS, loc_in_stock
               ), CreateResult ); 
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                  '%s(KS=%s) указаны срок-количество=[%s]', oi.Наименование, loc_KS, loc_delivery_quantity
