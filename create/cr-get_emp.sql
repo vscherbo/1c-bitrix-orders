@@ -143,6 +143,7 @@ BEGIN
     END IF; -- IF INN, KPP
 
     IF emp."ЕАдрес" IS NULL THEN -- delete this code ???
+        emp."ЕАдрес" := loc_email ;
         UPDATE "Работники" SET "ЕАдрес" = loc_email WHERE bx_buyer_id = loc_buyer_id;
     END IF;
 
