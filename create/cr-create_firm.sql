@@ -82,8 +82,9 @@ Fax
 -- END of DEBUG
 **/
 WITH inserted AS (   
-    INSERT INTO "Предприятия"("Предприятие", "ЮрНазвание", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес", "Факс") 
-    VALUES (FirmNameRE, FirmName, ZipCode, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress, Fax) 
+    INSERT INTO "Предприятия"("Предприятие", "ЮрНазвание", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес", "Факс", "Создатель") 
+    VALUES (quote_literal(FirmNameRE), quote_literal(FirmName), ZipCode, INN, KPP, quote_literal(Consignee), quote_literal(DeliveryAddress), quote_literal(R_account_complex), K_account, quote_literal(LegalAddress), quote_literal(Fax), 0
+) 
     RETURNING "Код"
 )
 SELECT inserted."Код" INTO FirmCode FROM inserted;
