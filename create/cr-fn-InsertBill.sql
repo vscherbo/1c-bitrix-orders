@@ -67,10 +67,14 @@ BEGIN
        -- ExtraInfo := 'Доставка продукции компанией ''' || DeliveryMode || '''. Оплата доставки при получении.';
        loc_DeliveryPayer := 'Они';
     END IF;
-    
-    inet_bill_owner := get_bill_owner_by_entcode(aCode);
-    -- если не назначен заместитель ? Арутюн
-    inet_bill_owner := COALESCE(inet_bill_owner, 38);
+
+    IF BuyerComment IS NULL THEN
+        inet_bill_owner := get_bill_owner_by_entcode(aCode);
+    ELSE
+        inet_bill_owner := 38; -- заказ с комментариями
+    END IF;
+
+    -- inet_bill_owner := COALESCE(inet_bill_owner, 38); -- если не назначен заместитель ? Арутюн
  
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
     ourFirm := getFirm(acode, flgOwen);
@@ -101,7 +105,7 @@ $BODY$
   COST 100;
 ALTER FUNCTION fn_insertbill(numeric, integer, integer, integer, boolean)
   OWNER TO arc_energo;
-COMMENT ON FUNCTION fn_insertbill(numeric, integer, integer, integer, character varying) IS 'С сайта ''Способ доставки''
+COMMENT ON FUNCTION fn_insertbill(numeric, integer, integer, integer, boolean) IS 'С сайта ''Способ доставки''
 1    Самовывоз
 9    Почта России
 5    Междугородний автотранспорт, Почта, Экспресс-почта
