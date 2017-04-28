@@ -83,7 +83,7 @@ Fax
 **/
 WITH inserted AS (   
     INSERT INTO "Предприятия"("Предприятие", "ЮрНазвание", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес", "Факс", "Создатель") 
-    VALUES (quote_literal(FirmNameRE), quote_literal(FirmName), ZipCode, INN, KPP, quote_literal(Consignee), quote_literal(DeliveryAddress), quote_literal(R_account_complex), K_account, quote_literal(LegalAddress), quote_literal(Fax), 0
+    VALUES (quote_literal(FirmNameRE), quote_literal(FirmName), ZipCode, INN, KPP, quote_literal(Consignee), quote_literal(DeliveryAddress), quote_literal(R_account_complex), K_account, quote_literal(LegalAddress), quote_literal(Fax), 1
 ) 
     RETURNING "Код"
 )
