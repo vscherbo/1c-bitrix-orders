@@ -64,6 +64,12 @@ BEGIN
             new_emp := False;
             RAISE NOTICE 'get_emp: такой покупатель с сайта для предприятия найден.';
             SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
+            IF NOT FOUND THEN
+               emp."ЕАдрес" := 'not found'::VARCHAR;
+            END IF;
+            IF emp."ЕАдрес" IS NULL THEN
+               emp."ЕАдрес" := 'is_null'::VARCHAR;
+            END IF;
         ELSIF loc_email IS NOT NULL THEN -- ищем Работника по email
             RAISE NOTICE 'get_emp: покупатель для предприятия=% по loc_buyer_id=% не найден. Ищем по email=%', FirmCode, loc_buyer_id, loc_email;
             BEGIN
