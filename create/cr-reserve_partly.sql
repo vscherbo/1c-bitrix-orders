@@ -36,7 +36,11 @@ LOOP
 
     IF position('со склада' in loc_when) > 0 THEN
         loc_lack := setup_reserve(a_bill_no, ks, loc_qnt);
-        loc_reason := 'нет в наличии';
+        IF loc_lack > 0 THEN 
+            loc_reason := 'нет в наличии';
+        ELSE
+            loc_reason := '';
+        END IF;
         RAISE NOTICE '->%=%', loc_reason, loc_lack;
     ELSIF 0 = length(loc_when) THEN 
         RAISE NOTICE 'empty loc_when, loc_qnt=%', loc_qnt;
