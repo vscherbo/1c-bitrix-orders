@@ -12,6 +12,12 @@ $BODY$ DECLARE
   of_Site_found BOOLEAN;
   is_kipspb BOOLEAN;
   loc_bill_no INTEGER;
+  loc_RETURNED_SQLSTATE TEXT;
+  loc_MESSAGE_TEXT TEXT;
+  loc_PG_EXCEPTION_DETAIL TEXT;
+  loc_PG_EXCEPTION_HINT TEXT;
+  loc_PG_EXCEPTION_CONTEXT TEXT;
+  loc_exception_txt TEXT;
 BEGIN
     FOR o IN SELECT * FROM bx_order WHERE billcreated = 0 ORDER BY "Номер" LOOP
         SELECT f.fvalue INTO SiteID FROM bx_order_feature f WHERE f."bx_order_Номер" = o."Номер" AND f.fname = 'Сайт';
@@ -28,8 +34,15 @@ BEGIN
                     loc_cr_bill_result := fn_createinetbill(o."Номер");
                 EXCEPTION WHEN OTHERS THEN
                     loc_cr_bill_result := -2;
+                    GET STACKED DIAGNOSTICS
+                        loc_RETURNED_SQLSTATE = RETURNED_SQLSTATE,
+                        loc_MESSAGE_TEXT = MESSAGE_TEXT,
+                        loc_PG_EXCEPTION_DETAIL = PG_EXCEPTION_DETAIL,
+                        loc_PG_EXCEPTION_HINT = PG_EXCEPTION_HINT,
+                        loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
+                    loc_exception_txt = format('RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
                     UPDATE bx_order SET billcreated = loc_cr_bill_result WHERE "Номер" = o."Номер";
-                    RAISE NOTICE 'ОШИБКА при созданн автосчёта по заказу [%]', o."Номер";
+                    RAISE NOTICE 'ОШИБКА при создании автосчёта по заказу [%] exception=[%]', o."Номер", loc_exception_txt;
                 END; -- cast to numeric
 
                 RAISE NOTICE 'Результат создания счёта=% для заказа=%', loc_cr_bill_result, o."Номер";
