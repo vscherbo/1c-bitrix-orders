@@ -24,7 +24,7 @@ DECLARE
    EmpRec RECORD;
    loc_OrderItemProcessingTime varchar;
    inserted_bill_item RECORD;
-   our_emp_id INTEGER;
+   -- our_emp_id INTEGER;
    vendor_id INTEGER;
    flgOwen BOOLEAN;
    skipCheckOwen BOOLEAN;
@@ -270,7 +270,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
              Npp := Npp+1;
 
             loc_lack_reserve := 0;
-            SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
+            -- SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
 
             IF item.ks IS NOT NULL THEN -- резервы, только для товаров с КС
                 IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN -- разбивка сроки-количество
