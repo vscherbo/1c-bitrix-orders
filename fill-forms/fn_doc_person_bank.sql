@@ -31,7 +31,7 @@ r."Ф_НазваниеКратко" AS pg_firm
 FROM arc_energo."Счета" b
 JOIN arc_energo."Фирма" f ON b."фирма" = f."КлючФирмы"
 JOIN arc_energo."ФирмаРеквизиты" r ON b."фирма" = r."КодФирмы" AND r."Ф_Активность" = TRUE
-JOIN arc_energo."Сотрудники" e ON b."Хозяин" = e."Менеджер"
+JOIN arc_energo."Сотрудники" e ON autobill_mgr(b."Хозяин") = e."Менеджер"
 WHERE 
 b."№ счета" = 
 """ + str(bill_no) + ";"
