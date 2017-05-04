@@ -1,8 +1,9 @@
--- Function: fn_insertbill(numeric, integer, integer, integer, boolean)
+-- Function: fn_insertbill(integer, numeric, integer, integer, integer, boolean)
 
--- DROP FUNCTION fn_insertbill(numeric, integer, integer, integer, boolean);
+-- DROP FUNCTION fn_insertbill(integer, numeric, integer, integer, integer, boolean);
 
 CREATE OR REPLACE FUNCTION fn_insertbill(
+    arg_createresult integer,
     sum numeric,
     bx_order integer,
     acode integer,
@@ -68,13 +69,21 @@ BEGIN
        loc_DeliveryPayer := 'Они';
     END IF;
 
-    IF BuyerComment IS NULL THEN
-        inet_bill_owner := get_bill_owner_by_entcode(aCode);
-    ELSE
-        inet_bill_owner := 38; -- заказ с комментариями
-    END IF;
+    PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
+    locDealerFlag := FOUND;
 
-    -- inet_bill_owner := COALESCE(inet_bill_owner, 38); -- если не назначен заместитель ? Арутюн
+    IF locDealerFlag OR (BuyerComment IS NULL AND 1 = arg_createresult) THEN -- без комментария и всё в наличии
+        RAISE NOTICE 'без комментария и всё в наличии, выбираем хозяина счёта';
+        inet_bill_owner := get_bill_owner_by_entcode(aCode);
+        -- inet_bill_owner := COALESCE(get_bill_owner_by_entcode(aCode), autobill_mgr(41) ) ;
+        IF inet_bill_owner IS NULL THEN
+            inet_bill_owner := 38; -- НУЖНО написать: inetbill_mgr();
+            RAISE NOTICE 'не удалось выбрать хозяина счёта, вызывали inetbill_mgr=%', inet_bill_owner;
+        END IF;
+    ELSE -- заказ с комментариями или частичный автосчёт
+        inet_bill_owner :=  38; -- НУЖНО написать: inetbill_mgr();
+        RAISE NOTICE 'или комментарий, или частичный автосчёт, вызывали inetbill_mgr=%', inet_bill_owner;
+    END IF;
  
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
     ourFirm := getFirm(acode, flgOwen);
@@ -103,9 +112,9 @@ END
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION fn_insertbill(numeric, integer, integer, integer, boolean)
+ALTER FUNCTION fn_insertbill(integer, numeric, integer, integer, integer, boolean)
   OWNER TO arc_energo;
-COMMENT ON FUNCTION fn_insertbill(numeric, integer, integer, integer, boolean) IS 'С сайта ''Способ доставки''
+COMMENT ON FUNCTION fn_insertbill(integer, numeric, integer, integer, integer, boolean) IS 'С сайта ''Способ доставки''
 1    Самовывоз
 9    Почта России
 5    Междугородний автотранспорт, Почта, Экспресс-почта

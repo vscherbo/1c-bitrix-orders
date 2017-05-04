@@ -142,7 +142,7 @@ UNION
        ELSE -- недостаточно Ясная+Выставка
           loc_delivery_quantity := get_delivery_quantity(bx_order_no, oi."Ид");
           IF loc_delivery_quantity IS NOT NULL AND loc_delivery_quantity <> '' THEN
-              CreateResult := 1; -- если есть разбивка сроки-количество, создаём автосчёт
+              CreateResult := 6; -- если есть разбивка сроки-количество, создаём автосчёт
               -- DEBUG only
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                  '%s(KS=%s) синхронизирован и количества на складе недостаточно [%s]', oi.Наименование, loc_KS, loc_in_stock
@@ -218,7 +218,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
 
     IF EmpRec."Код" IS NOT NULL THEN
         loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
-        bill := fn_InsertBill(loc_sum, bx_order_no, EmpRec."Код", EmpRec."КодРаботника", flgOwen);
+        bill := fn_InsertBill(CreateResult, loc_sum, bx_order_no, EmpRec."Код", EmpRec."КодРаботника", flgOwen);
         Npp := 1;
         VAT := bill."ставкаНДС";
         loc_bill_no := bill."№ счета";
