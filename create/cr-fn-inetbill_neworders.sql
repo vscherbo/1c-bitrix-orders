@@ -26,14 +26,15 @@ BEGIN
         IF of_Site_found AND is_kipspb THEN
             SELECT "№ счета" INTO loc_bill_no FROM "Счета" WHERE "ИнтернетЗаказ" = o."Номер";
             IF FOUND THEN
-                UPDATE bx_order SET billcreated = -1 WHERE "Номер" = o."Номер";
+                UPDATE bx_order SET billcreated = loc_bill_no WHERE "Номер" = o."Номер"; -- предотвратить повторную обработку
                 RAISE NOTICE 'Для заказа с номером % уже создан счёт=%', o."Номер", loc_bill_no;
             ELSE
+                UPDATE bx_order SET billcreated = o."Номер"  WHERE "Номер" = o."Номер"; -- предотвратить повторную обработку
                 RAISE NOTICE 'Создаём счёт для заказа=%', o."Номер";
                 BEGIN
                     loc_cr_bill_result := fn_createinetbill(o."Номер");
                 EXCEPTION WHEN OTHERS THEN
-                    loc_cr_bill_result := -2;
+                    loc_cr_bill_result := -1;
                     GET STACKED DIAGNOSTICS
                         loc_RETURNED_SQLSTATE = RETURNED_SQLSTATE,
                         loc_MESSAGE_TEXT = MESSAGE_TEXT,
