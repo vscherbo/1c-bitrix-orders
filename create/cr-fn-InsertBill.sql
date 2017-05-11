@@ -72,10 +72,9 @@ BEGIN
     PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
     locDealerFlag := FOUND;
 
-    IF locDealerFlag OR (BuyerComment IS NULL AND 1 = arg_createresult) THEN -- без комментария и всё в наличии
+    IF locDealerFlag OR (BuyerComment IS NULL AND 1 = arg_createresult) THEN -- Дилерский ИЛИ (без комментария и всё в наличии)
         RAISE NOTICE 'без комментария и всё в наличии, выбираем хозяина счёта';
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
-        -- inet_bill_owner := COALESCE(get_bill_owner_by_entcode(aCode), autobill_mgr(41) ) ;
         IF inet_bill_owner IS NULL THEN
             inet_bill_owner := 38; -- НУЖНО написать: inetbill_mgr();
             RAISE NOTICE 'не удалось выбрать хозяина счёта, вызывали inetbill_mgr=%', inet_bill_owner;
@@ -87,8 +86,6 @@ BEGIN
  
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
     ourFirm := getFirm(acode, flgOwen);
-    PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
-    locDealerFlag := FOUND;
 
     WITH inserted AS (
         INSERT INTO "Счета"
