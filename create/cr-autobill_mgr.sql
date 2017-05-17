@@ -22,7 +22,7 @@ BEGIN
        RAISE NOTICE 'выбран менеджер автосчетов=%', loc_mgr_code;
 	ELSE
 	   loc_mgr_code := arg_code;
-       RAISE NOTICE 'не менеджер-41, не меняем менеджера=%', loc_mgr_code;
+       -- RAISE NOTICE 'не менеджер-41, не меняем менеджера=%', loc_mgr_code;
 	END IF;
 	RETURN loc_mgr_code;
 end
