@@ -7,7 +7,6 @@ CREATE OR REPLACE FUNCTION fn_createinetbill(bx_order_no integer)
 $BODY$
 DECLARE
    oi RECORD;
-   soderg RECORD;
    bill RECORD;
    loc_KS integer;
    CreateResult integer;
@@ -54,6 +53,11 @@ DECLARE
    loc_is_valid BOOLEAN := FALSE;
 dbg_order_items_count INTEGER;
 loc_where_buy VARCHAR;
+loc_okei_code integer;
+loc_measure_unit varchar;
+loc_item_name varchar;
+loc_price NUMERIC;
+loc_modification_params varchar;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -226,27 +230,48 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
         SELECT count(*) INTO dbg_order_items_count FROM tmp_order_items ;
         RAISE NOTICE 'строк для счёта=%', dbg_order_items_count;
         FOR item in SELECT * FROM tmp_order_items LOOP
+            real_discount := NULL;
+            PriceVAT := NULL;
+            Price := NULL;
+            loc_where_buy := NULL;
+            loc_okei_code := NULL;
+            loc_measure_unit := NULL;
+            loc_item_name := NULL;
             RAISE NOTICE 'tmp_order_items=%', item;
             IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN
                loc_OrderItemProcessingTime := item.oi_delivery_qnt; -- разбиение по ';' в заполнении шаблона libreoffice
             ELSE
                loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
             END IF;
-            SELECT "НазваниевСчет", "Цена" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = item.ks;
-
-            real_discount := dlr_discount(EmpRec."Код", item.ks);
-            PriceVAT := soderg."Цена"*(100-real_discount)/100;
-
-            Price := PriceVAT*100/(100 + VAT);
             --
             RAISE NOTICE 'loc_bill_no=%, item.ks=%', bill."№ счета", item.ks;
             -- TODO Выявлять услугу "Оплата доставки"
 
             IF item.ks IS NOT NULL THEN
+                -- SELECT "НазваниевСчет", "Цена", "ОКЕИ" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = item.ks;
+                WITH content AS (
+                SELECT "НазваниевСчет", "Цена", COALESCE("ОКЕИ", 796) AS "ОКЕИ" FROM "Содержание" s WHERE "КодСодержания" = item.ks)
+                SELECT content.*, o."ЕдИзм" into loc_item_name, loc_price, loc_okei_code, loc_measure_unit 
+                FROM content
+                JOIN "ОКЕИ" o on o."КодОКЕИ" = "ОКЕИ";
+
+
+
+                real_discount := dlr_discount(EmpRec."Код", item.ks);
+                PriceVAT := loc_price*(100-real_discount)/100;
+                Price := PriceVAT*100/(100 + VAT);
                 loc_where_buy := 'Рез.склада';
             ELSE
                 loc_where_buy := 'TODO';
                 loc_OrderItemProcessingTime := NULL; -- неопределено для несинхронизированных
+                loc_okei_code := item.oi_okei_code;
+                loc_measure_unit := item.oi_measure_unit;
+                loc_item_name := item.oi_name; -- для несинхронизированных позиций имя с сайта
+                SELECT oif.fvalue INTO loc_modification_params FROM arc_energo.bx_order_item_feature oif
+                WHERE oif."bx_order_Номер" = bx_order_no AND oif.bx_order_item_id = item.oi_id AND oif.fname = 'Модификация';
+                IF FOUND THEN
+                    loc_item_name := loc_item_name || E', ' || loc_modification_params;
+                END IF;
             END IF;
 
             WITH inserted AS (
@@ -260,9 +285,9 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     "Гдезакупать")
                     VALUES ((SELECT max("КодПозиции")+1 FROM "Содержание счета"),
                     loc_bill_no,
-                    item.ks, item.oi_okei_code, item.oi_measure_unit, item.oi_quantity,
+                    item.ks, loc_okei_code, loc_measure_unit, item.oi_quantity,
                     loc_OrderItemProcessingTime,
-                    npp, COALESCE(soderg."НазваниевСчет",item.oi_name), -- для несинхронизированных позиций имя с сайта
+                    npp, loc_item_name,
                     round(Price, 2), PriceVAT,
                     loc_where_buy) 
              RETURNING * 
