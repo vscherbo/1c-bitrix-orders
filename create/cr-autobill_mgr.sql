@@ -19,7 +19,7 @@ BEGIN
                                     AND "МенеджерСтат" = TRUE
                                     AND "Активность" = TRUE)
             ORDER BY "Приоритет" LIMIT 1;   
-       RAISE NOTICE 'выбран менеджер автосчетов=%', loc_mgr_code;
+       -- RAISE NOTICE 'выбран менеджер автосчетов=%', loc_mgr_code;
 	ELSE
 	   loc_mgr_code := arg_code;
        -- RAISE NOTICE 'не менеджер-41, не меняем менеджера=%', loc_mgr_code;
