@@ -26,16 +26,18 @@ declare
     K_account VARCHAR;
     LegalAddress VARCHAR;
     Fax VARCHAR;
+    loc_legal_name VARCHAR[];
 BEGIN
 SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
-SELECT fvalue
-    , TRIM(lname[1] || lname[3]) || ' ' || lname[2]
-INTO FirmName, FirmNameRE
-FROM (SELECT fvalue 
-    , regexp_matches(
-          regexp_replace(fvalue, '["''«»“]*', '', 'g')
-          , '(.*)(ООО|ПАО|ОАО|ЗАО|\mАО|АООТ|АОЗТ|ТОО)(.*)') AS lname
-    FROM bx_order_feature bof WHERE "bx_order_Номер" = bx_order_id AND bof.fname = 'Название компании') as leg_name;
+
+SELECT fvalue INTO FirmName FROM bx_order_feature bof WHERE "bx_order_Номер" = bx_order_id AND bof.fname = 'Название компании';
+
+FirmName := COALESCE(FirmName, 'не задано Название_компании');
+loc_legal_name := regexp_matches( 
+         regexp_replace(FirmName, '["''«»“]*', '', 'g'), 
+                        '(.*)(ООО|ПАО|ОАО|ЗАО|\mАО|АООТ|АОЗТ|ТОО|Общество с ограниченной ответственностью)(.*)', 'i');
+FirmNameRE := TRIM(loc_legal_name[1] || loc_legal_name[3]) || ' ' || loc_legal_name[2];
+FirmNameRE := COALESCE(FirmNameRE, FirmName);
 
 SELECT fvalue INTO Bank FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Банк';
 SELECT fvalue INTO BIK FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'БИК';
