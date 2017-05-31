@@ -247,6 +247,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
             RAISE NOTICE 'loc_bill_no=%, item.ks=%', bill."№ счета", item.ks;
             -- TODO Выявлять услугу "Оплата доставки"
 
+            loc_where_buy := '';
             IF item.ks IS NOT NULL THEN
                 -- SELECT "НазваниевСчет", "Цена", "ОКЕИ" INTO soderg FROM "Содержание" s WHERE s."КодСодержания" = item.ks;
                 WITH content AS (
@@ -260,9 +261,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 real_discount := dlr_discount(EmpRec."Код", item.ks);
                 PriceVAT := loc_price*(100-real_discount)/100;
                 Price := PriceVAT*100/(100 + VAT);
-                loc_where_buy := 'Рез.склада';
             ELSE
-                loc_where_buy := 'TODO';
                 loc_OrderItemProcessingTime := NULL; -- неопределено для несинхронизированных
                 loc_okei_code := item.oi_okei_code;
                 loc_measure_unit := item.oi_measure_unit;
@@ -301,16 +300,24 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN -- разбивка сроки-количество
                     SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
                     RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
+                    IF loc_lack_reserve = 0 THEN
+                        -- TODO заменить на Рез.склада, ЖДЁМ. АБ/ВВ не д.б. для loc_lack_reserve = 0
+                        loc_where_buy := regexp_replace(item.oi_delivery_qnt, E'со склада', E'Рез.склада');
+                        loc_where_buy := regexp_replace(loc_where_buy, E'к ', E'ЖДЁМ ', 'g'); -- global
+                    END IF;
                 ELSE -- без разбивки сроки-количество
-                    loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
+                    -- loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
+                    loc_lack_reserve := ctr_reserve(loc_bill_no, item.ks, item.oi_quantity);
                     loc_lack_reason := NULL;
+                    loc_where_buy := 'Рез.склада';
                     RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
                 END IF;
+                UPDATE "Содержание счета" SET "Гдезакупать" = loc_where_buy || ' ' || "Гдезакупать" WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
 
                 -- Извещение о неудачном резерве
                 IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
                     CreateResult := 7; -- не удалось создать резерв
-                    UPDATE "Содержание счета" SET "Срок2" = NULL WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
+                    UPDATE "Содержание счета" SET "Срок2" = NULL, "Гдезакупать" = NULL WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
                     loc_lack_reason := format('%s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
                            item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
                     INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));

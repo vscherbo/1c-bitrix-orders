@@ -35,7 +35,8 @@ LOOP
     RAISE NOTICE 'Срок-количество: {%}-{%}, length(loc_when)=%', loc_when, loc_qnt, length(loc_when);
 
     IF position('со склада' in loc_when) > 0 THEN
-        loc_lack := setup_reserve(a_bill_no, ks, loc_qnt);
+        -- loc_lack := setup_reserve(a_bill_no, ks, loc_qnt);
+        loc_lack := ctr_reserve(a_bill_no, ks, loc_qnt);
         IF loc_lack > 0 THEN 
             loc_reason := 'нет в наличии';
         ELSE
