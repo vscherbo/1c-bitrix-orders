@@ -15,7 +15,8 @@ AS $function$
 declare
     FirmCode INTEGER;
     ZipCode VARCHAR;
-    FirmName VARCHAR;
+    bxFirmName VARCHAR;
+    FirmName VARCHAR; -- Upper, no quotes
     FirmNameRE VARCHAR;
     Consignee VARCHAR;
     DeliveryAddress VARCHAR;
@@ -30,14 +31,14 @@ declare
 BEGIN
 SELECT fvalue INTO Consignee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Грузополучатель';
 
-SELECT fvalue INTO FirmName FROM bx_order_feature bof WHERE "bx_order_Номер" = bx_order_id AND bof.fname = 'Название компании';
+SELECT fvalue INTO bxFirmName FROM bx_order_feature bof WHERE "bx_order_Номер" = bx_order_id AND bof.fname = 'Название компании';
 
-FirmName := COALESCE(FirmName, 'не задано Название_компании');
-loc_legal_name := regexp_matches( 
-         regexp_replace(FirmName, '["''«»“]*', '', 'g'), 
-                        '(.*)(ООО|ПАО|ОАО|ЗАО|\mАО|АООТ|АОЗТ|ТОО|Общество с ограниченной ответственностью)(.*)', 'i');
-FirmNameRE := TRIM(loc_legal_name[1] || loc_legal_name[3]) || ' ' || loc_legal_name[2];
-FirmNameRE := COALESCE(FirmNameRE, FirmName);
+FirmName := COALESCE(bxFirmName, 'не задано Название_компании');
+FirmNameRE := upper(regexp_replace(FirmName, '["''«»“]*', '', 'g'));
+loc_legal_name := regexp_matches(FirmNameRE,
+                        '(.*)(ГУП|МУП|ООО|ПАО|ОАО|ЗАО|\mАО|АООТ|АОЗТ|ТОО|Общество с ограниченной ответственностью)(.*)', 'i');
+FirmNameRE := COALESCE(TRIM(loc_legal_name[1] || loc_legal_name[3]) || ' ' || loc_legal_name[2]
+, FirmNameRE); -- если разобрать не удалось, то просто UPPERCASE без кавычек
 
 SELECT fvalue INTO Bank FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Банк';
 SELECT fvalue INTO BIK FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'БИК';
@@ -90,7 +91,7 @@ WITH inserted AS (
     RETURNING "Код"
 )
 SELECT inserted."Код" INTO FirmCode FROM inserted;
-RAISE NOTICE 'Создано предприятие Код=%, Предприятие=%, ИНН=%, КПП=%', FirmCode, FirmName, INN, quote_nullable(KPP);
+RAISE NOTICE 'Создано предприятие Код=%, ЮрНазвание=[%], Предприятие=[%], ИНН=%, КПП=%', FirmCode, FirmName, FirmNameRE, INN, quote_nullable(KPP);
 
 RETURN FirmCode;
 END
