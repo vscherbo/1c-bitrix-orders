@@ -19,7 +19,7 @@ $BODY$ DECLARE
   loc_PG_EXCEPTION_CONTEXT TEXT;
   loc_exception_txt TEXT;
 BEGIN
-    FOR o IN SELECT * FROM bx_order WHERE billcreated = 0 ORDER BY "Номер" LOOP
+    FOR o IN SELECT * FROM bx_order WHERE billcreated = 0 ORDER BY "Номер" DESC LOOP
         SELECT f.fvalue INTO SiteID FROM bx_order_feature f WHERE f."bx_order_Номер" = o."Номер" AND f.fname = 'Сайт';
         of_Site_found := found;
         is_kipspb := position('ar' in SiteID) > 0;
@@ -53,7 +53,7 @@ BEGIN
                     -- клиенту
                     IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
                         PERFORM sendbillsinglemsg(loc_msg_id);
-                        UPDATE "Счета" SET "Статус"=0 WHERE "№ счета" = loc_bill_no; -- вызовет регистрацию в bill_status_history
+                        UPDATE "Счета" SET "Статус"=0 WHERE "ИнтернетЗаказ" = o."Номер"; -- вызовет регистрацию в bill_status_history
                         -- В очередь обновления статуса для Инет заказов с нашего сайта
                         /** изменение статуса заказа на сайте на "Ожидает оплату"
                          * после появления квитанции (статус 999) в СчётОчередьСообщений по этому счёту
