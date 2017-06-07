@@ -65,7 +65,7 @@ INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начал�
 SELECT * INTO loc_buyer_id, loc_buyer_name, loc_email, loc_is_valid FROM get_bx_order_ids(bx_order_no) ;
 -- IF is_bx_order_valid(bx_order_no) THEN
 IF loc_is_valid THEN
-    CreateResult := 3; -- инициируем значением "пустой состав заказа"
+    CreateResult := -8; -- инициируем значением "пустой состав заказа"
     bx_sum := 0;
 ELSE
     CreateResult := 4; -- отменённый или неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
@@ -106,7 +106,7 @@ UNION
     RAISE NOTICE 'loc_KS=%, vendor_id=%', loc_KS, vendor_id;
     
     IF (loc_KS is null) THEN
-       CreateResult := 2; -- есть не синхронизированная позиция в заказе
+       CreateResult := GREATEST(2, CreateResult); -- есть не синхронизированная позиция в заказе
        RAISE NOTICE 'В заказе %  не синхронизированная позиция с mod_id=%', bx_order_no, oi.mod_id;
        INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id,  format(
         '%s - не синхронизированная позиция', oi.Наименование
@@ -129,9 +129,11 @@ UNION
                            , 0);
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
        IF loc_in_stock >= oi."Количество" THEN -- достаточно на Ясной+Выставка
-          IF CreateResult NOT IN (2,6) THEN -- если не было несинхронизированных (2) или нехватки (6)
-             CreateResult := 1; -- позиция заказа синхронизирована
-          END IF;    
+          -- IF CreateResult NOT IN (2,6) THEN -- если не было несинхронизированных (2) или нехватки (6)
+          --    CreateResult := 1; -- позиция заказа синхронизирована
+          -- END IF;
+          CreateResult := GREATEST(1, CreateResult); -- если были несинхронизированные (2) или нехватка (6)
+
           -- DEBUG only
           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
              '%s(KS=%s) синхронизирован и есть на складе [%s]', oi.Наименование, loc_KS, loc_in_stock
@@ -146,7 +148,7 @@ UNION
        ELSE -- недостаточно Ясная+Выставка
           loc_delivery_quantity := get_delivery_quantity(bx_order_no, oi."Ид");
           IF loc_delivery_quantity IS NOT NULL AND loc_delivery_quantity <> '' THEN
-              CreateResult := 1; -- если есть разбивка сроки-количество, создаём автосчёт
+              CreateResult := GREATEST(1, CreateResult); -- если есть разбивка сроки-количество, создаём автосчёт
               -- DEBUG only
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                  '%s(KS=%s) синхронизирован и количества на складе недостаточно [%s]', oi.Наименование, loc_KS, loc_in_stock
@@ -166,7 +168,7 @@ UNION
                              oi."Количество", loc_delivery_quantity);
               ***/
           ELSE
-              CreateResult := 6; -- позиция заказа синхронизирована, но недостаточно количества
+              CreateResult := GREATEST(6, CreateResult); -- позиция заказа синхронизирована, но недостаточно количества
               -- TODO CreateResult := 1; -- из идущих, т.к. позиция заказа синхронизирована, но недостаточно количества
               -- TODO loc_delivery_quantity := format('со склада: %s; : %s',  loc_in_stock, oi."Количество"-loc_in_stock); -- , get_expected_shipment(loc_KS, False));
               RAISE NOTICE 'Для KS=% нет достаточного количества=%', loc_KS, oi."Количество";
@@ -199,7 +201,7 @@ UNION
 
     -- Для контроля "потерянных" позиций
     bx_sum := bx_sum + oi."Сумма";
-    RAISE NOTICE 'CreateResult = %', CreateResult;
+    RAISE NOTICE 'boi loop CreateResult = %', CreateResult;
     INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no,  oi.mod_id, format(
         'Финиш %s , результат=%s', oi.Наименование, CreateResult
     ));
