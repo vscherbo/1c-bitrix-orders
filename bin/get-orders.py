@@ -15,9 +15,6 @@ import logging
 from xml.etree import ElementTree as ET
 
 parser = argparse.ArgumentParser(description='BX orders listener.')
-#parser.add_argument('--host', type=str, help='PG host')
-#parser.add_argument('--db', type=str, help='database name')
-#parser.add_argument('--user', type=str, help='db user')
 
 parser.add_argument('--log', type=str, default="INFO", help='log level')
 #parser.add_argument('--log', type=str, default="DEBUG", help='log level')
@@ -240,9 +237,9 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
                 for insert_clause in sale_item_features_insert_dict:
                     outf.write(insert_clause + '\n')
 
-        # outf.write(u'SELECT fn_createinetbill('+ bx_order_id +u');')
+        outf.write(u'SELECT bxorder2bill('+ bx_order_id +u');')
         outf.close()
-        if flagNew: # and not flagFastOrder
+        if flagNew:
             outf = codecs.open(outf_name, 'r', 'utf-8')
             sqlf.write(outf.read())
             outf.seek(0)
@@ -380,7 +377,7 @@ try:
                     parse_xml_insert_into_db(conf['site'], el, con, sql_outfile_name)
                     logging.info("sql-file created: %s", sql_outfile_name)
                     cur = con.cursor()
-                    cur.callproc('fn_inetbill_neworders')
+                    # cur.callproc('fn_inetbill_neworders')
                     con.commit()
                     cur.close()
                 else:
