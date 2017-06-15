@@ -237,7 +237,7 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
                 for insert_clause in sale_item_features_insert_dict:
                     outf.write(insert_clause + '\n')
 
-        outf.write(u'SELECT bxorder2bill('+ bx_order_id +u');')
+        run_bxorder2bill = u'SELECT bxorder2bill('+ bx_order_id +u');'
         outf.close()
         if flagNew:
             outf = codecs.open(outf_name, 'r', 'utf-8')
@@ -249,11 +249,17 @@ def parse_xml_insert_into_db(site, root, pg_conn, sqlf_name):
             cur = pg_conn.cursor()
             if len(sql_lines) > 0:
                 cur.execute(sql_lines)
+                pg_conn.commit()
+                cur.execute(run_bxorder2bill)
+                pg_conn.commit()
                 cur.close()
                 logging.debug("sql_lines executed")
                 pg_conn.commit()
                 logging.debug("sql_lines commited")
+            else:
+                sql_lines = u""
         else:
+            sql_lines = u""
             # TODO update Canceled orders
             sqlf.write("-- Skip order " + bx_order_id + " (flagNew="+str(flagNew) + ", flagFastOrder="+str(flagFastOrder) + ")\n")
 
