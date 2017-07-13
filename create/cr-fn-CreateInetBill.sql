@@ -57,7 +57,8 @@ loc_okei_code integer;
 loc_measure_unit varchar;
 loc_item_name varchar;
 loc_price NUMERIC;
-loc_modification_params varchar;
+loc_modificators varchar;
+loc_1C_article varchar;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -73,7 +74,8 @@ ELSE
     RETURN CreateResult;
 END IF;
 
-CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_id TEXT, oi_okei_code integer, oi_measure_unit character varying(50), whid integer, oi_quantity numeric(18,3), oi_delivery_qnt TEXT, oi_name VARCHAR);
+DROP TABLE IF EXISTS tmp_order_items; -- until 2017-03-07
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_id TEXT, oi_okei_code integer, oi_measure_unit character varying(50), whid integer, oi_quantity numeric(18,3), oi_delivery_qnt TEXT, oi_name VARCHAR, oi_mod_id VARCHAR, oi_modificators VARCHAR) ON COMMIT DROP;
 TRUNCATE tmp_order_items; -- if exists
 
 CREATE temporary TABLE IF NOT EXISTS qnt_in_stock (ks INTEGER, whid INTEGER, whqnt NUMERIC) ON COMMIT DROP;
@@ -129,9 +131,6 @@ UNION
                            , 0);
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
        IF loc_in_stock >= oi."Количество" THEN -- достаточно на Ясной+Выставка
-          -- IF CreateResult NOT IN (2,6) THEN -- если не было несинхронизированных (2) или нехватки (6)
-          --    CreateResult := 1; -- позиция заказа синхронизирована
-          -- END IF;
           CreateResult := GREATEST(1, CreateResult); -- если были несинхронизированные (2) или нехватка (6)
 
           -- DEBUG only
@@ -139,12 +138,6 @@ UNION
              '%s(KS=%s) синхронизирован и есть на складе [%s]', oi.Наименование, loc_KS, loc_in_stock
           ), 1 ); 
 
-          /*** общий INSERT для 1, 2, 6 ***
-          INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity)
-                              VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
-                                      2, -- Ясная
-                                      oi."Количество");
-          ***/
        ELSE -- недостаточно Ясная+Выставка
           loc_delivery_quantity := get_delivery_quantity(bx_order_no, oi."Ид");
           IF loc_delivery_quantity IS NOT NULL AND loc_delivery_quantity <> '' THEN
@@ -161,15 +154,9 @@ UNION
               -- часть/части из идущих
               -- часть в сроки стандартной поставки
               -- loc_parts :=
-              /*** общий INSERT для 1, 2, 6 ***
-              INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt)
-                     VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
-                             2, -- Ясная
-                             oi."Количество", loc_delivery_quantity);
-              ***/
           ELSE
               CreateResult := GREATEST(6, CreateResult); -- позиция заказа синхронизирована, но недостаточно количества
-              -- TODO CreateResult := 1; -- из идущих, т.к. позиция заказа синхронизирована, но недостаточно количества
+              -- TODO из идущих, т.к. позиция заказа синхронизирована, но недостаточно количества
               -- TODO loc_delivery_quantity := format('со склада: %s; : %s',  loc_in_stock, oi."Количество"-loc_in_stock); -- , get_expected_shipment(loc_KS, False));
               RAISE NOTICE 'Для KS=% нет достаточного количества=%', loc_KS, oi."Количество";
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
@@ -194,10 +181,12 @@ UNION
        END IF; -- достаточно на Ясной+Выставка
     END IF; -- loc_KS is not null
 
-    INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt, oi_name)
+    SELECT oif.fvalue INTO loc_modificators FROM arc_energo.bx_order_item_feature oif
+    WHERE oif."bx_order_Номер" = bx_order_no AND oif.bx_order_item_id = oi."Ид" AND oif.fname = 'Модификация';
+    INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt, oi_name, oi_mod_id, oi_modificators)
                         VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                                 2, -- Ясная
-                                oi."Количество", loc_delivery_quantity, oi."Наименование");
+                                oi."Количество", loc_delivery_quantity, oi."Наименование", oi.mod_id, COALESCE(loc_modificators, ''));
 
     -- Для контроля "потерянных" позиций
     bx_sum := bx_sum + oi."Сумма";
@@ -267,13 +256,19 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 loc_OrderItemProcessingTime := NULL; -- неопределено для несинхронизированных
                 loc_okei_code := item.oi_okei_code;
                 loc_measure_unit := item.oi_measure_unit;
-                loc_item_name := item.oi_name; -- для несинхронизированных позиций имя с сайта
-                SELECT oif.fvalue INTO loc_modification_params FROM arc_energo.bx_order_item_feature oif
-                WHERE oif."bx_order_Номер" = bx_order_no AND oif.bx_order_item_id = item.oi_id AND oif.fname = 'Модификация';
-                IF FOUND THEN
-                    loc_item_name := loc_item_name || E', ' || loc_modification_params;
-                END IF;
+                loc_item_name := item.oi_name || E', ' || item.oi_modificators; -- для несинхронизированных позиций имя с сайта
             END IF;
+
+            /** Наименование для Фискального накопителя перекрывает предыдущее наименование ***/
+            loc_1C_article := NULL;
+            PERFORM FROM arc_energo.bx_order_feature oif
+            WHERE oif."bx_order_Номер" = bx_order_no AND oif.fname = 'Метод оплаты ИД'
+            AND oif.fvalue='23';
+            IF FOUND THEN -- Яндекс.Касса
+                loc_item_name := he_decode(format('%s %s', COALESCE(fiscal_name(item.oi_mod_id), item.oi_name), item.oi_modificators));
+                loc_1C_article := E'фискализирован';
+            END IF;
+            /***/
 
             WITH inserted AS (
                INSERT INTO "Содержание счета"
@@ -283,14 +278,14 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     "Срок2",
                     "ПозицияСчета", "Наименование",
                     "Цена", "ЦенаНДС",
-                    "Гдезакупать")
+                    "Гдезакупать", "Артикул1С")
                     VALUES ((SELECT max("КодПозиции")+1 FROM "Содержание счета"),
                     loc_bill_no,
                     item.ks, loc_okei_code, loc_measure_unit, item.oi_quantity,
                     loc_OrderItemProcessingTime,
                     npp, loc_item_name,
                     round(Price, 2), PriceVAT,
-                    loc_where_buy) 
+                    loc_where_buy, loc_1C_article) 
              RETURNING * 
              ) SELECT * INTO inserted_bill_item FROM inserted;
              Npp := Npp+1;
