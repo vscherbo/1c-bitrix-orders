@@ -59,6 +59,7 @@ loc_item_name varchar;
 loc_price NUMERIC;
 loc_modificators varchar;
 loc_1C_article varchar;
+loc_kp integer;
 BEGIN
 RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -259,6 +260,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 loc_item_name := item.oi_name || E', ' || item.oi_modificators; -- для несинхронизированных позиций имя с сайта
             END IF;
 
+            SELECT max("КодПозиции")+1 INTO loc_kp FROM "Содержание счета";
             /** Наименование для Фискального накопителя перекрывает предыдущее наименование ***/
             loc_1C_article := NULL;
             PERFORM FROM arc_energo.bx_order_feature oif
@@ -266,7 +268,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
             AND oif.fvalue='23';
             IF FOUND THEN -- Яндекс.Касса
                 loc_item_name := he_decode(format('%s %s', COALESCE(fiscal_name(item.oi_mod_id), item.oi_name), item.oi_modificators));
-                loc_1C_article := E'фискализирован';
+                loc_1C_article := get_code1c4artikul(loc_kp); -- E'фискализирован';
             END IF;
             /***/
 
@@ -279,7 +281,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     "ПозицияСчета", "Наименование",
                     "Цена", "ЦенаНДС",
                     "Гдезакупать", "Артикул1С")
-                    VALUES ((SELECT max("КодПозиции")+1 FROM "Содержание счета"),
+                    VALUES (loc_kp,
                     loc_bill_no,
                     item.ks, loc_okei_code, loc_measure_unit, item.oi_quantity,
                     loc_OrderItemProcessingTime,
