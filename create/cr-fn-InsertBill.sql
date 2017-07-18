@@ -37,14 +37,6 @@ BEGIN
     IF found THEN BillInfo := BillInfo || ', ' ||PaymentGuarantee; END IF;
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
     IF found THEN BillInfo := BillInfo || ', Покупатель: ' ||BuyerComment; END IF;
-    /** 2016-09-30 Арутюн Гараханян: 
-       когда создается автосчет в строке Инфо появляется куча информации, которая в целом не нужна. можно ее туда не помещать, 
-       только то, что клиент пишет в графе "комментарий заказчика"
-    SELECT fvalue INTO PaymentType FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Метод оплаты';
-    IF found THEN BillInfo := BillInfo || ' Метод оплаты:' || PaymentType; END IF;
-    SELECT fvalue INTO DeliveryService FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Название службы доставки';
-    IF found THEN BillInfo := BillInfo || ' Служба доставки:' || DeliveryService; END IF;
-    **/
 
     SELECT fvalue INTO DeliveryMode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Способ доставки';
 
@@ -72,8 +64,9 @@ BEGIN
     PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
     locDealerFlag := FOUND;
 
-    IF locDealerFlag OR (BuyerComment IS NULL AND 1 = arg_createresult) THEN -- Дилерский ИЛИ (без комментария и всё в наличии)
-        RAISE NOTICE 'без комментария и всё в наличии, выбираем хозяина счёта';
+    IF locDealerFlag OR (BuyerComment IS NULL AND 1 = arg_createresult AND (position('урьер' in DeliveryMode)=0) ) THEN
+         -- Дилерский ИЛИ (без комментария и всё в наличии и НЕ курьер)
+        RAISE NOTICE 'без комментария, всё в наличии и НЕ курьер, выбираем хозяина счёта';
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
         IF inet_bill_owner IS NULL THEN
             inet_bill_owner := 38; -- НУЖНО написать: inetbill_mgr();
@@ -81,7 +74,7 @@ BEGIN
         END IF;
     ELSE -- заказ с комментариями или частичный автосчёт
         inet_bill_owner :=  38; -- НУЖНО написать: inetbill_mgr();
-        RAISE NOTICE 'или комментарий, или частичный автосчёт, вызывали inetbill_mgr=%', inet_bill_owner;
+        RAISE NOTICE 'или комментарий, или частичный автосчёт, или курьер вызывали inetbill_mgr=%', inet_bill_owner;
     END IF;
  
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
