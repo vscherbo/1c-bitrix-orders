@@ -32,6 +32,7 @@ $BODY$ DECLARE
   ourFirm VARCHAR;
   locVAT NUMERIC;
   locDealerFlag BOOLEAN;
+locAutobillFlag BOOLEAN;
 BEGIN
     SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Гарантия оплаты дилером';
     IF found THEN BillInfo := BillInfo || ', ' ||PaymentGuarantee; END IF;
@@ -63,18 +64,17 @@ BEGIN
 
     PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
     locDealerFlag := FOUND;
+    locAutobillFlag := (BuyerComment IS NULL AND 1 = arg_createresult AND (position('урьер' in DeliveryMode)=0) );
 
-    IF locDealerFlag OR (BuyerComment IS NULL AND 1 = arg_createresult AND (position('урьер' in DeliveryMode)=0) ) THEN
-         -- Дилерский ИЛИ (без комментария и всё в наличии и НЕ курьер)
-        RAISE NOTICE 'без комментария, всё в наличии и НЕ курьер, выбираем хозяина счёта';
+    IF NOT locDealerFlag AND NOT locAutobillFlag THEN
+        inet_bill_owner :=  38; -- НУЖНО написать: inetbill_mgr();
+        RAISE NOTICE 'НЕ дилерский И или комментарий, или частичный автосчёт, или курьер вызывали inetbill_mgr=%', inet_bill_owner;
+    ELSE -- или дилерский, или возможен автосчёт
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
         IF inet_bill_owner IS NULL THEN
             inet_bill_owner := 38; -- НУЖНО написать: inetbill_mgr();
             RAISE NOTICE 'не удалось выбрать хозяина счёта, вызывали inetbill_mgr=%', inet_bill_owner;
         END IF;
-    ELSE -- заказ с комментариями или частичный автосчёт
-        inet_bill_owner :=  38; -- НУЖНО написать: inetbill_mgr();
-        RAISE NOTICE 'или комментарий, или частичный автосчёт, или курьер вызывали inetbill_mgr=%', inet_bill_owner;
     END IF;
  
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
