@@ -53,8 +53,6 @@ BEGIN
     THEN
         RAISE NOTICE 'get_emp: Юр. лицо, ИНН=%, КПП=%. Ищем Работника с loc_buyer_id=%', INN, COALESCE(KPP, '_не_задан_'), loc_buyer_id;
         Firm := fn_find_enterprise(bx_order_id, INN, KPP);
-        -- moved into fn_find_enterprise
-        -- FirmCode := COALESCE(Firm."Код", create_firm(bx_order_id, INN, KPP));
         FirmCode := Firm."Код";
         new_emp := True;
         -- Ищем Работника с loc_buyer_id
