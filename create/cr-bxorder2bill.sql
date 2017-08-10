@@ -15,6 +15,7 @@ $BODY$ DECLARE
   loc_PG_EXCEPTION_HINT TEXT;
   loc_PG_EXCEPTION_CONTEXT TEXT;
   loc_exception_txt TEXT;
+  loc_reason TEXT;
 BEGIN
 SELECT f.fvalue INTO SiteID FROM bx_order_feature f WHERE f."bx_order_Номер" = arg_bx_order_no AND f.fname = 'Сайт';
 of_Site_found := found;
@@ -95,7 +96,9 @@ IF of_Site_found AND is_kipspb THEN
         END IF; -- loc_cr_bill_result IN (...)
     END IF; -- FOUND "№ счета"
 ELSE
-    RAISE NOTICE 'Пропускаем заказ: of_Site_found=%, is_kipspb=%', of_Site_found, is_kipspb;
+    loc_reason := format('Заказ не kipspb, пропускаем (of_Site_found=%s, is_kipspb=%s)', of_Site_found, is_kipspb);
+    RAISE NOTICE '%', loc_reason;
+    INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(arg_bx_order_no, loc_reason, 99, -1);
     UPDATE bx_order SET billcreated = 99 WHERE "Номер" = arg_bx_order_no;
 END IF; -- SiteID contains 'ar'
 
