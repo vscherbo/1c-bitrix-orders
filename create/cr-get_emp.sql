@@ -52,49 +52,59 @@ BEGIN
     IF (INN IS NOT NULL) -- AND (KPP IS NOT NULL) -- юр. лицо, у ИП нет КПП
     THEN
         RAISE NOTICE 'get_emp: Юр. лицо, ИНН=%, КПП=%. Ищем Работника с loc_buyer_id=%', INN, COALESCE(KPP, '_не_задан_'), loc_buyer_id;
-        Firm := fn_find_enterprise(bx_order_id, INN, KPP);
-        FirmCode := Firm."Код";
-        new_emp := True;
-        -- Ищем Работника с loc_buyer_id
-        SELECT ec."КодРаботника", ec."Код", '-1'::VARCHAR AS "ЕАдрес" INTO emp 
-        FROM emp_company ec
-            JOIN "Предприятия" f ON f."Код"=ec."Код"
-            WHERE ec.bx_buyer_id=loc_buyer_id
-            AND f."ИНН"=INN;
-        IF FOUND THEN
-            new_emp := False;
-            RAISE NOTICE 'get_emp: такой покупатель с сайта для предприятия найден.';
-            SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
-            IF NOT FOUND THEN
-               emp."ЕАдрес" := 'not found'::VARCHAR;
-            END IF;
-            IF emp."ЕАдрес" IS NULL THEN
-               emp."ЕАдрес" := 'is_null'::VARCHAR;
-            END IF;
-        ELSIF loc_email IS NOT NULL THEN -- ищем Работника по email
-            RAISE NOTICE 'get_emp: покупатель для предприятия=% по loc_buyer_id=% не найден. Ищем по email=%', FirmCode, loc_buyer_id, loc_email;
-            BEGIN
-                SELECT "КодРаботника", "Код", "ЕАдрес" INTO STRICT emp FROM "Работники" WHERE "Работники"."ЕАдрес" = loc_email AND "Код" = FirmCode;
-                IF FOUND THEN
-                    new_emp := False;
-                    RAISE NOTICE 'get_emp: Найден Работник по email=%. Регистрируем для предприятия=% в emp_company', loc_email, FirmCode;
-                    INSERT INTO emp_company VALUES(FirmCode, emp."КодРаботника", loc_buyer_id)
-                        ON CONFLICT ("Код", "КодРаботника") -- ON CONSTRAINT  "emp_company_PK" 
-                        DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
-                END IF; -- найден Работник по email
-                EXCEPTION
-                    WHEN NO_DATA_FOUND THEN
-                        RAISE NOTICE 'get_emp: Работник с email=% не найден', loc_email;
-                    WHEN TOO_MANY_ROWS THEN
+        -- Firm := fn_find_enterprise(bx_order_id, INN, KPP);
+        -- FirmCode := Firm."Код";
+
+        FirmCode := find_inn_kpp(bx_order_id, INN, KPP);
+        IF FirmCode > 0 THEN
+            SELECT * INTO Firm FROM "Предприятия" WHERE "Код" = FirmCode;
+            new_emp := True;
+            -- Ищем Работника с loc_buyer_id
+            SELECT ec."КодРаботника", ec."Код", '-1'::VARCHAR AS "ЕАдрес" INTO emp 
+            FROM emp_company ec
+                JOIN "Предприятия" f ON f."Код"=ec."Код"
+                WHERE ec.bx_buyer_id=loc_buyer_id
+                AND f."ИНН"=INN;
+            IF FOUND THEN
+                new_emp := False;
+                RAISE NOTICE 'get_emp: такой покупатель с сайта для предприятия найден.';
+                SELECT "ЕАдрес" INTO emp."ЕАдрес" FROM "Работники" WHERE "Работники"."КодРаботника" = emp."КодРаботника";
+                IF NOT FOUND THEN
+                   emp."ЕАдрес" := 'not found'::VARCHAR;
+                END IF;
+                IF emp."ЕАдрес" IS NULL THEN
+                   emp."ЕАдрес" := 'is_null'::VARCHAR;
+                END IF;
+            ELSIF loc_email IS NOT NULL THEN -- ищем Работника по email
+                RAISE NOTICE 'get_emp: покупатель для предприятия=% по loc_buyer_id=% не найден. Ищем по email=%', FirmCode, loc_buyer_id, loc_email;
+                BEGIN
+                    SELECT "КодРаботника", "Код", "ЕАдрес" INTO STRICT emp FROM "Работники" WHERE "Работники"."ЕАдрес" = loc_email AND "Код" = FirmCode;
+                    IF FOUND THEN
                         new_emp := False;
-                        loc_aub_msg := format('ТУПИК: найдено более одного Работника по email=%s для Предприятия=%s', loc_email, FirmCode);
-                        INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_id, loc_aub_msg, 9, -1);
-                        RAISE NOTICE 'get_emp: %', loc_aub_msg;
-                    WHEN OTHERS THEN
-                        GET STACKED DIAGNOSTICS text_var1 = MESSAGE_TEXT, text_var2 = PG_EXCEPTION_DETAIL, text_var3 = PG_EXCEPTION_HINT;
-                        RAISE NOTICE 'get_emp: MESSAGE_TEXT=%, PG_EXCEPTION_DETAIL=%, PG_EXCEPTION_HINT=%', text_var1, text_var2, text_var3;
-            END;
-        END IF;
+                        RAISE NOTICE 'get_emp: Найден Работник по email=%. Регистрируем для предприятия=% в emp_company', loc_email, FirmCode;
+                        INSERT INTO emp_company VALUES(FirmCode, emp."КодРаботника", loc_buyer_id)
+                            ON CONFLICT ("Код", "КодРаботника") -- ON CONSTRAINT  "emp_company_PK" 
+                            DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
+                    END IF; -- найден Работник по email
+                    EXCEPTION
+                        WHEN NO_DATA_FOUND THEN
+                            RAISE NOTICE 'get_emp: Работник с email=% не найден', loc_email;
+                        WHEN TOO_MANY_ROWS THEN
+                            new_emp := False;
+                            loc_aub_msg := format('ТУПИК: найдено более одного Работника по email=%s для Предприятия=%s', loc_email, FirmCode);
+                            INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_id, loc_aub_msg, 9, -1);
+                            RAISE NOTICE 'get_emp: %', loc_aub_msg;
+                        WHEN OTHERS THEN
+                            GET STACKED DIAGNOSTICS text_var1 = MESSAGE_TEXT, text_var2 = PG_EXCEPTION_DETAIL, text_var3 = PG_EXCEPTION_HINT;
+                            RAISE NOTICE 'get_emp: MESSAGE_TEXT=%, PG_EXCEPTION_DETAIL=%, PG_EXCEPTION_HINT=%', text_var1, text_var2, text_var3;
+                END;
+            END IF; -- found in emp_company
+        ELSE
+            new_emp := False; -- Предприятие не найдено
+            loc_aub_msg := format('Невозможно выбрать Предприятие ИНН=%s, КПП=%s', quote_nullable(INN), quote_nullable(KPP));
+            INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_id, loc_aub_msg, FirmCode, -1);
+            RAISE NOTICE 'get_emp: %', loc_aub_msg;
+        END IF; -- FirmCode > 0
 
         IF new_emp THEN
             RAISE NOTICE 'get_emp: Создаём Работника bx_order_id=%, FirmCode=%', bx_order_id, FirmCode;

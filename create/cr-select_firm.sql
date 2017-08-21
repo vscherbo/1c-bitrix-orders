@@ -3,22 +3,34 @@ CREATE OR REPLACE FUNCTION arc_energo.select_firm(arg_inn text, arg_kpp text)
  RETURNS integer
  LANGUAGE plpgsql
 AS $function$
-declare
+DECLARE
 loc_Firm_code integer ;
-loc_select text := 'SELECT "Код" FROM "Предприятия"';
-loc_where text;
 BEGIN
-loc_select := concat_ws(' ', loc_select, 'WHERE', '"ИНН" = ' || quote_literal(arg_INN), 'and "КПП" = ' || quote_literal(arg_KPP), ';');
-RAISE NOTICE '%', loc_select;
+
 BEGIN
-    EXECUTE loc_select INTO strict loc_Firm_code; 
-    EXCEPTION
-       WHEN NO_DATA_FOUND THEN
-            RAISE NOTICE 'Предприятие с ИНН=% не найдено', arg_INN;
-            loc_Firm_code := -1;
-        WHEN TOO_MANY_ROWS THEN
-            RAISE NOTICE 'Несколько Предприятий с ИНН=%', arg_INN;
-            loc_Firm_code := -2;
-END;    
+    SELECT "Код" INTO strict loc_Firm_code FROM "Предприятия" WHERE "ИНН" = arg_INN and ("КПП" IS NULL OR "КПП" = arg_KPP);
+EXCEPTION
+   WHEN NO_DATA_FOUND THEN
+        RAISE NOTICE 'Предприятие с ИНН=% не найдено', arg_INN;
+        loc_Firm_code := -1;
+    WHEN TOO_MANY_ROWS THEN
+        -- RAISE NOTICE 'Несколько Предприятий с ИНН=%', arg_INN;
+        WITH firms AS (SELECT "Код" FROM "Предприятия" WHERE "ИНН" = arg_INN and ("КПП" IS NULL OR "КПП" = arg_KPP) )
+            , bills AS (SELECT "Код", "Дата счета" FROM "Счета" 
+                                WHERE "Код" IN (SELECT * FROM firms) 
+                                AND "№ Фактуры" IS NOT NULL 
+                                AND "Дата счета" IS NOT NULL)
+        SELECT "Код" INTO loc_Firm_code FROM
+            (SELECT "Код"  FROM firms
+                   JOIN "СоотношениеСтатуса" ON firms."Код" = "КодПредприятия"
+                   WHERE "СтатусПредприятия" = 10
+            union
+            (SELECT "Код" FROM bills     
+                ORDER BY bills."Дата счета" DESC
+                LIMIT 1)
+            ) firm_code ;
+        loc_Firm_code := COALESCE(loc_Firm_code, -2);
+END;
+
 return loc_Firm_code;
 end;$function$;
