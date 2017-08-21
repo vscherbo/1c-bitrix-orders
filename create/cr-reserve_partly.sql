@@ -52,8 +52,13 @@ LOOP
         RAISE NOTICE 'parsed expected=%', loc_res[1];
         SELECT * INTO loc_lack, loc_reason FROM setup_reserve_expected(a_bill_no, ks, loc_qnt, loc_res[1]::timestamp without time zone);
         RAISE NOTICE '-->нехватка идущих={%}, причина={%}', loc_lack, loc_reason;
-    ELSIF regexp_matches(loc_when, '.*\d+.*\d+ недел.*', 'g'::TEXT) IS NOT NULL THEN -- m-n недель
+    ELSIF regexp_matches(loc_when, '.*\d+.*\d+ недел.*', 'g'::TEXT) IS NOT NULL THEN -- 'm-n недел'
         loc_res := regexp_matches(loc_when, '.*(\d+.*\d+) недел.*', 'g'::TEXT);
+        RAISE NOTICE '---> default period=%', loc_res[1];
+        loc_lack := loc_qnt;
+        loc_reason := 'Не реализована постановка в Свободный Резерв';
+    ELSIF regexp_matches(loc_when, 'через.*\d+.*', 'g'::TEXT) IS NOT NULL THEN -- 'через 000'
+        loc_res := regexp_matches(loc_when, 'через.*\d+.*', 'g'::TEXT);
         RAISE NOTICE '---> default period=%', loc_res[1];
         loc_lack := loc_qnt;
         loc_reason := 'Не реализована постановка в Свободный Резерв';
