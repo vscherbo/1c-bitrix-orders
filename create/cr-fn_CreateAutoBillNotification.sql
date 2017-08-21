@@ -29,6 +29,10 @@ BEGIN
         SELECT string_agg(descr, E'\n') INTO loc_str FROM arc_energo.aub_log
                             WHERE bx_order_no=order_id and res_code in (2,6,7) and mod_id <>'-1';
         loc_str := E'При создании были ошибки:\n' || loc_str;                            
+    ELSIF a_reason IN (10) THEN
+        SELECT string_agg(descr, E'\n') INTO loc_str FROM arc_energo.aub_log
+                            WHERE bx_order_no=order_id and res_code in (10) and mod_id <>'-1';
+        loc_str := E'Заказ НЕ-дилера с резервами из идущих:\n' || loc_str; 
     END IF;
     mstr := mstr || loc_str || E'\nПроверьте его, пожалуйста!';
     loc_str := '';

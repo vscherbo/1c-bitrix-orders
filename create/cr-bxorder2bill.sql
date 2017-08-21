@@ -16,6 +16,7 @@ $BODY$ DECLARE
   loc_PG_EXCEPTION_CONTEXT TEXT;
   loc_exception_txt TEXT;
   loc_reason TEXT;
+  loc_func_name TEXT;
 BEGIN
 SELECT f.fvalue INTO SiteID FROM bx_order_feature f WHERE f."bx_order_Номер" = arg_bx_order_no AND f.fname = 'Сайт';
 of_Site_found := found;
@@ -29,7 +30,13 @@ IF of_Site_found AND is_kipspb THEN
         UPDATE bx_order SET billcreated = arg_bx_order_no WHERE "Номер" = arg_bx_order_no; -- предотвратить повторную обработку
         RAISE NOTICE 'Создаём счёт для заказа=%', arg_bx_order_no;
         BEGIN
-            loc_cr_bill_result := fn_createinetbill(arg_bx_order_no);
+            IF chk_is_inet_bill_new() THEN
+                loc_func_name := 'create_inet_bill';
+                loc_cr_bill_result := create_inet_bill(arg_bx_order_no);
+            ELSE -- before 2017-08-14 
+                loc_func_name := 'fn_createinetbill';
+                loc_cr_bill_result := fn_createinetbill(arg_bx_order_no);
+            END IF;
         EXCEPTION WHEN OTHERS THEN
             loc_cr_bill_result := -1;
             GET STACKED DIAGNOSTICS
@@ -38,9 +45,11 @@ IF of_Site_found AND is_kipspb THEN
                 loc_PG_EXCEPTION_DETAIL = PG_EXCEPTION_DETAIL,
                 loc_PG_EXCEPTION_HINT = PG_EXCEPTION_HINT,
                 loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
-            loc_exception_txt = format('fn_createinetbill RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+            loc_exception_txt = format('%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
             UPDATE bx_order SET billcreated = loc_cr_bill_result WHERE "Номер" = arg_bx_order_no;
-            RAISE NOTICE 'ОШИБКА при создании автосчёта по заказу [%] exception=[%]', arg_bx_order_no, loc_exception_txt;
+            loc_reason := format('ОШИБКА при создании автосчёта exception=[%s]', loc_exception_txt);
+            INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(arg_bx_order_no, loc_reason, -1, -1);
+            RAISE NOTICE '%. Заказ [%]', loc_reason, arg_bx_order_no;
         END; -- создание счёта
 
         RAISE NOTICE 'Результат создания счёта=% для заказа=%', loc_cr_bill_result, arg_bx_order_no;
@@ -72,7 +81,7 @@ IF of_Site_found AND is_kipspb THEN
             END IF;
         END IF; -- 1 = loc_cr_bill_result
         -- менеджеру 
-        IF loc_cr_bill_result IN (1,2,6,7) THEN -- включая частичный автосчёт
+        IF loc_cr_bill_result IN (1,2,6,7,10) THEN -- включая частичный автосчёт
             RAISE NOTICE 'Создаём сообщение менеджеру для заказа=%', arg_bx_order_no;
             -- loc_msg_id, которое вернула "fnCreateAutoBillMessage", содержит код_причины неотправки письма клиенту об автосчёте
             BEGIN
