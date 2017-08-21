@@ -68,7 +68,7 @@ BEGIN
 
     IF NOT locDealerFlag AND NOT locAutobillFlag THEN
         inet_bill_owner :=  38; -- НУЖНО написать: inetbill_mgr();
-        RAISE NOTICE 'НЕ дилерский И или комментарий, или частичный автосчёт, или курьер вызывали inetbill_mgr=%', inet_bill_owner;
+        RAISE NOTICE 'НЕ дилерский И или комментарий, или частичный автосчёт, или курьер. Вызывали inetbill_mgr=%', inet_bill_owner;
     ELSE -- или дилерский, или возможен автосчёт
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
         IF inet_bill_owner IS NULL THEN
