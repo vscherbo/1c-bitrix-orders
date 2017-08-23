@@ -138,7 +138,7 @@ BEGIN
                         RAISE NOTICE 'get_emp: Работник с email=% не найден', loc_email;
                     WHEN TOO_MANY_ROWS THEN
                         new_emp := False;
-                        loc_aub_msg := format('ТУПИК: найдено более одного Работника-физ.лица по email=%s', loc_email);
+                        loc_aub_msg := format('ТУПИК: найдено более одного Работника по email=%s', loc_email);
                         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_id, loc_aub_msg, 9, -1);
                         RAISE NOTICE 'get_emp: %', loc_aub_msg;
                     WHEN OTHERS THEN
@@ -148,7 +148,7 @@ BEGIN
         END IF;
 
         IF new_emp THEN
-            RAISE NOTICE 'get_emp: Создаём Работника-физ.лицо bx_order_id=%, FirmCode=%', bx_order_id, FirmCode;
+            RAISE NOTICE 'get_emp: Создаём Работника bx_order_id=% для FirmCode=%', bx_order_id, FirmCode;
             SELECT * FROM create_emp(bx_order_id, FirmCode) AS fileds("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
 
         END IF;
