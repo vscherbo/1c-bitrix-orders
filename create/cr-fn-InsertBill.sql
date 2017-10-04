@@ -67,12 +67,14 @@ BEGIN
     locAutobillFlag := (BuyerComment IS NULL AND 1 = arg_createresult AND (position('урьер' in DeliveryMode)=0) );
 
     IF NOT locDealerFlag AND NOT locAutobillFlag THEN
-        inet_bill_owner :=  38; -- НУЖНО написать: inetbill_mgr();
+        -- inet_bill_owner :=  38;
+        inet_bill_owner :=  inetbill_mgr();
         RAISE NOTICE 'НЕ дилерский И или комментарий, или частичный автосчёт, или курьер. Вызывали inetbill_mgr=%', inet_bill_owner;
     ELSE -- или дилерский, или возможен автосчёт
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
         IF inet_bill_owner IS NULL THEN
-            inet_bill_owner := 38; -- НУЖНО написать: inetbill_mgr();
+            -- inet_bill_owner := 38;
+            inet_bill_owner :=  inetbill_mgr();
             RAISE NOTICE 'не удалось выбрать хозяина счёта, вызывали inetbill_mgr=%', inet_bill_owner;
         END IF;
     END IF;
