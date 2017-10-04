@@ -16,7 +16,7 @@ $BODY$ DECLARE
   loc_PG_EXCEPTION_CONTEXT TEXT;
   loc_exception_txt TEXT;
   loc_reason TEXT;
-  loc_func_name TEXT;
+  loc_func_name TEXT := 'N/A inside bxorder2bill';
 BEGIN
 SELECT f.fvalue INTO SiteID FROM bx_order_feature f WHERE f."bx_order_Номер" = arg_bx_order_no AND f.fname = 'Сайт';
 of_Site_found := found;
@@ -45,7 +45,7 @@ IF of_Site_found AND is_kipspb THEN
                 loc_PG_EXCEPTION_DETAIL = PG_EXCEPTION_DETAIL,
                 loc_PG_EXCEPTION_HINT = PG_EXCEPTION_HINT,
                 loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
-            loc_exception_txt = format('%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+            loc_exception_txt = format(E'%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
             UPDATE bx_order SET billcreated = loc_cr_bill_result WHERE "Номер" = arg_bx_order_no;
             loc_reason := format('ОШИБКА при создании автосчёта exception=[%s]', loc_exception_txt);
             INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(arg_bx_order_no, loc_reason, -1, -1);
@@ -57,6 +57,7 @@ IF of_Site_found AND is_kipspb THEN
             RAISE NOTICE 'Создаём сообщение клиенту для заказа=%', arg_bx_order_no;
             BEGIN -- клиенту
                 loc_msg_id := "fnCreateAutoBillMessage"(arg_bx_order_no);
+                loc_func_name := 'fnCreateAutoBillMessage';
             EXCEPTION WHEN OTHERS THEN
                 loc_msg_id := -10;
                 GET STACKED DIAGNOSTICS
@@ -65,7 +66,8 @@ IF of_Site_found AND is_kipspb THEN
                     loc_PG_EXCEPTION_DETAIL = PG_EXCEPTION_DETAIL,
                     loc_PG_EXCEPTION_HINT = PG_EXCEPTION_HINT,
                     loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
-                loc_exception_txt = format('fnCreateAutoBillMessage RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+                loc_exception_txt = format(E'%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+--                 loc_exception_txt = format('fnCreateAutoBillMessage RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
             END; -- создание сообщения клиенту
 
             IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
@@ -86,6 +88,7 @@ IF of_Site_found AND is_kipspb THEN
             -- loc_msg_id, которое вернула "fnCreateAutoBillMessage", содержит код_причины неотправки письма клиенту об автосчёте
             BEGIN
                 loc_msg_id := "fnCreateAutoBillNotification"(arg_bx_order_no, COALESCE(loc_msg_id, loc_cr_bill_result));
+                loc_func_name := 'fnCreateAutoBillNotification';
             EXCEPTION WHEN OTHERS THEN
                 loc_msg_id := -20;
                 GET STACKED DIAGNOSTICS
@@ -94,7 +97,8 @@ IF of_Site_found AND is_kipspb THEN
                     loc_PG_EXCEPTION_DETAIL = PG_EXCEPTION_DETAIL,
                     loc_PG_EXCEPTION_HINT = PG_EXCEPTION_HINT,
                     loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
-                loc_exception_txt = format('fnCreateAutoBillMessage RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+                loc_exception_txt = format(E'%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+--                 loc_exception_txt = format('fnCreateAutoBillMessage RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
             END; -- создание сообщения менеджеру
 
             IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
