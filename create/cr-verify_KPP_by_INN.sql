@@ -18,9 +18,10 @@ begin
          RAISE NOTICE 'verify_kpp_by_inn: не удалось извлечь КПП из ответа сайта ИТС, ret_kpp=%', rec_kpp.ret_kpp;
       END IF;
   ELSE
-     RAISE NOTICE 'verify_kpp_by_inn: не получен ответ от сайта ИТС, ret_txt=%', rec_answer.ret_txt;
+     RAISE NOTICE 'verify_kpp_by_inn: не получен ответ от сайта ИТС, ret_txt=%, ret_kpp=%', rec_answer.ret_txt, ret_kpp;
   END IF;
 
+  RAISE NOTICE 'verify_kpp_by_inn: inn=%, RETURN ret_kpp=%', inn, ret_kpp;
   RETURN ret_kpp;
 end
 $BODY$
