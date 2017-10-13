@@ -18,7 +18,7 @@ SELECT digits_only(trim(both FROM fvalue)) INTO bx_KPP FROM bx_order_feature WHE
 IF (bx_INN IS NOT NULL) THEN -- юр. лицо, у ИП нет КПП
     RAISE NOTICE 'find_firm: Юр. лицо, ИНН=%, КПП=%.', bx_INN, COALESCE(bx_KPP, '_не_задан_');
     len_inn := length(bx_INN);
-    IF 12 = len_inn THEN -- для ИП не м.б. КПП, защита
+    IF len_inn in (9, 12) THEN -- для ИП и Беларуси не м.б. КПП, защита от неверных значений
         bx_KPP := NULL; 
     END IF;
 
@@ -28,15 +28,17 @@ IF (bx_INN IS NOT NULL) THEN -- юр. лицо, у ИП нет КПП
             loc_kpp := verify_KPP_by_INN(bx_INN);
             IF 'N/A'= loc_kpp THEN -- нет ответа 1С
                 loc_kpp := bx_KPP;
-            ELSE -- ищем с КПП из Инета
-                loc_FirmCode := select_firm(bx_INN, loc_kpp);
-                IF loc_FirmCode = -1 THEN -- с КПП из Инета тоже не найдено, создаём
-                    loc_FirmCode := create_firm(arg_bx_order_id, bx_INN, loc_kpp);
-                END IF;
+            END IF;
+            -- ELSE -- ищем с КПП из Инета
+            loc_FirmCode := select_firm(bx_INN, loc_kpp);
+            IF loc_FirmCode = -1 THEN -- с КПП из Инета тоже не найдено, создаём
+                loc_FirmCode := create_firm(arg_bx_order_id, bx_INN, loc_kpp);
             END IF;
         ELSIF -2 = loc_FirmCode THEN -- не удалось выбрать из дублей Предприятия
             NULL;
         END IF; -- loc_FirmCode < 0
+    ELSIF len_inn IN (9) THEN -- Республика Беларусь
+        loc_FirmCode := select_firm(bx_INN, bx_KPP); -- с учётом Статуса=10 (отец дублей)
     ELSE
         loc_FirmCode := -3;
         RAISE NOTICE 'Непредвиденная длина ИНН=%, ИНН=% ', len_inn, bx_INN;
