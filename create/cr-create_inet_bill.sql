@@ -144,7 +144,7 @@ UNION
               CreateResult := GREATEST(1, CreateResult); -- если есть разбивка сроки-количество, создаём автосчёт
               -- DEBUG only
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-                 '%s(KS=%s) синхронизирован, резервирование со склада [%s] и из идущих', oi.Наименование, loc_KS, loc_in_stock
+                 '%s(KS=%s) синхронизирован, резервирование со склада [%s]', oi.Наименование, loc_KS, loc_in_stock
               ), CreateResult ); 
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                  '%s(KS=%s) указаны срок-количество=[%s]', oi.Наименование, loc_KS, loc_delivery_quantity
@@ -210,7 +210,14 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
         loc_emp_code := find_emp(bx_order_no, loc_firm_code);
         IF loc_emp_code > 0 THEN
             loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
-            bill := fn_InsertBill(CreateResult, loc_sum, bx_order_no, loc_firm_code, loc_emp_code, flgOwen);
+            loc_delivery_qnt_flag := False;
+            FOR item in SELECT * FROM tmp_order_items LOOP
+                IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN
+                   loc_delivery_qnt_flag := True;
+                   EXIT;
+                END IF;
+            END LOOP;
+            bill := fn_InsertBill(CreateResult, loc_sum, bx_order_no, loc_firm_code, loc_emp_code, flgOwen, loc_delivery_qnt_flag);
             Npp := 1;
             VAT := bill."ставкаНДС";
             loc_bill_no := bill."№ счета";
@@ -298,7 +305,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     IF loc_delivery_qnt_flag THEN -- разбивка сроки-количество
                         IF loc_suspend_bill_msg_flag THEN
                            INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-                              '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', oi.Наименование, loc_KS, loc_delivery_quantity
+                              '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', oi.Наименование, item.ks, item.oi_delivery_qnt
                              ), CreateResult ); 
                         END IF;
                         SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);

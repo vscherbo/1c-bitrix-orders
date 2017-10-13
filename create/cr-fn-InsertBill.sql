@@ -1,6 +1,6 @@
 -- Function: fn_insertbill(integer, numeric, integer, integer, integer, boolean)
 
--- DROP FUNCTION fn_insertbill(integer, numeric, integer, integer, integer, boolean);
+-- DROP FUNCTION fn_insertbill(integer, numeric, integer, integer, integer, boolean, boolean);
 
 CREATE OR REPLACE FUNCTION fn_insertbill(
     arg_createresult integer,
@@ -8,7 +8,8 @@ CREATE OR REPLACE FUNCTION fn_insertbill(
     bx_order integer,
     acode integer,
     aempcode integer,
-    flgowen boolean)
+    flgowen boolean,
+    flg_delivery_qnt boolean)
   RETURNS record AS
 $BODY$ DECLARE
   ret_bill RECORD;
@@ -64,21 +65,23 @@ BEGIN
 
     PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
     locDealerFlag := FOUND;
-    locAutobillFlag := (BuyerComment IS NULL AND 1 = arg_createresult AND (position('урьер' in DeliveryMode)=0) );
+    locAutobillFlag := (BuyerComment IS NULL -- без комментария
+                        AND 1 = arg_createresult -- всё доступно, м.б. в т.ч. из идущих
+                        AND (position('урьер' in DeliveryMode)=0) -- доставка не курьером и не курьерской службой
+                        AND NOT flg_delivery_qnt -- нет разбивки срок-количество
+                       );
 
-    IF NOT locDealerFlag AND NOT locAutobillFlag THEN
-        -- inet_bill_owner :=  38;
-        inet_bill_owner :=  inetbill_mgr();
-        RAISE NOTICE 'НЕ дилерский И или комментарий, или частичный автосчёт, или курьер. Вызывали inetbill_mgr=%', inet_bill_owner;
-    ELSE -- или дилерский, или возможен автосчёт
+    IF locDealerFlag OR locAutobillFlag THEN -- или дилерский, или возможен автосчёт
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
         IF inet_bill_owner IS NULL THEN
-            -- inet_bill_owner := 38;
             inet_bill_owner :=  inetbill_mgr();
             RAISE NOTICE 'не удалось выбрать хозяина счёта, вызывали inetbill_mgr=%', inet_bill_owner;
         END IF;
+    ELSE
+        inet_bill_owner :=  inetbill_mgr();
+        RAISE NOTICE 'НЕ дилерский И или комментарий, или частичный автосчёт, или курьер. Вызывали inetbill_mgr=%', inet_bill_owner;
     END IF;
- 
+
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
     ourFirm := getFirm(acode, flgOwen);
 
@@ -104,14 +107,3 @@ END
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION fn_insertbill(integer, numeric, integer, integer, integer, boolean)
-  OWNER TO arc_energo;
-COMMENT ON FUNCTION fn_insertbill(integer, numeric, integer, integer, integer, boolean) IS 'С сайта ''Способ доставки''
-1    Самовывоз
-9    Почта России
-5    Междугородний автотранспорт, Почта, Экспресс-почта
-7    Транспортная компания (ж/д, авиа, авто)
-2    Курьер по СПб
-8    Курьерская служба
-6    Иное
-';
