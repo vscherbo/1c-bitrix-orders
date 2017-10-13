@@ -8,14 +8,15 @@ loc_Firm_code integer ;
 BEGIN
 
 BEGIN
-    SELECT "Код" INTO strict loc_Firm_code FROM "Предприятия" WHERE "ИНН" = arg_INN and ("КПП" IS NULL OR "КПП" = arg_KPP);
+--     SELECT "Код" INTO strict loc_Firm_code FROM "Предприятия" WHERE "ИНН" = arg_INN and ("КПП" IS NULL OR "КПП" = arg_KPP);
+    SELECT "Код" INTO strict loc_Firm_code FROM select_inn_kpp(arg_inn, arg_kpp) as foo("Код" integer);
 EXCEPTION
    WHEN NO_DATA_FOUND THEN
         RAISE NOTICE 'Предприятие с ИНН=% не найдено', arg_INN;
         loc_Firm_code := -1;
     WHEN TOO_MANY_ROWS THEN
         -- RAISE NOTICE 'Несколько Предприятий с ИНН=%', arg_INN;
-        WITH firms AS (SELECT "Код" FROM "Предприятия" WHERE "ИНН" = arg_INN and ("КПП" IS NULL OR "КПП" = arg_KPP) )
+        WITH firms AS (SELECT "Код" FROM select_inn_kpp(arg_inn, arg_kpp) as foo("Код" integer))
             , bills AS (SELECT "Код", "Дата счета" FROM "Счета" 
                                 WHERE "Код" IN (SELECT * FROM firms) 
                                 AND "№ Фактуры" IS NOT NULL 
