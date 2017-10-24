@@ -8,7 +8,7 @@ GREATEST(dt_insert, q."Дата")
 , bo."Счет", "Ид"
 FROM bx_order bo -- vw_bx_order_today
 join "ДозвонНТУ" q on q."Счет" = bo."Счет"
-where bo."Дата"::timestamp >= '2017-10-11'
+where bo."Дата"::timestamp >= '2017-10-19'
 and billcreated = 1
 and "КтоЗвонил" = 'робот' 
 and position('@kipspb.ru' in "КомуПередал") = 0
