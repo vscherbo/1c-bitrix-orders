@@ -46,12 +46,21 @@ LOOP
     ELSIF 0 = length(loc_when) THEN 
         RAISE NOTICE 'empty loc_when, loc_qnt=%', loc_qnt;
         SELECT * INTO loc_lack, loc_reason FROM setup_reserve_expected(a_bill_no, ks, loc_qnt, NULL);
-        RAISE NOTICE '-->нехватка идущих={%}, причина={%}', loc_lack, loc_reason;
-    ELSIF regexp_matches(loc_when, '.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT) IS NOT NULL THEN
+        RAISE NOTICE '-->из идущих={%}, причина нехватки={%}', loc_lack, loc_reason;
+    ELSIF regexp_matches(loc_when, '^к (\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT) IS NOT NULL THEN
         loc_res := regexp_matches(loc_when, '.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT);
         RAISE NOTICE 'parsed expected=%', loc_res[1];
         SELECT * INTO loc_lack, loc_reason FROM setup_reserve_expected(a_bill_no, ks, loc_qnt, loc_res[1]::timestamp without time zone);
-        RAISE NOTICE '-->нехватка идущих={%}, причина={%}', loc_lack, loc_reason;
+        RAISE NOTICE '-->из идущих={%}, причина нехватки={%}', loc_lack, loc_reason;
+    ELSIF regexp_matches(loc_when, '.од заказ.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT) IS NOT NULL THEN
+        loc_res := regexp_matches(loc_when, '.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT);
+        RAISE NOTICE 'parsed planning=%', loc_res[1];
+        loc_lack := loc_qnt;
+        loc_reason := 'Не реализована постановка резерва из планируемых поставок';
+        /**
+        SELECT * INTO loc_lack, loc_reason FROM setup_reserve_planning(a_bill_no, ks, loc_qnt, loc_res[1]::timestamp without time zone);
+        RAISE NOTICE '-->планируемая поставка={%}, причина={%}', loc_lack, loc_reason;
+        **/
     ELSIF regexp_matches(loc_when, '.*\d+.*\d+ недел.*', 'g'::TEXT) IS NOT NULL THEN -- 'm-n недел'
         loc_res := regexp_matches(loc_when, '.*(\d+.*\d+) недел.*', 'g'::TEXT);
         RAISE NOTICE '---> default period=%', loc_res[1];
