@@ -55,7 +55,7 @@ loc_delivery_qnt_flag boolean;
 loc_suspend_bill_msg_flag boolean;
 loc_suspend_bill_msg text;
 BEGIN
-RAISE NOTICE '##################### Начало fn_createinetbill, заказ=%', bx_order_no;
+RAISE NOTICE '##################### Начало create_inet_bill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
 
 -- SELECT * INTO loc_buyer_id, loc_buyer_name, loc_email, loc_is_valid FROM get_bx_order_ids(bx_order_no) ;
@@ -123,12 +123,16 @@ UNION
        END IF;
        
        -- TODO заменить на stock_availability
+       loc_delivery_quantity := '';
+       /**
        INSERT INTO qnt_in_stock(ks, whid, whqnt) SELECT loc_KS, (is_in_stock(loc_KS)).* ;
        loc_in_stock := 0;
-       loc_delivery_quantity := '';
        loc_in_stock := COALESCE(
                            (SELECT SUM(whqnt) FROM qnt_in_stock WHERE qnt_in_stock.ks = loc_KS)
                            , 0);
+       **/
+       loc_in_stock := stock_availability_mod_id(oi.mod_id, TRUE, loc_KS);
+       INSERT INTO aub_qnt_in_stock(bx_order_no, ks, mod_id, whqnt) VALUES(bx_order_no, loc_KS, oi.mod_id, loc_in_stock);
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
        IF loc_in_stock >= oi."Количество" THEN -- достаточно на Ясной+Выставка
           CreateResult := GREATEST(1, CreateResult); -- если были несинхронизированные (2) или нехватка (6)
@@ -203,7 +207,8 @@ IF (loc_sum <> bx_sum) AND (1 = CreateResult) THEN
    RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', loc_sum, bx_sum; 
 END IF;
 IF (CreateResult IN (1,2,6) ) THEN -- включая частичный автосчёт
-    INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
+    -- TODO delete
+    -- INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
 
     loc_firm_code := find_firm(bx_order_no);
     IF loc_firm_code > 0 THEN
