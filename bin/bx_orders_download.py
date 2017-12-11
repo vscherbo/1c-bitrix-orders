@@ -25,6 +25,13 @@ def get_xml_list_fixed(inp_text):
     return loc_xml_orders
 
 def get_orders(site, site_user, site_pword, version):
+    if site.endswith('arc.world'):
+        verify_flag = False
+        proto = 'http://'
+    else:
+        verify_flag = True
+        proto = 'https://'
+
     url = proto + site + '/bitrix/admin/1c_exchange.php'
 
     sess = Session()
@@ -95,7 +102,8 @@ def get_orders(site, site_user, site_pword, version):
                 xml_orders = get_xml_list_fixed(xml_from_site.splitlines())
                 logging.debug("len(xml_orders)=%s", len(xml_orders))
 
-                if 4 == len(xml_orders):
+                if len(xml_orders) <= 4:
+                    xml_lines = None
                     logging.debug('empty xml, just header. Skip.')
                 else:
                     xml_lines = u"\n".join(xml_orders)
@@ -128,13 +136,6 @@ if __name__ == '__main__':
     site_user = conf['site_user']
     site_pword = conf['site_pword']
     version = conf['version']
-
-    if site.endswith('arc.world'):
-        verify_flag = False
-        proto = 'http://'
-    else:
-        verify_flag = True
-        proto = 'https://'
 
     get_orders(site, site_user, site_pword, version)
 
