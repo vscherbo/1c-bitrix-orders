@@ -64,7 +64,7 @@ def parse_xml(xml_lines):
         logging.debug("bx_buyer_id={0}, юр.лицо={1}".format(bx_buyer_id, loc_legal_entity))
         # TODO search buyer_id in DB
         # insert OR update bx_buyer
-        buyer_sql = """INSERT INTO bx_buyer(bx_buyer_id, bx_logname, bx_name, "ИНН", "КПП") 
+        buyer_sql = u"""INSERT INTO bx_buyer(bx_buyer_id, bx_logname, bx_name, "ИНН", "КПП") 
                     VALUES ({0}, '{1}', '{2}', '{3}', '{4}')
                     ON CONFLICT (bx_buyer_id)
                     DO UPDATE SET 
@@ -93,9 +93,11 @@ def parse_xml(xml_lines):
 
         for bx_order_feature in bx_order.findall(u'ЗначенияРеквизитов/ЗначениеРеквизита'):
             bof_name = bx_order_feature.find(u'Наименование').text.encode('utf-8')
-            bof_value = bx_order_feature.find(u'Значение').text.encode('utf-8').replace('\r\n', '/').replace('\n',
-                                                                                                             '/').replace(
-                "'", "''")
+            val = bx_order_feature.find(u'Значение')
+            if val.text is None:
+                bof_value = None
+            else:
+                bof_value = val.text.encode('utf-8').replace('\r\n', '/').replace('\n', '/').replace("'", "''")
             insert_bx_order_feature = 'INSERT INTO bx_order_feature("bx_order_Номер", fname, fvalue)'
             values_bx_order_feature = "VALUES({0}, '{1}', '{2}');\n".format(bx_order_id, bof_name, bof_value)
             sql_bx_order_feature = "{0} {1}".format(insert_bx_order_feature, values_bx_order_feature)
@@ -125,9 +127,11 @@ def parse_xml(xml_lines):
 
             for bx_item_feature in bx_item.findall(u'ЗначенияРеквизитов/ЗначениеРеквизита'):
                 bif_name = bx_item_feature.find(u'Наименование').text.encode('utf-8')
-                bif_value = bx_item_feature.find(u'Значение').text.encode('utf-8').replace('\r\n', '/').replace('\n',
-                                                                                                                '/').replace(
-                    "'", "''")
+                val = bx_item_feature.find(u'Значение')
+                if val.text is None:
+                    bif_value = None
+                else:
+                    bif_value = val.text.encode('utf-8').replace('\r\n', '/').replace('\n', '/').replace("'", "''")
                 insert_bx_order_item_feature = 'INSERT INTO bx_order_item_feature(bx_order_item_id, "bx_order_Номер", fname, fvalue)'
                 values_bx_order_item_feature = "VALUES({0}, {1}, '{2}', '{3}');\n".format(bx_item_id, bx_order_id,
                                                                                           bif_name, bif_value)
@@ -181,13 +185,6 @@ if args.xml_file is None:
     site_pword = conf['site_pword']
     version = conf['version']
 
-    if site.endswith('arc.world'):
-        verify_flag = False
-        proto = 'http://'
-    else:
-        verify_flag = True
-        proto = 'https://'
-
     xml_lines = get_orders(site, site_user, site_pword, version)
 else:
     xmlf = codecs.open(args.xml_file, 'r', 'utf-8')
@@ -195,26 +192,26 @@ else:
     xmlf.close()
     logging.info("read xml file: %s", args.xml_file)
 
-for bx_order_id, sql_order in parse_xml(xml_lines).iteritems():
-    logging.info('write to sql-file bx_order={0}'.format(bx_order_id))
-    sql_outfile_name = "02-sql/order-{0}-{1}-{2}.sql".format(site, bx_order_id,
-                                                             time.strftime("%Y-%m-%d_%H-%M-%S"))
-    sqlf = open(sql_outfile_name, 'w')
-    for sql_line in sql_order:
-        sqlf.write("%s\n" % sql_line)
-    sqlf.close()
+if xml_lines is not None:
+    for bx_order_id, sql_order in parse_xml(xml_lines).iteritems():
+        logging.info('write to sql-file bx_order={0}'.format(bx_order_id))
+        sql_outfile_name = "02-sql/order-{0}-{1}-{2}.sql".format(site, bx_order_id,
+                                                                 time.strftime("%Y-%m-%d_%H-%M-%S"))
+        sqlf = open(sql_outfile_name, 'w')
+        for sql_line in sql_order:
+            sqlf.write("%s\n" % sql_line)
+        sqlf.close()
 
-    if args.run_sql:
-        sql_lines = "".join(sql_order)
-        cur.execute(sql_lines)
-        pg_con.commit()
-        if args.create_bill:
-            run_bxorder2bill = u'SELECT bxorder2bill('+ bx_order_id +u');'
-            cur.execute(run_bxorder2bill)
+        if args.run_sql:
+            sql_lines = "".join(sql_order)
+            cur.execute(sql_lines)
             pg_con.commit()
+            if args.create_bill:
+                run_bxorder2bill = u'SELECT bxorder2bill('+ bx_order_id + u');'
+                cur.execute(run_bxorder2bill)
+                pg_con.commit()
 
 pg_con.commit()
 cur.close()
-
 
 # ------------ Bottom line -------------------------
