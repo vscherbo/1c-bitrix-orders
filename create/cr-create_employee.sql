@@ -19,11 +19,13 @@ declare
     phone VARCHAR;
     EmpNotice VARCHAR;
     ret_emp_code integer;
+loc_email TEXT;
 begin
-RAISE NOTICE 'create_employee: Создаём Работника bx_order_id=%, firmcode=%, email=%', arg_bx_order_id, arg_firmcode, arg_email;
+loc_email := coalesce(arg_email, 'н/д');
+RAISE NOTICE 'create_employee: Создаём Работника bx_order_id=%, firmcode=%, email=%', arg_bx_order_id, arg_firmcode, loc_email;
 
 SELECT fvalue INTO person FROM bx_order_feature WHERE "bx_order_Номер" = arg_bx_order_id AND fname = 'Контактное лицо';
-IF NOT FOUND THEN person := arg_email; END IF;
+IF NOT FOUND THEN person := loc_email; END IF;
 
 SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = arg_bx_order_id AND fname = 'Местоположение';
 IF NOT found THEN PersonLocation := ''; END IF;
@@ -39,7 +41,7 @@ WITH inserted AS (
    INSERT INTO "Работники" ("КодРаботника", "Код", -- bx_buyer_id, 
                             "Дата", "ФИО", "Телефон", "ЕАдрес", "Примечание")  
                             values ((SELECT MAX("КодРаботника")+1 FROM "Работники"), arg_firmcode,
-                            now(), person, phone, arg_email, EmpNotice) 
+                            now(), person, phone, loc_email, EmpNotice)
                             RETURNING "КодРаботника", "Код", "ЕАдрес" 
 )
 SELECT inserted."КодРаботника" INTO ret_emp_code FROM inserted;

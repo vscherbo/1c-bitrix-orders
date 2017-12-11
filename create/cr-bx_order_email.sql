@@ -22,7 +22,8 @@ IF loc_email <> loc_email2 THEN
     loc_email := loc_email2;
     RAISE NOTICE 'bx_order_email: заменяем _контактный email_ на EMail покупателя';
 END IF;
-loc_email := COALESCE(loc_email, '');
+
+-- loc_email := COALESCE(loc_email, '');
 return loc_email;
 end;
 $body$;

@@ -14,7 +14,7 @@ text_var1 text;
 text_var2 text;
 text_var3 text;
 BEGIN
-loc_email := bx_order_email(arg_bx_order_id); -- always NOT NULL 
+loc_email := bx_order_email(arg_bx_order_id);
 loc_templ_email := '%' || loc_email || '%';
 RAISE NOTICE 'select_emp: покупатель для предприятия=% по buyer_id не найден. Ищем по email=%', arg_firm_code, loc_email;
 BEGIN
