@@ -50,6 +50,8 @@ LOOP
     ELSIF regexp_matches(loc_when, '^к (\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT) IS NOT NULL THEN
         loc_res := regexp_matches(loc_when, '.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT);
         RAISE NOTICE 'parsed expected=%', loc_res[1];
+        loc_str := format('setup_reserve_expected(a_bill_no={%s}, ks={%s}, loc_qnt={%s}, loc_res[1]={%s}', a_bill_no, ks, loc_qnt, loc_res[1]);
+        RAISE NOTICE '%', loc_str;
         SELECT * INTO loc_lack, loc_reason FROM setup_reserve_expected(a_bill_no, ks, loc_qnt, loc_res[1]::timestamp without time zone);
         RAISE NOTICE '-->из идущих={%}, причина нехватки={%}', loc_lack, loc_reason;
     ELSIF regexp_matches(loc_when, '.од заказ.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT) IS NOT NULL THEN
