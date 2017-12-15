@@ -84,7 +84,10 @@ FOR oi in (SELECT bx_order_item.*
             FROM bx_order_item
             LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
                                     AND bx_order_item_feature."bx_order_Номер" = bx_order_item."bx_order_Номер"
-                                    AND bx_order_item_feature.fname = 'КодМодификации'
+                                    AND ( 
+                                         bx_order_item_feature.fname = 'КодМодификации'
+                                         OR bx_order_item_feature.fname = 'СвойствоКорзины#SKU_CODE'
+                                        )
             WHERE bx_order_no = bx_order_item."bx_order_Номер" 
               AND POSITION(':' in bx_order_item."Наименование") = 0
 UNION
@@ -185,7 +188,8 @@ UNION
     END IF; -- loc_KS is not null
 
     SELECT oif.fvalue INTO loc_modificators FROM arc_energo.bx_order_item_feature oif
-    WHERE oif."bx_order_Номер" = bx_order_no AND oif.bx_order_item_id = oi."Ид" AND oif.fname = 'Модификация';
+    WHERE oif."bx_order_Номер" = bx_order_no AND oif.bx_order_item_id = oi."Ид" 
+          AND (oif.fname = 'Модификация' OR oif.fname = 'СвойствоКорзины#SKU_NAME');
     INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt, oi_name, oi_mod_id, oi_modificators)
                         VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                                 2, -- Ясная
@@ -282,26 +286,23 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 END IF;
                 /***/
 
-                SELECT max("КодПозиции")+1 INTO loc_kp FROM "Содержание счета";
                 WITH inserted AS (
                    INSERT INTO "Содержание счета"
-                        ("КодПозиции",
-                        "№ счета",
+                        ("№ счета",
                         "КодСодержания", "КодОКЕИ", "Ед Изм", "Кол-во",
                         "Срок2",
                         "ПозицияСчета", "Наименование",
                         "Цена", "ЦенаНДС", "Скидка",
                         "Гдезакупать", "Артикул1С")
-                        VALUES (loc_kp,
-                        loc_bill_no,
+                        VALUES (loc_bill_no,
                         item.ks, loc_okei_code, loc_measure_unit, item.oi_quantity,
                         loc_OrderItemProcessingTime,
                         npp, loc_item_name,
                         round(Price, 2), PriceVAT, 0-real_discount,
                         loc_where_buy, loc_1C_article) 
-                 RETURNING * 
-                 ) SELECT * INTO inserted_bill_item FROM inserted;
-                 Npp := Npp+1;
+                    RETURNING * 
+                ) SELECT * INTO inserted_bill_item FROM inserted;
+                Npp := Npp+1;
 
                 loc_lack_reserve := 0;
                 -- SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
@@ -309,8 +310,8 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 IF item.ks IS NOT NULL THEN -- резервы, только для товаров с КС
                     IF loc_delivery_qnt_flag THEN -- разбивка сроки-количество
                         IF loc_suspend_bill_msg_flag THEN
-                           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-                              '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', oi.Наименование, item.ks, item.oi_delivery_qnt
+                           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id, format(
+                              '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
                              ), CreateResult ); 
                         END IF;
                         SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
@@ -350,13 +351,13 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
             INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_aub_msg, CreateResult, -1);
         ELSE -- loc_emp_code < 0 
             CreateResult := 8; -- bad Employee
-            loc_aub_msg := format('Автосчёт не создан: невозможно определить Код Работника, emp_code=%s', loc_emp_code);
+            loc_aub_msg := format('Автосчёт не создан, причина=%s', bad_employee_reason(loc_emp_code));
             INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_aub_msg, CreateResult, -1);
             RAISE NOTICE '%. CreateResult=%', loc_aub_msg, CreateResult;
         END IF;
     ELSE -- loc_firm_code < 0
         CreateResult := 9; -- bad Firm
-        loc_aub_msg := format('Автосчёт не создан: невозможно определить Код Предприятия, firm_code=%s', loc_firm_code);
+        loc_aub_msg := format('Автосчёт не создан, причина=%s', bad_firm_reason(loc_firm_code));
         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, '' || loc_aub_msg, CreateResult, -1);
         RAISE NOTICE '%. CreateResult=%', loc_aub_msg, CreateResult;
     END IF;
