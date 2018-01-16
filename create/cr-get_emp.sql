@@ -25,11 +25,11 @@ DECLARE
     text_var2 text;
     text_var3 text;
 loc_aub_msg TEXT;
-v_payment_method_id integer;
+payment_method_id integer;
 BEGIN
     SELECT bx_buyer_id INTO loc_buyer_id FROM bx_order WHERE "Номер" = bx_order_id;
 
-    SELECT fvalue INTO v_payment_method_id FROM bx_order_feature WHERE bx_order_id = "bx_order_Номер" AND fname = 'Метод оплаты ИД';
+    SELECT fvalue INTO payment_method_id FROM bx_order_feature WHERE bx_order_id = "bx_order_Номер" AND fname = 'Метод оплаты ИД';
 
     SELECT digits_only(trim(both FROM fvalue)) INTO INN FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'ИНН';
     IF '' = INN THEN INN := NULL; END IF;
@@ -110,7 +110,8 @@ BEGIN
             RAISE NOTICE 'get_emp: Создаём Работника bx_order_id=%, FirmCode=%', bx_order_id, FirmCode;
             SELECT * FROM create_emp(bx_order_id, FirmCode) AS fileds("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
         END IF;
-    ELSIF (INN IS NULL) AND (KPP IS NULL) AND (v_payment_method_id <> 22) THEN -- физ. лицо, не м.б. Банковский перевод(22)
+    -- ELSIF (INN IS NULL) AND (KPP IS NULL) AND (payment_method_id <> 22) THEN -- физ. лицо, не м.б. Банковский перевод(22)
+    ELSIF (INN IS NULL) AND (KPP IS NULL) AND NOT is_bx_bank_payment(bx_order_id) THEN -- физ. лицо, не м.б. Банковский перевод
         RAISE NOTICE 'get_emp: Физ. лицо. Ищем Работника с loc_buyer_id=%', loc_buyer_id;
         FirmCode := 223719;
         new_emp := True;
