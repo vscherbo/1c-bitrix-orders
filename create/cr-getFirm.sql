@@ -46,7 +46,7 @@ ELSE
 END IF;
 
 -- IF 'ТД2' = ourFirm THEN -- Patch
-IF ourFirm NOt IN ('АРКОМ', 'КИПСПБ', 'ОСЗ', 'ЭТК') THEN -- Patch
+IF ourFirm NOT IN ('АРКОМ', 'КИПСПБ', 'ОСЗ', 'ЭТК') THEN -- Patch
     ourFirm := 'ЭТК';
 END IF;
 
