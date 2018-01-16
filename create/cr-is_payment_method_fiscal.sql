@@ -7,7 +7,7 @@ BEGIN
 PERFORM FROM arc_energo.bx_order_feature oif
         WHERE oif."bx_order_Номер" = arg_bx_order_id
               AND oif.fname = 'Метод оплаты ИД'
-              AND oif.fvalue='23';
+              AND oif.fvalue='25';
 RETURN FOUND;
 END
 $body$

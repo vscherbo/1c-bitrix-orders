@@ -11,7 +11,7 @@ begin
     FROM bx_order_feature 
     WHERE arg_bx_order_id = "bx_order_Номер" 
         AND fname = 'Метод оплаты ИД';
-    RETURN (22 = v_payment_method_id); 
+    RETURN (24 = v_payment_method_id); 
 end;
 $body$;
  

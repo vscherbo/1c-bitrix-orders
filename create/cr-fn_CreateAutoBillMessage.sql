@@ -12,6 +12,7 @@ loc_message_id integer;
 loc_bill_no INTEGER;
 enterprise_code INTEGER;
 payment_method_id INTEGER;
+payment_method text;
 delivery_mode VARCHAR;
 buyer_comment VARCHAR;
 ord_date timestamp without time zone;
@@ -20,27 +21,24 @@ loc_msg_type INTEGER;
 BEGIN 
 SELECT "Счет", "Дата", "Время" INTO loc_bill_no, ord_date, ord_time FROM bx_order WHERE "Номер" = order_id;
 SELECT "Код" INTO enterprise_code FROM "Счета" WHERE "№ счета" = loc_bill_no;
-SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Комментарий покупателя';
+SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Комментарии покупателя';
     if buyer_comment IS NULL THEN
         mstr := E'Ваш заказ '|| order_id::VARCHAR || ' от '|| ord_date + ord_time::INTERVAL || ' на сайте kipspb.ru '
                || E'\nобработан и сформирован счёт №' || to_char(loc_bill_no, '9999-9999') || E'.\n';
         RAISE NOTICE 'Извещение для Автосчёта=%', mstr;
         SELECT fvalue INTO payment_method_id FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Метод оплаты ИД';
-        -- 21 - Наличные
-        -- 22 - Банк???
-        -- 25 - Квитанция
-        -- 26 - Платрон
-        SELECT fvalue INTO delivery_mode FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Способ доставки';
+        SELECT trim(both FROM fvalue) INTO payment_method FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Метод оплаты';
+        SELECT trim(both FROM fvalue) INTO delivery_mode FROM bx_order_feature WHERE order_id = "bx_order_Номер" AND fname = 'Способ доставки';
         IF 223719 = enterprise_code THEN -- Если Физлицо
             RAISE NOTICE 'Автосчёт физ. лица.';
             -- Если НЕ 'Курьерская служба', формируем текст письма
             IF 'Курьерская служба' != delivery_mode THEN
                 mstr := mstr || E'\nВо вложении находится бланк Вашего заказа.';
                 loc_msg_type := 2; -- бланк-заказа
-                IF 25 = payment_method_id THEN -- Квитанция для Банка
+                IF 'Квитанция' = payment_method THEN -- Квитанция для Банка
                     mstr := mstr || E'\nТам же - квитанция для оплаты в отделении банка.';               
                     loc_msg_type := 3; -- бланк-заказа и квитанция
-                END IF; -- 25, Квитанция
+                END IF; -- Квитанция
             ELSE
                 RAISE NOTICE 'Автосчёт с доставкой курьерской службой, пропускаем.';
                 loc_message_id := -2; -- обработать в CreateAutoBillNotification
