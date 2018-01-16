@@ -107,11 +107,11 @@ UNION
     
     IF (loc_KS is null) THEN
         CreateResult := GREATEST(2, CreateResult); -- есть не синхронизированная позиция в заказе
-        PERFORM 1 FROM vw_bxsyncdev;
+        PERFORM 1 FROM vw_bxsyncdev WHERE vw_bxsyncdev.mod_id = oi.mod_id;
         IF FOUND THEN
             loc_aub_msg := format('%s - позиция отсутствует в базе АРК', oi.Наименование);
         ELSE
-            loc_aub_msg := format('%s - не синхронизированная позиция', oi.Наименование);
+            loc_aub_msg := format('%s - не синхронизированный прибор', oi.Наименование);
         END IF;
         INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, loc_aub_msg, CreateResult);
         RAISE NOTICE 'В заказе % % с mod_id=%', bx_order_no, loc_aub_msg, oi.mod_id;
