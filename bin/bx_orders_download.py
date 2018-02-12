@@ -40,6 +40,8 @@ def get_orders(site, site_user, site_pword, version):
     sess.keep_alive = True
 
     # authentication
+    logging.debug("checkauth url={0}".format(url))
+    logging.debug("checkauth site_user={0}, site_pword={1}".format(site_user, site_pword))
     req = Request('GET',
                   url,
                   auth=(site_user, site_pword),

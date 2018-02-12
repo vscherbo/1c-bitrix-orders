@@ -58,8 +58,8 @@ def parse_xml(xml_lines):
         bx_buyer_login = buyer[1].strip(' ')
         bx_buyer_name = buyer[2].strip(' ')
         flagFastOrder = 'OrderUser' in bx_buyer_login
-        bx_buyer_inn = bx_counterpart.find(u'ИНН')
-        bx_buyer_kpp = bx_counterpart.find(u'КПП')
+        bx_buyer_inn = bx_counterpart.find(u'ИНН').text
+        bx_buyer_kpp = bx_counterpart.find(u'КПП').text
         loc_legal_entity = bx_buyer_inn is not None
         logging.debug("bx_buyer_id={0}, юр.лицо={1}".format(bx_buyer_id, loc_legal_entity))
         # TODO search buyer_id in DB
@@ -205,10 +205,12 @@ if xml_lines is not None:
         if args.run_sql:
             sql_lines = "".join(sql_order)
             cur.execute(sql_lines)
+            logging.info('INSERT completed')
             pg_con.commit()
             if args.create_bill:
-                run_bxorder2bill = u'SELECT bxorder2bill('+ bx_order_id + u');'
+                run_bxorder2bill = u'SELECT bxorder2bill({0});'.format(bx_order_id)
                 cur.execute(run_bxorder2bill)
+                logging.info('bxorder2bill completed')
                 pg_con.commit()
 
 pg_con.commit()
