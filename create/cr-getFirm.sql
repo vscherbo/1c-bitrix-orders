@@ -26,7 +26,8 @@ ELSIF aCode = 223719 THEN
 ELSE 
     SELECT INTO flgDealer exists(select 1 from vwДилеры WHERE "Код"= aCode);
     IF flgDealer THEN
-        ourFirm = 'КИПСПБ';
+--        ourFirm = 'КИПСПБ';
+       ourFirm = 'ТД3';
     ELSIF flgOwen THEN
         ourFirm = 'ОСЗ';
     ELSE
@@ -46,7 +47,8 @@ ELSE
 END IF;
 
 -- IF 'ТД2' = ourFirm THEN -- Patch
-IF ourFirm NOT IN ('АРКОМ', 'КИПСПБ', 'ОСЗ', 'ЭТК') THEN -- Patch
+-- IF ourFirm NOT IN ('АРКОМ', 'КИПСПБ', 'ОСЗ', 'ЭТК') THEN -- Patch
+IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ЭТК', 'ТД3') THEN -- Patch
     ourFirm := 'ЭТК';
 END IF;
 
