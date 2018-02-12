@@ -56,7 +56,7 @@ JOIN (SELECT "ДатаСтартаПодписи", "КодОтчета", "Ном
     ORDER BY "ДатаСтартаПодписи" DESC LIMIT 1 ) AS s ON s."КлючФирмы" = b."фирма"
 WHERE 
 b."№ счета" = 
-""" + str(bill_no) + ";"
+""" + str(bill_no) + ' ORDER BY r."Ф_ДатаВводаРеквизитов" desc limit 1;'
 
 recs = plpy.execute(bill_fax_fields_query)
 if 0 == recs.nrows():
@@ -67,7 +67,7 @@ for (k, v) in recs[0].items():
     if v is None:
         upd_dict[k] = ''
     else:
-        #plpy.log('[' + v + ']')
+        # plpy.log('[' + v + ']')
         upd_dict[k] = v.decode('utf-8')
 
 locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
@@ -94,11 +94,22 @@ WHERE
 c."№ счета" = 
 """ + str(bill_no) + """ ORDER BY c."ПозицияСчета";"""
 
-#fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period", 7: "pg_sum_dec", 8: "pg_sum_novat_dec"}
 fld_items = {0: "pg_position", 1: "pg_pos_name", 2: "pg_mes_unit", 3: "pg_qnt", 4: "pg_price", 5: "pg_sum", 6: "pg_period"}
 
+plpy.notice("pg_firm_key=" + upd_dict["pg_firm_key"].encode('utf-8'))
 home = expanduser("~")
-doc = load(home + u'/fill-forms/bill_fax_template-'+ upd_dict["pg_firm_key"]  +u'.odt')
+
+firm_code = upd_dict["pg_firm_key"]
+plpy.notice("firm_code=_{0}_".format(firm_code.encode('utf-8')) )
+
+#doc_template = home + '/fill-forms/bill_fax_template-'+ upd_dict["pg_firm_key"]  +'.odt'
+#doc_template = home + u'/fill-forms/bill_fax_template-'+ firm_code + u'.odt'
+# plpy.notice("doc_template=_{0}_".format(doc_template.encode('utf-8')) )
+# 
+#doc = load(home + u'/fill-forms/bill_fax_template-'+ upd_dict["pg_firm_key"].decode('utf-8')  +u'.odt')
+#
+doc = load(home + '/fill-forms/bill_fax_template-'+ firm_code  +'.odt')
+
 rv = plpy.execute("SELECT const_value FROM arc_energo.arc_constants WHERE const_name='autobill_out_dir'")
 out_dir = rv[0]["const_value"]
 outfile=out_dir + '/db/'+ str(bill_no)[:4] + '-' + str(bill_no)[4:] + '-Счет-факс.odt'.decode('utf-8')

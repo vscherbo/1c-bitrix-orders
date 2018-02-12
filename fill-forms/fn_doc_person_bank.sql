@@ -34,7 +34,7 @@ JOIN arc_energo."ФирмаРеквизиты" r ON b."фирма" = r."КодФ
 JOIN arc_energo."Сотрудники" e ON autobill_mgr(b."Хозяин") = e."Менеджер"
 WHERE 
 b."№ счета" = 
-""" + str(bill_no) + ";"
+""" + str(bill_no) + ' ORDER BY r."Ф_ДатаВводаРеквизитов" desc limit 1;'
 
 home = expanduser("~")
 tpl = svglue.load(file=home+'/fill-forms/person-bank.svg')
@@ -52,6 +52,7 @@ pg_mgr_name = res[0]["pg_mgr_name"].decode('UTF-8')
 wr = textwrap.TextWrapper(width=50, break_long_words=False)
 a_b_list = wr.wrap(res[0]["pg_account_bank"].decode('UTF-8'))
 
+#plpy.log(res[0]["pg_account_bank"])
 
 tpl.set_text('firm1', pg_firm)
 tpl.set_text('firm2', pg_firm)
@@ -61,8 +62,16 @@ tpl.set_text('kpp1', res[0]["pg_kpp"])
 tpl.set_text('kpp2', res[0]["pg_kpp"])
 tpl.set_text('account_bank1', a_b_list[0])
 tpl.set_text('account_bank2', a_b_list[0])
-tpl.set_text('bank_tail1', a_b_list[1])
-tpl.set_text('bank_tail2', a_b_list[1])
+try:
+    loc_tail = a_b_list[1]
+except IndexError:
+    loc_tail = ''
+
+tpl.set_text('bank_tail1', loc_tail)
+tpl.set_text('bank_tail2', loc_tail)
+# tpl.set_text('bank_tail1', a_b_list[1])
+# tpl.set_text('bank_tail2', a_b_list[1])
+
 tpl.set_text('corresp1', res[0]["pg_corresp"])
 tpl.set_text('corresp2', res[0]["pg_corresp"])
 tpl.set_text('bik1', res[0]["pg_bik"])

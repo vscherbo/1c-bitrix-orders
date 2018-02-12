@@ -102,7 +102,7 @@ JOIN "ФирмаРеквизиты" r ON b."фирма" = r."КодФирмы" A
 JOIN "Сотрудники" e ON autobill_mgr(b."Хозяин") = e."Менеджер"
 WHERE
 b."№ счета" = 
-""" + str(bill_no) + ";"
+""" + str(bill_no) + ' ORDER BY r."Ф_ДатаВводаРеквизитов" desc limit 1;'
 
 recs = plpy.execute(order_fields_query)
 upd_dict = {}
