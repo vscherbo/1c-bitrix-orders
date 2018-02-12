@@ -28,18 +28,19 @@ select 30, '   в т.ч. юр.лиц: ' || count(*) FROM aub
 join "Счета" on "Счета"."№ счета" = aub."Счет" and not "Счета"."Дилерский" and "Счета"."Код" <> 223719
 union
 select 35, '      в т.ч. юр.лиц без регистрации: ' || count(*) FROM aub
-join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарий покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
+join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарии покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
 join "Счета" on "Счета"."№ счета" = aub."Счет" and not "Счета"."Дилерский" and "Счета"."Код" <> 223719
 union
 select 40, '   в т.ч. физ.лиц: ' || count(*) FROM aub
 join "Счета" on "Счета"."№ счета" = aub."Счет" and "Счета"."Код" = 223719
 union
 select 50, '      в т.ч. физ.лиц без регистрации: ' || count(*) FROM aub
-join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарий покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
+join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарии покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
 join "Счета" on "Счета"."№ счета" = aub."Счет" and "Счета"."Код" = 223719
 order by 1) aub_rep;
 
 -- in details
+\echo
 select 'Автосчёт не создан: ' || count(*)
 FROM arc_energo.bx_order bo
 where
@@ -97,14 +98,14 @@ select 30, '   в т.ч. юр.лиц: ' || count(*) FROM aub
 join "Счета" on "Счета"."№ счета" = aub."Счет" and not "Счета"."Дилерский" and "Счета"."Код" <> 223719
 union
 select 35, '      в т.ч. юр.лиц без регистрации: ' || count(*) FROM aub
-join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарий покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
+join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарии покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
 join "Счета" on "Счета"."№ счета" = aub."Счет" and not "Счета"."Дилерский" and "Счета"."Код" <> 223719
 union
 select 40, '   в т.ч. физ.лиц: ' || count(*) FROM aub
 join "Счета" on "Счета"."№ счета" = aub."Счет" and "Счета"."Код" = 223719
 union
 select 50, '      в т.ч. физ.лиц без регистрации: ' || count(*) FROM aub
-join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарий покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
+join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарии покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
 join "Счета" on "Счета"."№ счета" = aub."Счет" and "Счета"."Код" = 223719
 order by 1) aub_rep;
 \t off
