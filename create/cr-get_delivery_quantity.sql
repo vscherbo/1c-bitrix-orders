@@ -11,7 +11,7 @@ $BODY$
            FROM bx_order_item_feature 
            WHERE "bx_order_Номер" = arg_order_id
                  AND bx_order_item_id = arg_order_item_id 
-                 AND fname = 'Срок-Количество' OR fname = 'СвойствоКорзины#TIME_QNT' ;
+                 AND (fname = 'Срок-Количество' OR fname = 'СвойствоКорзины#TIME_QNT') ;
 $BODY$
   LANGUAGE sql VOLATILE
   COST 100;
