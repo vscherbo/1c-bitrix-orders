@@ -108,7 +108,7 @@ def parse_xml(xml_lines):
                 bof_value = None
             else:
                 bof_value = val.text.encode('utf-8').replace('\r\n', '/').replace('\n', '/').replace("'", "''")
-            if (u'Сайт' == bof_name and u'ar' == val.text):
+            if ('Сайт' == bof_name and 'ar' == bof_value):
                 do_sites = True
             insert_bx_order_feature = 'INSERT INTO bx_order_feature("bx_order_Номер", fname, fvalue)'
             values_bx_order_feature = "VALUES({0}, '{1}', '{2}');\n".format(bx_order_id, bof_name, bof_value)
