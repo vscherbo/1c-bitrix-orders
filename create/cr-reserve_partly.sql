@@ -36,7 +36,9 @@ LOOP
 
     IF position('со склада' in loc_when) > 0 THEN
         -- loc_lack := setup_reserve(a_bill_no, ks, loc_qnt);
-        loc_lack := ctr_reserve(a_bill_no, ks, loc_qnt);
+        loc_str := format('ctr_reserve2(a_bill_no={%s}, ks={%s}, loc_qnt={%s}', a_bill_no, ks, loc_qnt);
+        RAISE NOTICE 'со склада %', loc_str;
+        loc_lack := ctr_reserve2(a_bill_no, ks, loc_qnt);
         IF loc_lack > 0 THEN 
             loc_reason := 'нет в наличии';
         ELSE
@@ -50,9 +52,15 @@ LOOP
     ELSIF regexp_matches(loc_when, '^к (\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT) IS NOT NULL THEN
         loc_res := regexp_matches(loc_when, '.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT);
         RAISE NOTICE 'parsed expected=%', loc_res[1];
-        loc_str := format('setup_reserve_expected(a_bill_no={%s}, ks={%s}, loc_qnt={%s}, loc_res[1]={%s}', a_bill_no, ks, loc_qnt, loc_res[1]);
+        -- loc_str := format('setup_reserve_expected(a_bill_no={%s}, ks={%s}, loc_qnt={%s}, loc_res[1]={%s}', a_bill_no, ks, loc_qnt, loc_res[1]);
+        loc_str := format('ctr_reserve2(a_bill_no={%s}, ks={%s}, loc_qnt={%s}, loc_res[1]={%s}', a_bill_no, ks, loc_qnt, loc_res[1]);
         RAISE NOTICE '%', loc_str;
-        SELECT * INTO loc_lack, loc_reason FROM setup_reserve_expected(a_bill_no, ks, loc_qnt, loc_res[1]::timestamp without time zone);
+        -- SELECT * INTO loc_lack, loc_reason FROM setup_reserve_expected(a_bill_no, ks, loc_qnt, loc_res[1]::timestamp without time zone);
+        loc_reason = '';
+        SELECT * INTO loc_lack FROM ctr_reserve2(a_bill_no, ks, loc_qnt, loc_res[1]::date);
+        IF loc_lack > 0 THEN
+            loc_reason := 'нехватка в идущих';
+        END IF;
         RAISE NOTICE '-->из идущих={%}, причина нехватки={%}', loc_lack, loc_reason;
     ELSIF regexp_matches(loc_when, '.од заказ.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT) IS NOT NULL THEN
         loc_res := regexp_matches(loc_when, '.*(\d{4}.\d{2}.\d{2}|\d{2}.\d{2}.\d{4})', 'g'::TEXT);
