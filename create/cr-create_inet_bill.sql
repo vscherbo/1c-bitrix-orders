@@ -100,7 +100,7 @@ UNION
 ) LOOP
     --
     RAISE NOTICE 'Заказ=%, обрабатываем Товар=%, oi.mod_id=%', oi."bx_order_Номер", oi.Наименование, oi.mod_id;
-    INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no, oi.mod_id, format('Старт %s', oi.Наименование));
+    INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no, oi.mod_id, format('Старт %s', oi."Наименование"));
     SELECT "КодСодержания","Поставщик" INTO loc_KS, vendor_id from vwsyncdev 
             WHERE vwsyncdev.mod_id = oi.mod_id;
     RAISE NOTICE 'loc_KS=%, vendor_id=%', loc_KS, vendor_id;
@@ -125,15 +125,7 @@ UNION
          skipCheckOwen := TRUE; -- если встретился 'не Овен', больше не проверяем
        END IF;
        
-       -- TODO заменить на stock_availability
        loc_delivery_quantity := '';
-       /**
-       INSERT INTO qnt_in_stock(ks, whid, whqnt) SELECT loc_KS, (is_in_stock(loc_KS)).* ;
-       loc_in_stock := 0;
-       loc_in_stock := COALESCE(
-                           (SELECT SUM(whqnt) FROM qnt_in_stock WHERE qnt_in_stock.ks = loc_KS)
-                           , 0);
-       **/
        loc_in_stock := stock_availability_mod_id(oi.mod_id, TRUE, loc_KS);
        INSERT INTO aub_qnt_in_stock(bx_order_no, ks, mod_id, whqnt) VALUES(bx_order_no, loc_KS, oi.mod_id, loc_in_stock);
        RAISE NOTICE 'KS=%, loc_in_stock=%, нужно=%', loc_KS, loc_in_stock, oi."Количество";
@@ -142,7 +134,7 @@ UNION
 
           -- DEBUG only
           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-             '%s(KS=%s) ОК [%s]', oi.Наименование, loc_KS, loc_in_stock
+             '%s(KS=%s) ОК [в наличии %s, нужно %s]', oi.Наименование, loc_KS, loc_in_stock, oi."Количество"
           ), 1 ); 
 
        ELSE -- недостаточно Ясная+Выставка
@@ -151,7 +143,7 @@ UNION
               CreateResult := GREATEST(1, CreateResult); -- если есть разбивка сроки-количество, создаём автосчёт
               -- DEBUG only
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
-                 '%s(KS=%s) синхронизирован, резервирование со склада [%s]', oi.Наименование, loc_KS, loc_in_stock
+                 '%s(KS=%s) синхронизирован, нужно [%s], со склада [%s]', oi.Наименование, loc_KS, oi."Количество", loc_in_stock
               ), CreateResult ); 
               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, format(
                  '%s(KS=%s) указаны срок-количество=[%s]', oi.Наименование, loc_KS, loc_delivery_quantity
@@ -293,13 +285,15 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                         "Срок2",
                         "ПозицияСчета", "Наименование",
                         "Цена", "ЦенаНДС", "Скидка",
-                        "Гдезакупать", "Артикул1С")
+                        -- "Гдезакупать", "Артикул1С")
+                        "Артикул1С")
                         VALUES (loc_bill_no,
                         item.ks, loc_okei_code, loc_measure_unit, item.oi_quantity,
                         loc_OrderItemProcessingTime,
                         npp, loc_item_name,
                         round(Price, 2), PriceVAT, 0-real_discount,
-                        loc_where_buy, loc_1C_article) 
+                        -- loc_where_buy, loc_1C_article) 
+                        loc_1C_article) 
                     RETURNING * 
                 ) SELECT * INTO inserted_bill_item FROM inserted;
                 Npp := Npp+1;
@@ -323,19 +317,19 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                         END IF;
                     ELSE -- без разбивки сроки-количество
                         -- loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
-                        loc_lack_reserve := ctr_reserve(loc_bill_no, item.ks, item.oi_quantity);
+                        loc_lack_reserve := ctr_reserve2(loc_bill_no, item.ks, item.oi_quantity);
                         loc_lack_reason := NULL;
                         loc_where_buy := 'Рез.склада';
                         RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
                     END IF;
-                    UPDATE "Содержание счета" SET "Гдезакупать" = loc_where_buy || ' ' || "Гдезакупать" 
-                           WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
+                    /** UPDATE "Содержание счета" SET "Гдезакупать" = loc_where_buy || ' ' || "Гдезакупать" 
+                           WHERE "КодПозиции" = inserted_bill_item."КодПозиции"; **/
 
                     -- Извещение о неудачном резерве
                     IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
                         -- TODO рассмотреть: CreateResult := GREATEST(7, CreateResult);
                         CreateResult := 7; -- не удалось создать резерв
-                        UPDATE "Содержание счета" SET "Срок2" = NULL, "Гдезакупать" = NULL WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
+                        -- UPDATE "Содержание счета" SET "Срок2" = NULL, "Гдезакупать" = NULL WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
                         loc_lack_reason := format('%s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
                                item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
                         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
