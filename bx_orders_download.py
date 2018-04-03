@@ -24,7 +24,7 @@ def get_xml_list_fixed(inp_text):
             loc_xml_orders.append(utf8_line)
     return loc_xml_orders
 
-def get_orders(site, site_user, site_pword, version):
+def get_orders(site, site_user, site_pword, version, timeout=5):
     if site.endswith('arc.world'):
         verify_flag = False
         proto = 'http://'
@@ -50,7 +50,7 @@ def get_orders(site, site_user, site_pword, version):
     prepped = sess.prepare_request(req)
     resp = None
     try:
-        resp = sess.send(prepped)
+        resp = sess.send(prepped, timeout=timeout)
         logging.debug("checkauth prepped sent")
         logging.debug("checkauth resp.status_code=%s", resp.status_code)
         logging.debug("checkauth resp.text=%s", resp.text)
@@ -80,7 +80,7 @@ def get_orders(site, site_user, site_pword, version):
             req.params = {'type': 'sale', 'mode': 'init', 'version': version, 'sessid': sess_id[1]}
             prepped = sess.prepare_request(req)
             sess.cookies = saved_cookies
-            resp = sess.send(prepped)
+            resp = sess.send(prepped, timeout=timeout)
             logging.debug("init resp.text=%s", resp.text)
             (zip_enabled, file_limit, sessid, version) = resp.text.split()
 
@@ -90,7 +90,7 @@ def get_orders(site, site_user, site_pword, version):
             req.method = 'GET'
             prepped = sess.prepare_request(req)
             sess.cookies = saved_cookies
-            resp = sess.send(prepped)
+            resp = sess.send(prepped, timeout=timeout)
             xml_from_site = resp.text
 
             if 200 == resp.status_code:
@@ -98,7 +98,7 @@ def get_orders(site, site_user, site_pword, version):
                 req.params = {'type': 'sale', 'mode': 'success', 'version': version, 'sessid': sess_id[1]}
                 prepped = sess.prepare_request(req)
                 sess.cookies = saved_cookies
-                resp = sess.send(prepped)
+                resp = sess.send(prepped, timeout=timeout)
                 logging.debug("success resp.text=%s", resp.text)
 
                 xml_orders = get_xml_list_fixed(xml_from_site.splitlines())
