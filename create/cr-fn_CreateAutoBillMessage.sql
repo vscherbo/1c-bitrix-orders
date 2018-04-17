@@ -50,7 +50,7 @@ SELECT fvalue INTO buyer_comment FROM bx_order_feature WHERE order_id = "bx_orde
                mstr := mstr || E'\nВо вложении находится счёт для оплаты. Счёт действителен в течение 5 дней.';
                loc_msg_type := 4; -- счёт-факс
             ELSE
-               RAISE NOTICE 'Доставка не совместимая с авточётом. Пропускаем извещение для клиента.';
+               RAISE NOTICE 'Доставка не совместимая с автосчётом. Пропускаем извещение для клиента.';
                loc_message_id := -3; -- обработать в CreateAutoBillNotification
             END IF; -- широко используемые ТК или Самовывоз
         END IF; -- физлицо
