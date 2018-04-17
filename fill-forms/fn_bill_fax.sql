@@ -20,7 +20,7 @@ SELECT
 r."Ф_НазваниеКратко" pg_firm
 , s."ЗаДиректора" pg_signature
 , s."ВидНомерДатаДокументаДир" pg_proxy_doc
-, r."Ф_НазваниеПолное" pg_firm_full_name
+, r."Ф_НазваниеКратко" pg_firm_full_name
 , r."Ф_ПочтовыйАдрес" pg_post_address
 , r."Ф_ФактическийАдрес" pg_fact_address
 , r."Ф_Телефон" pg_citi_phone
