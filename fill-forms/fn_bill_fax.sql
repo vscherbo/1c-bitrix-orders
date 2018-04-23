@@ -39,6 +39,9 @@ r."Ф_НазваниеКратко" pg_firm
 , COALESCE (quote_literal(b."ОтгрузкаКем") || '. Оплата доставки при получении', 'Самовывоз') pg_carrier
 , e.email pg_email
 , e.telephone pg_phone
+, CASE WHEN e.mob_phone IS NULL THEN '' ELSE 'моб.т./WhatsApp/Viber: ' END pg_mob_label 
+, COALESCE(e.mob_phone, '') pg_mob_phone
+, '(812) 327-32-40' pg_firm_phone
 , e."ФИО" pg_mgr_name
 , c."ЮрНазвание" pg_firm_buyer
 , c."Факс" pg_fax
@@ -88,7 +91,7 @@ c."ПозицияСчета"::VARCHAR pg_position
 ,to_char(round("Кол-во"*"ЦенаНДС", 2), '999 999D99') pg_sum
 ,COALESCE("Срок2", E'') pg_period
 ,round("Кол-во"*"ЦенаНДС", 2) pg_sum_dec
-,round("Кол-во"*"Цена", 2) pg_sum_novat_dec
+,COALESCE(round("Кол-во"*"Цена", 2), 0) pg_sum_novat_dec
 FROM "Содержание счета" c
 WHERE
 c."№ счета" = 

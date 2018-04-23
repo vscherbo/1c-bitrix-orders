@@ -94,6 +94,8 @@ r."Ф_НазваниеКратко" pg_firm
 , to_char(b."Дата счета", 'DD.MM.YYYY') pg_order_date
 , e.email pg_email
 , e.telephone pg_phone
+, e.mob_phone pg_mob_phone
+, '(812) 327-32-40' pg_firm_phone
 , e."Имя" pg_mgr_name
 , COALESCE(b."Дополнительно", E'') pg_add_info
 FROM "Счета" b
