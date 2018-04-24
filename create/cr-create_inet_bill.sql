@@ -54,6 +54,7 @@ loc_firm_code integer;
 loc_delivery_qnt_flag boolean;
 loc_suspend_bill_msg_flag boolean;
 loc_suspend_bill_msg text;
+loc_no_autobill_item  boolean;
 BEGIN
 RAISE NOTICE '##################### Начало create_inet_bill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -69,7 +70,7 @@ ELSE
     RETURN CreateResult;
 END IF;
 
-DROP TABLE IF EXISTS tmp_order_items; -- until 2017-03-07
+DROP TABLE IF EXISTS tmp_order_items;
 CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_items(ks integer, oi_id TEXT, oi_okei_code integer, oi_measure_unit character varying(50), whid integer, oi_quantity numeric(18,3), oi_delivery_qnt TEXT, oi_name VARCHAR, oi_mod_id VARCHAR, oi_modificators VARCHAR) ON COMMIT DROP;
 TRUNCATE tmp_order_items; -- if exists
 
@@ -168,7 +169,7 @@ UNION
                                FROM "vwСкладВсеПодробно" v
                                JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
                                WHERE
-                                    v."КодСклада" In (2,5) AND
+                                    v."КодСклада" In (2,5,14) AND
                                     "КодСодержания" = loc_KS
                                     GROUP BY wh."Склад", "КодСодержания", quality
               LOOP
@@ -301,42 +302,49 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 loc_lack_reserve := 0;
                 -- SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
 
-                IF item.ks IS NOT NULL THEN -- резервы, только для товаров с КС
-                    IF loc_delivery_qnt_flag THEN -- разбивка сроки-количество
-                        IF loc_suspend_bill_msg_flag THEN
-                           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id, format(
-                              '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
-                             ), CreateResult ); 
-                        END IF;
-                        SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
-                        RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
-                        IF loc_lack_reserve = 0 THEN
-                            -- TODO заменить на Рез.склада, ЖДЁМ. АБ/ВВ не д.б. для loc_lack_reserve = 0
-                            loc_where_buy := regexp_replace(item.oi_delivery_qnt, E'со склада', E'Рез.склада');
-                            loc_where_buy := regexp_replace(loc_where_buy, E'к ', E'ЖДЁМ ', 'g'); -- global
-                        END IF;
-                    ELSE -- без разбивки сроки-количество
-                        -- loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
-                        loc_lack_reserve := ctr_reserve2(loc_bill_no, item.ks, item.oi_quantity);
-                        loc_lack_reason := NULL;
-                        loc_where_buy := 'Рез.склада';
-                        RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
-                    END IF;
-                    /** UPDATE "Содержание счета" SET "Гдезакупать" = loc_where_buy || ' ' || "Гдезакупать" 
-                           WHERE "КодПозиции" = inserted_bill_item."КодПозиции"; **/
-
-                    -- Извещение о неудачном резерве
-                    IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
-                        -- TODO рассмотреть: CreateResult := GREATEST(7, CreateResult);
-                        CreateResult := 7; -- не удалось создать резерв
-                        -- UPDATE "Содержание счета" SET "Срок2" = NULL, "Гдезакупать" = NULL WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
-                        loc_lack_reason := format('%s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
-                               item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
+                IF item.ks IS NOT NULL THEN -- далее только для товаров с КС
+                    loc_no_autobill_item := no_autobill_item(item.ks); -- не для автосчёта (стопХ)
+                    IF loc_no_autobill_item THEN -- не для автосчёта (стопХ)
+                        CreateResult := 11; -- имеет флаг СТОП
+                        loc_lack_reason := format('%s(KS=%s) имеет флаг СТОП, автосчёт не будет отправлен клиенту',
+                               item.oi_name, item.ks);
                         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
                         PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
-                    END IF; -- loc_lack_reserve <> 0
+                    ELSE
+                        IF loc_delivery_qnt_flag THEN -- разбивка сроки-количество
+                            IF loc_suspend_bill_msg_flag THEN
+                               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id, format(
+                                  '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
+                                 ), CreateResult ); 
+                            END IF;
+                            SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
+                            RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
+                            IF loc_lack_reserve = 0 THEN
+                                -- TODO заменить на Рез.склада, ЖДЁМ. АБ/ВВ не д.б. для loc_lack_reserve = 0
+                                loc_where_buy := regexp_replace(item.oi_delivery_qnt, E'со склада', E'Рез.склада');
+                                loc_where_buy := regexp_replace(loc_where_buy, E'к ', E'ЖДЁМ ', 'g'); -- global
+                            END IF;
+                        ELSE -- без разбивки сроки-количество
+                            -- loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
+                            loc_lack_reserve := ctr_reserve2(loc_bill_no, item.ks, item.oi_quantity);
+                            loc_lack_reason := NULL;
+                            loc_where_buy := 'Рез.склада';
+                            RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
+                        END IF;
+
+                        -- Извещение о неудачном резерве
+                        IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
+                            -- TODO рассмотреть: CreateResult := GREATEST(7, CreateResult);
+                            CreateResult := 7; -- не удалось создать резерв
+                            -- UPDATE "Содержание счета" SET "Срок2" = NULL, "Гдезакупать" = NULL WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
+                            loc_lack_reason := format('%s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
+                                   item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
+                            INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
+                            PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
+                        END IF; -- loc_lack_reserve <> 0
+                    END IF; -- loc_no_autobill_item
                 END IF; -- locKS IS NOT NULL
-            END LOOP;
+            END LOOP; -- позиции счёта
             IF CreateResult = 7 THEN
                 loc_aub_msg := format('Автосчёт {%s} создан, но не удалось поставить все резервы', bill."№ счета");
             ELSE 
