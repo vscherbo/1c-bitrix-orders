@@ -77,7 +77,9 @@ IF of_Site_found AND is_kipspb THEN
             END IF;
         END IF; -- 1 = loc_cr_bill_result
         -- менеджеру 
-        IF loc_cr_bill_result IN (1,2,6,7,10) THEN -- включая частичный автосчёт
+        -- IF loc_cr_bill_result IN (1,2,6,7,10,11) THEN -- включая частичный автосчёт
+        PERFORM 1 FROM vw_autobill_created WHERE ab_code = loc_cr_bill_result;
+        IF FOUND THEN -- включая частичный автосчёт
             RAISE NOTICE 'Создаём сообщение менеджеру для заказа=%', arg_bx_order_no;
             -- loc_msg_id, которое вернула "fnCreateAutoBillMessage", содержит код_причины неотправки письма клиенту об автосчёте
             BEGIN
@@ -100,7 +102,7 @@ IF of_Site_found AND is_kipspb THEN
             ELSE
                 RAISE NOTICE 'ERROR: не создано сообщение менеджеру для заказа=%, loc_msg_id=%', arg_bx_order_no, quote_nullable(loc_msg_id);
             END IF;
-        END IF; -- loc_cr_bill_result IN (...)
+        END IF; -- loc_cr_bill_result IN vw_autobill_created
     END IF; -- FOUND "№ счета"
 ELSE
     loc_reason := format('Заказ не kipspb, пропускаем (of_Site_found=%s, is_kipspb=%s)', of_Site_found, is_kipspb);
