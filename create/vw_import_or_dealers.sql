@@ -1,27 +1,27 @@
 CREATE OR REPLACE VIEW vw_import_or_dealers AS 
- SELECT k."Категория",
-    n."Модель",
-    t1."Стат",
-    p."Предприятие",
-    s."КодСодержания",
+ SELECT k."РљР°С‚РµРіРѕСЂРёСЏ",
+    n."РњРѕРґРµР»СЊ",
+    t1."РЎС‚Р°С‚",
+    p."РџСЂРµРґРїСЂРёСЏС‚РёРµ",
+    s."РљРѕРґРЎРѕРґРµСЂР¶Р°РЅРёСЏ",
         CASE
-            WHEN COALESCE(s."Дилерский", false) THEN '+'::text
+            WHEN COALESCE(s."Р”РёР»РµСЂСЃРєРёР№", false) THEN '+'::text
             ELSE NULL::text
-        END AS "Дил",
-    s."НазваниевСчет",
-    s."Кратко",
-    s."КодТНВЭД",
+        END AS "Р”РёР»",
+    s."РќР°Р·РІР°РЅРёРµРІРЎС‡РµС‚",
+    s."РљСЂР°С‚РєРѕ",
+    s."РљРѕРґРўРќР’Р­Р”",
     s.nosinc_dm
-   FROM "Содержание" s
-     --LEFT JOIN vwsupcurrent v ON s."КодСодержания" = v."КодСодержания"
-     LEFT JOIN "Предприятия" p ON s."Поставщик" = p."Код"
-LEFT JOIN ( SELECT "КодСодержания",
-            'Разраб'::text AS "Стат"
+   FROM "РЎРѕРґРµСЂР¶Р°РЅРёРµ" s
+     --LEFT JOIN vwsupcurrent v ON s."РљРѕРґРЎРѕРґРµСЂР¶Р°РЅРёСЏ" = v."РљРѕРґРЎРѕРґРµСЂР¶Р°РЅРёСЏ"
+     LEFT JOIN "РџСЂРµРґРїСЂРёСЏС‚РёСЏ" p ON s."РџРѕСЃС‚Р°РІС‰РёРє" = p."РљРѕРґ"
+LEFT JOIN ( SELECT "РљРѕРґРЎРѕРґРµСЂР¶Р°РЅРёСЏ",
+            'Р Р°Р·СЂР°Р±'::text AS "РЎС‚Р°С‚"
            FROM devmod.modifications
-          WHERE modifications.version_num = 0) t1 ON s."КодСодержания" = t1."КодСодержания"
-     JOIN "Наименование" n ON s."КодНаименования" = n."КодНаименования"
-     JOIN "Категория" k ON n."КодКатегории" = k."КодКатегории"
-  WHERE COALESCE(s."Активность", false) AND (s."Поставщик" = 215878 OR COALESCE(s."Дилерский", false)) AND s.stop IS NULL;
+          WHERE modifications.version_num = 0) t1 ON s."РљРѕРґРЎРѕРґРµСЂР¶Р°РЅРёСЏ" = t1."РљРѕРґРЎРѕРґРµСЂР¶Р°РЅРёСЏ"
+     JOIN "РќР°РёРјРµРЅРѕРІР°РЅРёРµ" n ON s."РљРѕРґРќР°РёРјРµРЅРѕРІР°РЅРёСЏ" = n."РљРѕРґРќР°РёРјРµРЅРѕРІР°РЅРёСЏ"
+     JOIN "РљР°С‚РµРіРѕСЂРёСЏ" k ON n."РљРѕРґРљР°С‚РµРіРѕСЂРёРё" = k."РљРѕРґРљР°С‚РµРіРѕСЂРёРё"
+  WHERE COALESCE(s."РђРєС‚РёРІРЅРѕСЃС‚СЊ", false) AND (s."РџРѕСЃС‚Р°РІС‰РёРє" = 215878 OR COALESCE(s."Р”РёР»РµСЂСЃРєРёР№", false)) AND s.stop IS NULL;
 
 ALTER TABLE vw_import_or_dealers
   OWNER TO arc_energo;
