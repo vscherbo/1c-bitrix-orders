@@ -169,7 +169,8 @@ UNION
                                FROM "vwСкладВсеПодробно" v
                                JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
                                WHERE
-                                    v."КодСклада" In (2,5,14) AND
+                                    -- v."КодСклада" In (2,5,14) AND
+                                    v."КодСклада" = ANY (valid_wh(1)) AND -- 1 autobil_creator ID
                                     "КодСодержания" = loc_KS
                                     GROUP BY wh."Склад", "КодСодержания", quality
               LOOP
@@ -274,7 +275,10 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 /** Наименование для Фискального накопителя перекрывает предыдущее наименование ***/
                 loc_1C_article := NULL;
                 IF is_payment_method_fiscal(bx_order_no) THEN -- Яндекс.Касса
-                    loc_item_name := he_decode(format('%s %s', COALESCE(fiscal_name(item.oi_mod_id), item.oi_name), item.oi_modificators));
+                    loc_item_name := he_decode( substring (
+                                                format('%s %s', COALESCE(fiscal_name(item.oi_mod_id), item.oi_name), item.oi_modificators)
+                                                from 1 for 128)
+                                              );
                     loc_1C_article := get_code1c4artikul(loc_kp);
                 END IF;
                 /***/
