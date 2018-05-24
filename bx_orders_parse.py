@@ -146,7 +146,7 @@ def parse_xml(xml_lines):
                     else:
                         bif_value = val.text.encode('utf-8').replace('\r\n', '/').replace('\n', '/').replace("'", "''").replace("&nbsp;", " ")
                     insert_bx_order_item_feature = 'INSERT INTO bx_order_item_feature(bx_order_item_id, "bx_order_Номер", fname, fvalue)'
-                    values_bx_order_item_feature = "VALUES({0}, {1}, '{2}', '{3}');\n".format(bx_item_id, bx_order_id,
+                    values_bx_order_item_feature = "VALUES({0}, {1}, '{2}', NULLIF('{3}', 'None'));\n".format(bx_item_id, bx_order_id,
                                                                                               bif_name, bif_value)
                     sql_bx_order_item_feature = "{0} {1}".format(insert_bx_order_item_feature, values_bx_order_item_feature)
                     logging.debug(sql_bx_order_item_feature)
