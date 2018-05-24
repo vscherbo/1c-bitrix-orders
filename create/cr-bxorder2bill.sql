@@ -81,6 +81,10 @@ IF of_Site_found AND is_kipspb THEN
         PERFORM 1 FROM vw_autobill_created WHERE ab_code = loc_cr_bill_result;
         IF FOUND THEN -- включая частичный автосчёт
             RAISE NOTICE 'Создаём сообщение менеджеру для заказа=%', arg_bx_order_no;
+            IF loc_cr_bill_result <> 1 THEN -- ЗАГОТОВКА
+                UPDATE "Счета" SET "Дополнительно" = 'ЗАГОТОВКА:' || "Дополнительно" WHERE "ИнтернетЗаказ" = arg_bx_order_no;
+            END IF;
+
             -- loc_msg_id, которое вернула "fnCreateAutoBillMessage", содержит код_причины неотправки письма клиенту об автосчёте
             BEGIN
                 loc_msg_id := "fnCreateAutoBillNotification"(arg_bx_order_no, COALESCE(loc_msg_id, loc_cr_bill_result));
