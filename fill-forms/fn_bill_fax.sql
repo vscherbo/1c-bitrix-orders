@@ -23,7 +23,7 @@ r."Ф_НазваниеКратко" pg_firm
 , r."Ф_НазваниеКратко" pg_firm_full_name
 , r."Ф_ПочтовыйАдрес" pg_post_address
 , r."Ф_ФактическийАдрес" pg_fact_address
-, r."Ф_Телефон" pg_citi_phone
+, r."Ф_Телефон" pg_city_phone
 , trim(f."ПрефиксВСчет") pg_prefix
 , f."Ф_ИНН" pg_inn
 , r."Ф_КПП" pg_kpp
