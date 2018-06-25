@@ -22,6 +22,8 @@ IF NOT FOUND THEN -- регистрируем
             ON CONFLICT ("Код", "КодРаботника")
             DO UPDATE SET bx_buyer_id = EXCLUDED.bx_buyer_id;
     END IF; 
+ELSE
+    RAISE NOTICE 'find_emp: Найден работник с кодом=% для предприятия=% в emp_company', ret_emp_code, arg_firm_code;
 END IF; -- not found in emp_company
 
 return COALESCE(ret_emp_code, -4);
