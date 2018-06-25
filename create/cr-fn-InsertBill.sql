@@ -34,6 +34,7 @@ $BODY$ DECLARE
   locVAT NUMERIC;
   locDealerFlag BOOLEAN;
 locAutobillFlag BOOLEAN;
+loc_payment_method varchar;
 BEGIN
     SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Гарантия оплаты дилером';
     IF found THEN BillInfo := BillInfo || ', ' ||PaymentGuarantee; END IF;
@@ -41,6 +42,7 @@ BEGIN
     IF found THEN BillInfo := BillInfo || ', Покупатель: ' ||BuyerComment; END IF;
 
     SELECT fvalue INTO DeliveryMode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Способ доставки';
+    SELECT fvalue INTO loc_payment_method FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Метод оплаты ИД';
 
     -- SELECT Order_ProcessingTime(... args ...) INTO loc_OrderProcessingTime;
     IF DeliveryMode = 'Самовывоз' THEN 
@@ -83,6 +85,7 @@ BEGIN
     END IF;
 
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
+    -- ourFirm := getFirm(acode, flgOwen, loc_payment_method);
     ourFirm := getFirm(acode, flgOwen);
 
     WITH inserted AS (
