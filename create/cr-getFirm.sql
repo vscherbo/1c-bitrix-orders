@@ -40,7 +40,8 @@ ELSE
         IF FOUND THEN
             ourFirm := lastFirm; -- see Patch below
         ELSE
-            ourFirm = 'ЭТК';
+            -- ourFirm = 'ЭТК';
+            ourFirm = 'ТД3';
         END IF; -- FOUND
     END IF;
 
@@ -48,8 +49,9 @@ END IF;
 
 -- IF 'ТД2' = ourFirm THEN -- Patch
 -- IF ourFirm NOT IN ('АРКОМ', 'КИПСПБ', 'ОСЗ', 'ЭТК') THEN -- Patch
-IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ЭТК', 'ТД3') THEN -- Patch
-    ourFirm := 'ЭТК';
+IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ТД3') THEN -- Patch
+    -- ourFirm := 'ЭТК';
+    ourFirm := 'ТД3';
 END IF;
 
 RETURN ourFirm;
