@@ -85,8 +85,7 @@ BEGIN
     END IF;
 
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
-    -- ourFirm := getFirm(acode, flgOwen, loc_payment_method);
-    ourFirm := getFirm(acode, flgOwen);
+    ourFirm := getFirm(acode, flgOwen, loc_payment_method);
 
     WITH inserted AS (
         INSERT INTO "Счета"

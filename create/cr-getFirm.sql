@@ -1,10 +1,11 @@
--- Function: getFirm(integer, boolean)
+-- Function: getFirm(integer, boolean, varchar)
 
--- DROP FUNCTION getFirm(integer, boolean);
+-- DROP FUNCTION getFirm(integer, boolean, varchar);
 
 CREATE OR REPLACE FUNCTION getFirm(
     acode integer,
-    flgowen boolean)
+    flgowen boolean,
+    arg_payment_method varchar)
   RETURNS character varying AS
 $BODY$
 DECLARE
@@ -18,15 +19,19 @@ FROM "Предприятия"
      JOIN "СоотношениеСтатуса" ON "Предприятия"."Код" = "СоотношениеСтатуса"."КодПредприятия"
 WHERE 
     acode = "Предприятия"."Код"
-    AND "СоотношениеСтатуса"."СтатусПредприятия" = 12;
+    AND "СоотношениеСтатуса"."СтатусПредприятия" = 12; -- без НДС
 IF FOUND THEN
     ourFirm = 'АРКОМ';
-ELSIF aCode = 223719 THEN
-    ourFirm = 'АРКОМ';
+ELSIF aCode = 223719 THEN -- физ. лицо
+    IF '22' = arg_payment_method THEN -- наличный
+        -- ourFirm = 'ИПБ';
+        ourFirm = 'АРКОМ'; -- до 2018-07-01
+    ELSE
+        ourFirm = 'АРКОМ';
+    END IF; -- arg_payment_method
 ELSE 
     SELECT INTO flgDealer exists(select 1 from vwДилеры WHERE "Код"= aCode);
     IF flgDealer THEN
---        ourFirm = 'КИПСПБ';
        ourFirm = 'ТД3';
     ELSIF flgOwen THEN
         ourFirm = 'ОСЗ';
@@ -49,7 +54,8 @@ END IF;
 
 -- IF 'ТД2' = ourFirm THEN -- Patch
 -- IF ourFirm NOT IN ('АРКОМ', 'КИПСПБ', 'ОСЗ', 'ЭТК') THEN -- Patch
-IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ТД3') THEN -- Patch
+-- IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ЭТК', 'ТД3') THEN -- Patch
+IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ТД3', 'ИПБ') THEN -- Patch
     -- ourFirm := 'ЭТК';
     ourFirm := 'ТД3';
 END IF;
@@ -58,6 +64,6 @@ RETURN ourFirm;
 END;$BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION getFirm(integer, boolean)
+ALTER FUNCTION getFirm(integer, boolean, varchar)
   OWNER TO arc_energo;
-COMMENT ON FUNCTION getFirm(integer, boolean) IS 'Возвращает аббревиатуру нашей компании, от которой будет сформирован счёт';
+COMMENT ON FUNCTION getFirm(integer, boolean, varchar) IS 'Возвращает аббревиатуру нашей компании, от которой будет сформирован счёт';
