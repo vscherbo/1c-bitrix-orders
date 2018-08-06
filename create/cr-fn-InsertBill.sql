@@ -5,7 +5,7 @@
 CREATE OR REPLACE FUNCTION fn_insertbill(
     arg_createresult integer,
     sum numeric,
-    bx_order integer,
+    bx_order_no integer,
     acode integer,
     aempcode integer,
     flgowen boolean,
@@ -35,14 +35,28 @@ $BODY$ DECLARE
   locDealerFlag BOOLEAN;
 locAutobillFlag BOOLEAN;
 loc_payment_method varchar;
+loc_comment BOOLEAN;
+loc_in_stock BOOLEAN;
+loc_courier BOOLEAN;
+loc_set_bill_owner TEXT;
+loc_aub_msg text;
+loc_no_aub_reason text;
+loc_reason_code integer := 100;
 BEGIN
-    SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Гарантия оплаты дилером';
+    loc_in_stock := (1 = arg_createresult); -- всё доступно, м.б. в т.ч. из идущих
+    SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_no AND fname = 'Гарантия оплаты дилером';
     IF found THEN BillInfo := BillInfo || ', ' ||PaymentGuarantee; END IF;
-    SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Комментарии покупателя';
+    SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_no AND fname = 'Комментарии покупателя';
     IF found THEN BillInfo := BillInfo || ', Покупатель: ' ||BuyerComment; END IF;
+    loc_comment := BuyerComment IS NOT NULL;  -- есть комментарий
+    RAISE NOTICE 'bx_order_no=%, BuyerComment=%,  loc_comment=%', bx_order_no,  COALESCE(BuyerComment, 'strNULL'), COALESCE(loc_comment::text, 'strNULL');
 
-    SELECT fvalue INTO DeliveryMode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Способ доставки';
-    SELECT fvalue INTO loc_payment_method FROM bx_order_feature WHERE "bx_order_Номер" = bx_order AND fname = 'Метод оплаты ИД';
+    SELECT fvalue INTO DeliveryMode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_no AND fname = 'Способ доставки';
+    RAISE NOTICE 'bx_order_no=%, DeliveryMode=%', bx_order_no,  COALESCE(DeliveryMode, 'strNULL');
+    loc_courier := (position('урьер' in DeliveryMode)>0); -- доставка курьером или курьерской службой
+    RAISE NOTICE 'bx_order_no=%, DeliveryMode=%,  loc_courier=%', bx_order_no,  COALESCE(DeliveryMode, 'strNULL'), COALESCE(loc_courier::text, 'strNULL');
+
+    SELECT fvalue INTO loc_payment_method FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_no AND fname = 'Метод оплаты ИД';
 
     -- SELECT Order_ProcessingTime(... args ...) INTO loc_OrderProcessingTime;
     IF DeliveryMode = 'Самовывоз' THEN 
@@ -61,27 +75,59 @@ BEGIN
                     ||  ' Доставка продукции компанией ''' || DeliveryMode || '''.' 
                     ||' Оплата доставки при получении.';
        /**/
-       -- ExtraInfo := 'Доставка продукции компанией ''' || DeliveryMode || '''. Оплата доставки при получении.';
        loc_DeliveryPayer := 'Они';
     END IF;
 
     PERFORM 1 FROM "vwДилеры" WHERE "Код" = acode;
     locDealerFlag := FOUND;
+    /**
     locAutobillFlag := (BuyerComment IS NULL -- без комментария
                         AND 1 = arg_createresult -- всё доступно, м.б. в т.ч. из идущих
                         AND (position('урьер' in DeliveryMode)=0) -- доставка не курьером и не курьерской службой
                         AND NOT flg_delivery_qnt -- нет разбивки срок-количество
                        );
+    **/
+    locAutobillFlag := loc_in_stock  -- всё доступно
+                       AND NOT loc_comment  -- без комментария
+                       AND NOT loc_courier  -- НЕ доставка курьером или курьерской службой
+                       AND NOT flg_delivery_qnt; -- нет разбивки срок-количество
 
+    RAISE NOTICE 'bx_order_no=%, locDealerFlag=%,  locAutobillFlag=%', bx_order_no, locDealerFlag, locAutobillFlag;
+   -- loc_no_aub_reason, loc_set_bill_owner;
     IF locDealerFlag OR locAutobillFlag THEN -- или дилерский, или возможен автосчёт
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
         IF inet_bill_owner IS NULL THEN
             inet_bill_owner :=  inetbill_mgr();
-            RAISE NOTICE 'не удалось выбрать хозяина счёта, вызывали inetbill_mgr=%', inet_bill_owner;
+            inet_bill_owner :=  inetbill_mgr();
+            loc_aub_msg := format(E'не удалось выбрать хозяина счёта, вызывали inetbill_mgr=%s', inet_bill_owner);
+            RAISE NOTICE '%', loc_aub_msg;
+            INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no, -1, loc_aub_msg);
         END IF;
-    ELSE
+    ELSE -- или не дилерский, или невозможен автосчёт
         inet_bill_owner :=  inetbill_mgr();
-        RAISE NOTICE 'НЕ дилерский И или комментарий, или частичный автосчёт, или курьер. Вызывали inetbill_mgr=%', inet_bill_owner;
+
+        IF loc_in_stock THEN -- всё в наличии, но не автосчёт. Протоколируем причину
+            loc_no_aub_reason := E'';
+            loc_set_bill_owner := format(E'автосчёт создан от менеджера %s', inet_bill_owner);
+            IF loc_comment THEN
+                loc_no_aub_reason := format(E'Заказ с комментарием: %s', BuyerComment);
+                loc_reason_code := loc_reason_code + 1;
+            END IF;
+
+            IF loc_courier THEN
+                loc_no_aub_reason := concat_ws('/', loc_no_aub_reason, format(E'Доставка не для автосчёта: %s', DeliveryMode));
+                loc_reason_code := loc_reason_code + 4;
+            END IF;
+
+            IF flg_delivery_qnt THEN -- разбивка срок-количество для НЕ-дилера
+                loc_no_aub_reason := concat_ws('/', loc_no_aub_reason, E'есть разбивка срок-количество');
+                loc_reason_code := loc_reason_code + 8;
+            END IF;
+
+            -- loc_no_aub_reason := concat_ws('/', loc_no_aub_reason, loc_set_bill_owner);
+            RAISE NOTICE '% %', loc_no_aub_reason, loc_set_bill_owner;
+            INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, -1, loc_no_aub_reason, loc_reason_code);
+        END IF;
     END IF;
 
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
@@ -90,7 +136,7 @@ BEGIN
     WITH inserted AS (
         INSERT INTO "Счета"
             ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата", "Дилерский") 
-        VALUES (acode, ourFirm, inet_bill_owner, loc_bill_no, loc_bill_no, CURRENT_DATE, sum, 't', bx_order, aEmpCode,
+        VALUES (acode, ourFirm, inet_bill_owner, loc_bill_no, loc_bill_no, CURRENT_DATE, sum, 't', bx_order_no, aEmpCode,
                 rtrim(rpad(BillInfo, Max_BillInfo)),
                 rtrim(rpad(ExtraInfo, Max_ExtraInfo)),
                 Delivery, DeliveryMode, loc_OrderProcessingTime, loc_DeliveryPayer, locDealerFlag)
