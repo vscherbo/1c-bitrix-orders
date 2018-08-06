@@ -24,8 +24,7 @@ IF FOUND THEN
     ourFirm = 'АРКОМ';
 ELSIF aCode = 223719 THEN -- физ. лицо
     IF '22' = arg_payment_method THEN -- наличный
-        -- ourFirm = 'ИПБ';
-        ourFirm = 'АРКОМ'; -- до 2018-07-01
+        ourFirm = 'ИПБ';
     ELSE
         ourFirm = 'АРКОМ';
     END IF; -- arg_payment_method
