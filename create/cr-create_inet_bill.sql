@@ -238,7 +238,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 loc_item_name := NULL;
                 loc_delivery_qnt_flag := False;
                 loc_suspend_bill_msg_flag := False;
-                RAISE NOTICE 'tmp_order_items=%', item;
+                RAISE NOTICE 'bx_order_no=%, tmp_order_items=%', bx_order_no, item;
                 IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN
                    loc_delivery_qnt_flag := True;
                    if NOT bill."Дилерский" then 
@@ -277,7 +277,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 IF is_payment_method_fiscal(bx_order_no) THEN -- Яндекс.Касса
                     loc_item_name := he_decode( substring (
                                                 format('%s %s', COALESCE(fiscal_name(item.oi_mod_id), item.oi_name), item.oi_modificators)
-                                                from 1 for 128)
+                                                from 1 for 127)
                                               );
                     loc_1C_article := get_code1c4artikul(loc_kp);
                 END IF;
