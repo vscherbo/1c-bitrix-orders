@@ -21,14 +21,15 @@ r."Ф_НазваниеКратко" pg_firm
 , s."ЗаДиректора" pg_signature
 , s."ВидНомерДатаДокументаДир" pg_proxy_doc
 , r."Ф_НазваниеКратко" pg_firm_full_name
-, r."Ф_ПочтовыйАдрес" pg_post_address
+, coalesce(r."Ф_ПочтовыйАдрес", '') pg_post_address
 , r."Ф_ФактическийАдрес" pg_fact_address
 , r."Ф_Телефон" pg_city_phone
 , trim(f."ПрефиксВСчет") pg_prefix
 , f."Ф_ИНН" pg_inn
 , r."Ф_КПП" pg_kpp
 , r."Ф_РассчетныйСчет" pg_account
-, r."Ф_Банк" pg_bank
+--, r."Ф_Банк" pg_bank
+, format('%s %s', r."Ф_Банк",  COALESCE(r."Ф_ГородБанка", ''))  pg_bank
 , "Ф_КоррСчет" pg_corresp
 , "Ф_БИК" pg_bik
 ,to_char(b."Сумма", '999 999D99') pg_price
@@ -64,6 +65,13 @@ b."№ счета" =
 recs = plpy.execute(bill_fax_fields_query)
 if 0 == recs.nrows():
     return 'Not found'
+
+loc_vat = int(recs[0]["pg_vat"])
+if 0 == loc_vat:
+    loc_vat_str = 'НДС не облагается'
+else:
+    loc_vat_str = 'В том числе НДС -{0}%'.format(loc_vat)
+
 
 upd_dict = {}
 for (k, v) in recs[0].items():
@@ -175,8 +183,11 @@ obj = UserFields(outfile, outfile)
 obj.update(upd_dict)
 locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
 obj.update({"pg_total": locale.currency(sum_total, False, True).replace('.', ',').decode('utf-8')})
-#obj.update({"pg_vat": locale.currency(sum_total - sum_novat, False, True).replace('.', ',').decode('utf-8')})
-obj.update({"pg_vat": locale.currency(round(sum_total*18/118,2), False, True).replace('.', ',').decode('utf-8')})
+calc_vat = round(sum_total*loc_vat/(100+loc_vat),2)
+obj.update({"pg_vat": locale.currency(calc_vat, False, True).replace('.', ',').decode('utf-8')})
+obj.update({"pg_vat_str": loc_vat_str.decode('utf-8')})
+
+# OLD obj.update({"pg_vat": locale.currency(round(sum_total*18/118,2), False, True).replace('.', ',').decode('utf-8')})
 locale.setlocale(locale.LC_ALL, '')
 obj.update({"pg_sum_in_words": sum_total_in_words})
 # obj.update({"pg_total_pos": recs.nrows()+1})
