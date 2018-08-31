@@ -1,8 +1,6 @@
--- Function: arc_energo.fn_doc_person_bank(integer)
+-- DROP FUNCTION arc_energo.fn_doc_person_bank(integer, boolean);
 
--- DROP FUNCTION arc_energo.fn_doc_person_bank(integer);
-
-CREATE OR REPLACE FUNCTION arc_energo.fn_doc_person_bank(bill_no integer)
+CREATE OR REPLACE FUNCTION arc_energo.fn_doc_person_bank(bill_no integer, no_vat boolean DEFAULT 't')
   RETURNS character varying AS
 $BODY$
 #-*- coding:utf-8 -*-
@@ -27,6 +25,7 @@ r."Ф_НазваниеКратко" AS pg_firm
 , to_char(b."№ счета", '9999-9999') AS pg_order
 , e.email AS pg_email
 , e.telephone AS pg_phone
+, e.mob_phone AS pg_mob_phone
 , e."Имя" AS pg_mgr_name
 FROM arc_energo."Счета" b
 JOIN arc_energo."Фирма" f ON b."фирма" = f."КлючФирмы"
@@ -37,7 +36,12 @@ b."№ счета" =
 """ + str(bill_no) + ' ORDER BY r."Ф_ДатаВводаРеквизитов" desc limit 1;'
 
 home = expanduser("~")
-tpl = svglue.load(file=home+'/fill-forms/person-bank.svg')
+if no_vat:
+    fname = home + '/fill-forms/person-bank-NO-VAT.svg'
+else:
+    fname = home + '/fill-forms/person-bank.svg'
+# tpl = svglue.load(file=home+'/fill-forms/person-bank-NO-VAT.svg')
+tpl = svglue.load(file=fname)
 
 res = plpy.execute(person_bank_query)
 
@@ -84,6 +88,8 @@ tpl.set_text('amount2', res[0]["pg_amount"])
 tpl.set_text('phone', res[0]["pg_phone"])
 tpl.set_text('email', res[0]["pg_email"])
 tpl.set_text('mgr_name', pg_mgr_name)
+# tpl.set_text('mob_phone', 'моб.т./WhatsApp/Viber: '.decode('utf-8') + res[0]["pg_mob_phone"])
+tpl.set_text('mob_phone', res[0]["pg_mob_phone"])
 
 src = str(tpl)
 
@@ -98,5 +104,3 @@ return fn
 $BODY$
   LANGUAGE plpython2u VOLATILE
   COST 100;
-ALTER FUNCTION arc_energo.fn_doc_person_bank(integer)
-  OWNER TO postgres;
