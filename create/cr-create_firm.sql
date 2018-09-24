@@ -4,7 +4,7 @@
 
 CREATE OR REPLACE FUNCTION arc_energo.create_firm(
     bx_order_id integer,
-    INN character varying,
+    arg_INN character varying,
     KPP character varying)
     RETURNS integer
     LANGUAGE 'plpgsql'
@@ -58,15 +58,15 @@ R_account_complex := substring(R_account_complex from 1 for 100);
 LegalAddress := substring(LegalAddress from 1 for 250);
 -- DEBUG
 /** Прерывается исполнение, если есть NULL. TODO quote_nullable
-RAISE NOTICE 'FirmNameRE=(%)%, FirmName=(%)%, ZipCode=(%)%, INN=(%)%, KPP=(%)%, Consignee=(%)%, DeliveryAddress=(%)%, R_account_complex=(%)%, K_account=(%)%, LegalAddress=(%)%, Fax=(%)%',
+RAISE NOTICE 'FirmNameRE=(%)%, FirmName=(%)%, ZipCode=(%)%, arg_INN=(%)%, KPP=(%)%, Consignee=(%)%, DeliveryAddress=(%)%, R_account_complex=(%)%, K_account=(%)%, LegalAddress=(%)%, Fax=(%)%',
 char_length(FirmNameRE),
 FirmNameRE,
 char_length(FirmName),
 FirmName,
 char_length(ZipCode),
 ZipCode,
-char_length(INN),
-INN,
+char_length(arg_INN),
+arg_INN,
 char_length(KPP),
 KPP,
 char_length(Consignee),
@@ -86,12 +86,18 @@ Fax
 **/
 WITH inserted AS (   
     INSERT INTO "Предприятия"("Предприятие", "ЮрНазвание", "Индекс", "ИНН", "КПП", "Грузополучатель", "Адрес", "Расчетный счет", "Корсчет", "ЮрАдрес", "Факс", "Создатель") 
-    VALUES (FirmNameRE, FirmName, ZipCode, INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress, Fax, 1
+    VALUES (FirmNameRE, FirmName, ZipCode, arg_INN, KPP, Consignee, DeliveryAddress, R_account_complex, K_account, LegalAddress, Fax, 1
 ) 
     RETURNING "Код"
 )
 SELECT inserted."Код" INTO FirmCode FROM inserted;
-RAISE NOTICE 'Создано предприятие Код=%, ЮрНазвание=[%], Предприятие=[%], ИНН=%, КПП=%', FirmCode, FirmName, FirmNameRE, INN, quote_nullable(KPP);
+RAISE NOTICE 'Создано предприятие Код=%, ЮрНазвание=[%], Предприятие=[%], ИНН=%, КПП=%', FirmCode, FirmName, FirmNameRE, arg_INN, quote_nullable(KPP);
+
+PERFORM 1 FROM arc_energo.tax_modes tm where tm.inn = arg_INN;
+if found then
+    insert into "СоотношениеСтатуса" ("КодПредприятия", "СтатусПредприятия") values(FirmCode, 12);
+    RAISE NOTICE 'NO_VAT предприятие Код=%', FirmCode;
+end if;
 
 RETURN FirmCode;
 END
