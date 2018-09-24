@@ -270,6 +270,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     loc_okei_code := item.oi_okei_code;
                     loc_measure_unit := item.oi_measure_unit;
                     loc_item_name := item.oi_name || E', ' || item.oi_modificators; -- для несинхронизированных позиций имя с сайта
+                    RAISE NOTICE 'loc_bill_no=%, NOT synced loc_item_name=%', bill."№ счета", loc_item_name;
                 END IF;
 
                 /** Наименование для Фискального накопителя перекрывает предыдущее наименование ***/
@@ -277,8 +278,9 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 IF is_payment_method_fiscal(bx_order_no) THEN -- Яндекс.Касса
                     loc_item_name := he_decode( substring (
                                                 format('%s %s', COALESCE(fiscal_name(item.oi_mod_id), item.oi_name), item.oi_modificators)
-                                                from 1 for 127)
+                                                from 1 for 128)
                                               );
+                    RAISE NOTICE 'loc_bill_no=%, FISCAL loc_item_name=%', bill."№ счета", loc_item_name;
                     loc_1C_article := get_code1c4artikul(loc_kp);
                 END IF;
                 /***/
