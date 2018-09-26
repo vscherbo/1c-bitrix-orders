@@ -12,14 +12,14 @@ $BODY$DECLARE
 BEGIN
    IF 4 = msg_type THEN -- счёт-факс
       -- arr_docs := array_append(arr_docs, fn_bill_fax(bill_no));
-      arr_docs := fn_bill_fax(bill_no);
+      arr_docs := bill_fax(bill_no);
    ELSE
       IF 3 = msg_type THEN -- квитанция
          -- arr_docs := array_append(arr_docs, fn_doc_person_bank(bill_no));
          arr_docs := fn_doc_person_bank(bill_no) || ',';
       END IF;
       -- arr_docs := array_append(arr_docs, fn_order_form(bill_no));
-      arr_docs := arr_docs || fn_order_form(bill_no);
+      arr_docs := arr_docs || fn_order_form_no_reqs(bill_no);
    END IF;
    RETURN arr_docs;
 END;$BODY$
