@@ -37,6 +37,8 @@ union
 select 50, '      в т.ч. физ.лиц без регистрации: ' || count(*) FROM aub
 join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарии покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
 join "Счета" on "Счета"."№ счета" = aub."Счет" and "Счета"."Код" = 223719
+union
+select 60, 'в т.ч. менеджером 41: ' || count(*) FROM aub where aub."Счет" / 1000000 = 41
 order by 1) aub_rep;
 
 -- in details
@@ -107,6 +109,8 @@ union
 select 50, '      в т.ч. физ.лиц без регистрации: ' || count(*) FROM aub
 join bx_order_feature bof on bof."bx_order_Номер" = aub."Номер" and bof.fname = 'Комментарии покупателя' and bof.fvalue LIKE 'Быстрый заказ%'
 join "Счета" on "Счета"."№ счета" = aub."Счет" and "Счета"."Код" = 223719
+union
+select 60, 'в т.ч. менеджером 41: ' || count(*) FROM aub where aub."Счет" / 1000000 = 41
 order by 1) aub_rep;
 \t off
 \echo
