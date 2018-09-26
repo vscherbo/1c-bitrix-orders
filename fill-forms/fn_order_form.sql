@@ -1,10 +1,7 @@
--- Function: arc_energo.fn_doc_person_bank(integer)
-
--- DROP FUNCTION arc_energo.fn_doc_person_bank(integer);
-
 CREATE OR REPLACE FUNCTION arc_energo.fn_order_form(bill_no integer)
-  RETURNS character varying AS
-$BODY$
+ RETURNS character varying
+ LANGUAGE plpython2u
+AS $function$
 #-*- coding:utf-8 -*-
 from odf.opendocument import load
 from odf.table import Table, TableRow, TableCell
@@ -89,13 +86,12 @@ r."Ф_НазваниеКратко" pg_firm
 , r."Ф_РассчетныйСчет" || E' в ' || r."Ф_Банк" AS pg_account_bank
 , "Ф_КоррСчет" pg_corresp
 , "Ф_БИК" pg_bik
-, to_char(b."Сумма", '999999999D99') AS pg_amount
+,
+to_char(b."Сумма", '999999999D99') AS pg_amount
 , to_char(b."№ счета", '9999-9999') AS pg_order
 , to_char(b."Дата счета", 'DD.MM.YYYY') pg_order_date
 , e.email pg_email
 , e.telephone pg_phone
-, e.mob_phone pg_mob_phone
-, '(812) 327-32-40' pg_firm_phone
 , e."Имя" pg_mgr_name
 , COALESCE(b."Дополнительно", E'') pg_add_info
 FROM "Счета" b
@@ -128,8 +124,4 @@ odt2pdf_query = odt2pdf_query.encode('utf8')
 res = plpy.execute(odt2pdf_query)
 #return outfile
 return res[0]["odt2pdf"]
-$BODY$
-  LANGUAGE plpython2u VOLATILE
-  COST 100;
-ALTER FUNCTION arc_energo.fn_doc_person_bank(integer)
-  OWNER TO postgres;
+$function$
