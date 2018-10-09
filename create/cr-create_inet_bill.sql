@@ -55,6 +55,8 @@ loc_delivery_qnt_flag boolean;
 loc_suspend_bill_msg_flag boolean;
 loc_suspend_bill_msg text;
 loc_no_autobill_item  boolean;
+loc_count_qnt  numeric;
+loc_wrong_qnt  numeric;
 BEGIN
 RAISE NOTICE '##################### Начало create_inet_bill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -169,7 +171,6 @@ UNION
                                FROM "vwСкладВсеПодробно" v
                                JOIN "Склады" wh ON v."КодСклада" = wh."КодСклада"
                                WHERE
-                                    -- v."КодСклада" In (2,5,14) AND
                                     v."КодСклада" = ANY (valid_wh(1)) AND -- 1 autobil_creator ID
                                     "КодСодержания" = loc_KS
                                     GROUP BY wh."Склад", "КодСодержания", quality
@@ -238,6 +239,8 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 loc_item_name := NULL;
                 loc_delivery_qnt_flag := False;
                 loc_suspend_bill_msg_flag := False;
+                loc_count_qnt := 0;
+                loc_wrong_qnt := 0;
                 RAISE NOTICE 'bx_order_no=%, tmp_order_items=%', bx_order_no, item;
                 IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN
                    loc_delivery_qnt_flag := True;
@@ -325,7 +328,18 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                             END IF;
                             SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
                             RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
-                            IF loc_lack_reserve = 0 THEN
+                            loc_count_qnt := count_time_qnt(item.oi_delivery_qnt);
+                            loc_wrong_qnt := item.oi_quantity - loc_count_qnt;
+                            if loc_wrong_qnt != 0 then -- некорректная разбивка сроки-количество
+                                CreateResult := 13; -- некорректная разбивка сроки-количество
+                                loc_aub_msg := format('%s(KS=%s) кол-во в разбивке срок-количество=%s[%s] отличается от заказанного=[%s] на {%s}', 
+                                      item.oi_name, item.ks, loc_count_qnt, item.oi_delivery_qnt, item.oi_quantity, loc_wrong_qnt);
+                                INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id, 
+                                loc_aub_msg, CreateResult); 
+                                RAISE NOTICE '%. CreateResult=%', loc_aub_msg, CreateResult;
+                            end if;
+
+                            IF loc_lack_reserve = 0 AND loc_wrong_qnt = 0 THEN
                                 -- TODO заменить на Рез.склада, ЖДЁМ. АБ/ВВ не д.б. для loc_lack_reserve = 0
                                 loc_where_buy := regexp_replace(item.oi_delivery_qnt, E'со склада', E'Рез.склада');
                                 loc_where_buy := regexp_replace(loc_where_buy, E'к ', E'ЖДЁМ ', 'g'); -- global
