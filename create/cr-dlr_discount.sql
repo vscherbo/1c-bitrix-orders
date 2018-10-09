@@ -16,7 +16,8 @@ SELECT c."СкидкаДилеру" INTO loc_firm_discount FROM "Предпри�
               AND c."Код" = dlr_code;
 
 SELECT "СкидкаДилеру" INTO loc_item_discount FROM "Содержание" 
-WHERE "КодСодержания" = ks;
+WHERE "КодСодержания" = ks
+and "Дилерский";
 
 RETURN LEAST(
     COALESCE(loc_firm_discount, 0),
