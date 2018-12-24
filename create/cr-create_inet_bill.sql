@@ -243,12 +243,17 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                 loc_wrong_qnt := 0;
                 RAISE NOTICE 'bx_order_no=%, tmp_order_items=%', bx_order_no, item;
                 IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN
-                   loc_delivery_qnt_flag := True;
-                   if NOT bill."Дилерский" then 
+                    loc_delivery_qnt_flag := True;
+                    if NOT bill."Дилерский" then 
                       loc_suspend_bill_msg_flag := True;
                       loc_suspend_bill_msg := ', но не отправлен клиенту';
                       CreateResult := GREATEST(10, CreateResult); -- для НЕ дилерских с разбивкой по срокам не уведомляем клиента
-                   end if;
+                    else -- только на период перехода к НДС 20% для ручного повышения цены на Резерв Идущий
+                      -- ниже вернуть формирование в aub_log 'для НЕ-дилера'
+                      loc_suspend_bill_msg_flag := True;
+                      loc_suspend_bill_msg := ', но не отправлен дилеру';
+                      CreateResult := GREATEST(14, CreateResult); -- даже для дилерских с разбивкой по срокам, т.е. с резервом из идущих
+                    end if;
                    loc_OrderItemProcessingTime := item.oi_delivery_qnt; -- разбиение по ';' в заполнении шаблона libreoffice
                 ELSE
                    loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
@@ -315,15 +320,16 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     loc_no_autobill_item := no_autobill_item(item.ks); -- не для автосчёта (стопХ)
                     IF loc_no_autobill_item THEN -- не для автосчёта (стопХ)
                         CreateResult := 11; -- имеет флаг СТОП
-                        loc_lack_reason := format('%s(KS=%s) имеет флаг СТОП, автосчёт не будет отправлен клиенту',
-                               item.oi_name, item.ks);
+                        loc_lack_reason := format('№ счёта=%s, %s(KS=%s) имеет флаг СТОП, автосчёт не будет отправлен клиенту',
+                               loc_bill_no, item.oi_name, item.ks);
                         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
                         PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
                     ELSE
                         IF loc_delivery_qnt_flag THEN -- разбивка сроки-количество
                             IF loc_suspend_bill_msg_flag THEN
                                INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id, format(
-                                  '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
+                                  -- '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
+                                  '%s(KS=%s) обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
                                  ), CreateResult ); 
                             END IF;
                             SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
@@ -357,8 +363,8 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                             -- TODO рассмотреть: CreateResult := GREATEST(7, CreateResult);
                             CreateResult := 7; -- не удалось создать резерв
                             -- UPDATE "Содержание счета" SET "Срок2" = NULL, "Гдезакупать" = NULL WHERE "КодПозиции" = inserted_bill_item."КодПозиции";
-                            loc_lack_reason := format('%s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
-                                   item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
+                            loc_lack_reason := format('№ счёта=%s, %s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
+                                   loc_bill_no, item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
                             INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
                             PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
                         END IF; -- loc_lack_reserve <> 0
