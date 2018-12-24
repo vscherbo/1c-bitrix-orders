@@ -25,7 +25,7 @@ BEGIN
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
         RAISE NOTICE 'select_emp: Работник с email=% не найден', loc_email;
-        RAISE NOTICE 'get_emp: Создаём Работника-физ.лицо bx_order_id=%, firm_code=%', arg_bx_order_id, arg_firm_code;
+        RAISE NOTICE 'select_emp: Создаём Работника-физ.лицо bx_order_id=%, firm_code=%', arg_bx_order_id, arg_firm_code;
         ret_emp_code := create_employee(arg_bx_order_id, arg_firm_code, loc_email);
     WHEN TOO_MANY_ROWS THEN
         /**
