@@ -93,8 +93,7 @@ WITH inserted AS (
 SELECT inserted."Код" INTO FirmCode FROM inserted;
 RAISE NOTICE 'Создано предприятие Код=%, ЮрНазвание=[%], Предприятие=[%], ИНН=%, КПП=%', FirmCode, FirmName, FirmNameRE, arg_INN, quote_nullable(KPP);
 
-PERFORM 1 FROM arc_energo.tax_modes tm where tm.inn = arg_INN;
-if found then
+if no_vat(arg_INN) then
     insert into "СоотношениеСтатуса" ("КодПредприятия", "СтатусПредприятия") values(FirmCode, 12);
     RAISE NOTICE 'NO_VAT предприятие Код=%', FirmCode;
 end if;
