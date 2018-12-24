@@ -135,20 +135,22 @@ BEGIN
 
     WITH inserted AS (
         INSERT INTO "Счета"
-            ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата", "Дилерский") 
+            ("Код", "фирма", "Хозяин", "№ счета", "предок", "Дата счета", "Сумма", "Интернет", "ИнтернетЗаказ", "КодРаботника", "инфо", "Дополнительно", "Отгрузка", "ОтгрузкаКем", "Срок", "ОтгрузкаОплата", "Дилерский", "ставкаНДС") 
         VALUES (acode, ourFirm, inet_bill_owner, loc_bill_no, loc_bill_no, CURRENT_DATE, sum, 't', bx_order_no, aEmpCode,
                 rtrim(rpad(BillInfo, Max_BillInfo)),
                 rtrim(rpad(ExtraInfo, Max_ExtraInfo)),
-                Delivery, DeliveryMode, loc_OrderProcessingTime, loc_DeliveryPayer, locDealerFlag)
+                Delivery, DeliveryMode, loc_OrderProcessingTime, loc_DeliveryPayer, locDealerFlag, vat_rate(ourFirm, acode))
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
 
+    /**
     locVAT := getVAT(acode);
     IF locVAT IS NOT NULL THEN
        UPDATE "Счета" SET "ставкаНДС" = locVAT WHERE "№ счета" = ret_bill."№ счета";
        ret_bill."ставкаНДС" := locVAT;
     END IF; -- locVAT
+    **/
 
     RETURN ret_bill;
 END
