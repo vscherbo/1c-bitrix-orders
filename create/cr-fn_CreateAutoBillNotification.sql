@@ -25,14 +25,11 @@ BEGIN
        loc_str := E'Некоторые резервы не удалось поставить.';
     END IF; 
     **/
-    IF a_reason IN (2,6,7,11) THEN
+    -- IF a_reason IN (2,6,7,11) THEN
+    IF a_reason IN (SELECT ab_code FROM arc_energo.vw_autobill_partly) THEN
         SELECT string_agg(descr, E'\n') INTO loc_str FROM arc_energo.aub_log
-                            WHERE bx_order_no=order_id and res_code in (2,6,7,11) and mod_id <>'-1';
+                            WHERE bx_order_no=order_id and res_code in (SELECT ab_code FROM arc_energo.vw_autobill_partly) and mod_id <>'-1';
         loc_str := E'Счёт требует ручной доработки:\n' || loc_str;                            
-    ELSIF a_reason IN (10) THEN
-        SELECT string_agg(descr, E'\n') INTO loc_str FROM arc_energo.aub_log
-                            WHERE bx_order_no=order_id and res_code in (10) and mod_id <>'-1';
-        loc_str := E'Заказ НЕ-дилера с резервами из идущих:\n' || loc_str; 
     END IF;
     mstr := mstr || loc_str || E'\nПроверьте его, пожалуйста!';
     loc_str := '';
