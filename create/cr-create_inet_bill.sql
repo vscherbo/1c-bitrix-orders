@@ -248,15 +248,10 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                       loc_suspend_bill_msg_flag := True;
                       loc_suspend_bill_msg := ', но не отправлен клиенту';
                       CreateResult := GREATEST(10, CreateResult); -- для НЕ дилерских с разбивкой по срокам не уведомляем клиента
-                    else -- только на период перехода к НДС 20% для ручного повышения цены на Резерв Идущий
-                      -- ниже вернуть формирование в aub_log 'для НЕ-дилера'
-                      loc_suspend_bill_msg_flag := True;
-                      loc_suspend_bill_msg := ', но не отправлен дилеру';
-                      CreateResult := GREATEST(14, CreateResult); -- даже для дилерских с разбивкой по срокам, т.е. с резервом из идущих
                     end if;
-                   loc_OrderItemProcessingTime := item.oi_delivery_qnt; -- разбиение по ';' в заполнении шаблона libreoffice
+                    loc_OrderItemProcessingTime := item.oi_delivery_qnt; -- разбиение по ';' в заполнении шаблона libreoffice
                 ELSE
-                   loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
+                    loc_OrderItemProcessingTime := 'В наличии'; -- для всего счёта: если Отправка, '1...3 рабочих дня' иначе '!Со склада'
                 END IF;
                 --
                 RAISE NOTICE 'loc_bill_no=%, item.ks=%', bill."№ счета", item.ks;
@@ -328,8 +323,7 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                         IF loc_delivery_qnt_flag THEN -- разбивка сроки-количество
                             IF loc_suspend_bill_msg_flag THEN
                                INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id, format(
-                                  -- '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
-                                  '%s(KS=%s) обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
+                                  '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
                                  ), CreateResult ); 
                             END IF;
                             SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
