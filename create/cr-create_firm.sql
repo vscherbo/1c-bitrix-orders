@@ -40,6 +40,9 @@ loc_legal_name := regexp_matches(FirmNameRE,
 FirmNameRE := COALESCE(TRIM(loc_legal_name[1] || loc_legal_name[3]) || ' ' || loc_legal_name[2]
 , FirmNameRE); -- если разобрать не удалось, то просто UPPERCASE без кавычек
 
+FirmName := regexp_replace(FirmName, 'Общество с ограниченной ответственностью', 'ООО', 'i');
+FirmName := regexp_replace(FirmName, 'Индивидуальный Предприниматель', 'ИП', 'i');
+
 SELECT fvalue INTO Bank FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Банк';
 SELECT fvalue INTO BIK FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'БИК';
 BIK := regexp_replace(BIK, '[^0-9]*', '', 'g');
@@ -48,7 +51,7 @@ SELECT fvalue INTO K_account FROM bx_order_feature WHERE "bx_order_Номер" =
 SELECT fvalue INTO LegalAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Юридический адрес';
 SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Адрес доставки';
 IF not found THEN DeliveryAddress := '';
-ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 100);
+ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 255);
 END IF;
 SELECT trim(both FROM fvalue) INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
 IF not found THEN ZipCode := ''; END IF;
