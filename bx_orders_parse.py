@@ -123,7 +123,7 @@ def parse_xml(xml_lines):
                 bx_item_id = bx_item.find(u'Ид').text
                 logging.debug('bx_item_id={0}'.format(bx_item_id))
                 for f in pg_order_item_fields:
-                    val = bx_item.find(f).text.encode('utf-8')
+                    val = bx_item.find(f).text.encode('utf-8').replace("'", "''")
                     pg_order_item_vals.append(val)
 
                 flds = ', '.join(map(u'"{0}"'.format, pg_order_item_fields))
