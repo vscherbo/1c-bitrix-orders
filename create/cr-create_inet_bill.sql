@@ -39,7 +39,7 @@ DECLARE
    loc_sum NUMERIC;
    loc_lack_reserve NUMERIC;
    loc_lack_reason TEXT;
-   loc_aub_msg TEXT;
+   loc_aub_msg TEXT := '';
 dbg_order_items_count INTEGER;
 loc_where_buy VARCHAR;
 loc_okei_code integer;
@@ -65,6 +65,7 @@ INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начал�
 -- IF loc_is_valid THEN
 IF is_bx_order_valid(bx_order_no) THEN
     CreateResult := -8; -- инициируем значением "пустой состав заказа"
+    loc_aub_msg := 'пустой состав заказа с сайта';
     bx_sum := 0;
 ELSE
     CreateResult := 4; -- отменённый или неполный заказ, покупатель или отсутствуют оба 'EMail' и 'Контактный email'
@@ -203,7 +204,8 @@ END LOOP; -- orders item
 SELECT "Сумма" INTO loc_sum FROM bx_order WHERE "Номер" = bx_order_no;
 IF (loc_sum <> bx_sum) AND (1 = CreateResult) THEN
    CreateResult := 5;
-   RAISE NOTICE 'Не совпадают bx_order_sum=%, items_sum=%', loc_sum, bx_sum; 
+   loc_aub_msg := format('Не совпадают сумма заказа=%s и суммой позиций=%s', loc_sum, bx_sum);
+   RAISE NOTICE '%', loc_aub_msg;
 END IF;
 IF (CreateResult IN (1,2,6) ) THEN -- включая частичный автосчёт
     -- TODO delete
@@ -384,7 +386,8 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
         RAISE NOTICE '%. CreateResult=%', loc_aub_msg, CreateResult;
     END IF;
 ELSE -- NOT CreateResult IN (1,2,6)
-    INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, 'Автосчёт не создан', CreateResult, -1);
+    -- -8 пустой состав заказа с сайта
+    INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, 'Автосчёт не создан:' || COALESCE(loc_aub_msg, ''), CreateResult, -1);
 END IF; -- CreateResult IN (1,2,6)
 
 UPDATE bx_order SET billcreated = CreateResult, "Счет" = loc_bill_no WHERE "Номер" = bx_order_no ;
