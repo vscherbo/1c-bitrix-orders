@@ -19,7 +19,7 @@ SELECT
 c."ПозицияСчета"::VARCHAR pg_position
 , "Наименование" pg_pos_name
 ,"Ед Изм" pg_mes_unit
-,to_char("Кол-во", '999 999D') pg_qnt
+,to_char("Кол-во", '999 999D9') pg_qnt
 ,to_char("ЦенаНДС", '999 999D99') pg_price
 ,to_char(round("Кол-во"*"ЦенаНДС", 2), '999 999D99') pg_sum
 ,COALESCE("Срок2", E'') pg_period
