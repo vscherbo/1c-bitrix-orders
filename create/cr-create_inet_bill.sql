@@ -31,8 +31,7 @@ DECLARE
    dbg_notice VARCHAR;
    loc_delivery_quantity TEXT;
    loc_parts TEXT[];
-   loc_article_id INTEGER;
-   loc_article_str TEXT;
+   loc_article TEXT;
    loc_when TEXT;
    loc_qnt NUMERIC;
    loc_part TEXT;
@@ -88,10 +87,7 @@ FOR oi in (SELECT bx_order_item.*
             FROM bx_order_item
             LEFT JOIN bx_order_item_feature ON bx_order_item_feature.bx_order_item_id = bx_order_item."Ид" 
                                     AND bx_order_item_feature."bx_order_Номер" = bx_order_item."bx_order_Номер"
-                                    AND ( 
-                                         bx_order_item_feature.fname = 'КодМодификации'
-                                         OR bx_order_item_feature.fname = 'СвойствоКорзины#SKU_CODE'
-                                        )
+                                    AND bx_order_item_feature.fname = 'СвойствоКорзины#SKU_CODE'
             WHERE bx_order_no = bx_order_item."bx_order_Номер" 
               AND POSITION(':' in bx_order_item."Наименование") = 0
 UNION
@@ -185,7 +181,7 @@ UNION
 
     SELECT oif.fvalue INTO loc_modificators FROM arc_energo.bx_order_item_feature oif
     WHERE oif."bx_order_Номер" = bx_order_no AND oif.bx_order_item_id = oi."Ид" 
-          AND (oif.fname = 'Модификация' OR oif.fname = 'СвойствоКорзины#SKU_NAME');
+          AND oif.fname = 'СвойствоКорзины#SKU_NAME';
     INSERT INTO tmp_order_items(ks, oi_id, oi_okei_code, oi_measure_unit, whid, oi_quantity, oi_delivery_qnt, oi_name, oi_mod_id, oi_modificators)
                         VALUES (loc_KS, oi."Ид", oi."Код", (SELECT "ЕдИзм" FROM "ОКЕИ" WHERE "КодОКЕИ" = oi."Код"),
                                 2, -- Ясная
@@ -289,6 +285,15 @@ IF (CreateResult IN (1,2,6) ) THEN -- включая частичный авто
                     loc_1C_article := get_code1c4artikul(loc_kp);
                 END IF;
                 /***/
+
+                /** Только в документах: счёт-факс и спецификация! Добавление артикула к наименованию
+                SELECT art_id INTO loc_article
+                FROM devmod.modifications m
+                WHERE m.mod_id = oi.mod_id AND m.version_num =1;
+                IF FOUND THEN
+                    loc_item_name := concat_ws(', Арт: ' loc_item_name, loc_article); 
+                END IF;
+                ***/
 
                 WITH inserted AS (
                    INSERT INTO "Содержание счета"
