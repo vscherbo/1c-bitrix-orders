@@ -11,6 +11,7 @@ WHERE   NOT EXISTS
         WHERE   bi."Номер" = bo."Номер" + 1
         )
 and "Номер" + 1 not in (select bx_order_id from bx_order_missed  where status = 1)        
+and bo."Дата" = current_date
 ORDER by "Номер" desc 
 offset 1;
 $function$
