@@ -29,7 +29,8 @@ IF NOT FOUND THEN person := loc_email; END IF;
 
 SELECT fvalue INTO PersonLocation FROM bx_order_feature WHERE "bx_order_Номер" = arg_bx_order_id AND fname = 'Местоположение';
 IF NOT found THEN PersonLocation := ''; END IF;
-SELECT trim(both FROM fvalue) INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = arg_bx_order_id AND fname = 'Индекс';
+-- trim(both FROM fvalue)
+SELECT digits_only(fvalue) INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = arg_bx_order_id AND fname = 'Индекс';
 IF not found THEN ZipCode := ''; END IF;
 SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Номер" = arg_bx_order_id AND fname = 'Адрес доставки';
 EmpNotice := SUBSTRING(concat_ws(', ', ZipCode, PersonLocation, DeliveryAddress) from 1 for 255);

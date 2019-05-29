@@ -53,7 +53,8 @@ SELECT fvalue INTO DeliveryAddress FROM bx_order_feature WHERE "bx_order_Ном�
 IF not found THEN DeliveryAddress := '';
 ELSE DeliveryAddress := substring(DeliveryAddress from 1 for 255);
 END IF;
-SELECT trim(both FROM fvalue) INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
+-- удаляем не-цифры из индекса
+SELECT digits_only(fvalue) INTO ZipCode FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Индекс';
 IF not found THEN ZipCode := ''; END IF;
 SELECT fvalue INTO Fax FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_id AND fname = 'Факс';
 R_account_complex := R_account || ' ' || Bank ;
