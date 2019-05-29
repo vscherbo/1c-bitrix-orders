@@ -108,7 +108,7 @@ BEGIN
 
         IF new_emp THEN
             RAISE NOTICE 'get_emp: Создаём Работника bx_order_id=%, FirmCode=%', bx_order_id, FirmCode;
-            SELECT * FROM create_emp(bx_order_id, FirmCode) AS fileds("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
+            SELECT * FROM create_emp(bx_order_id, FirmCode) AS fields("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
         END IF;
     -- ELSIF (INN IS NULL) AND (KPP IS NULL) AND (payment_method_id <> 22) THEN -- физ. лицо, не м.б. Банковский перевод(22)
     ELSIF (INN IS NULL) AND (KPP IS NULL) AND NOT is_bx_bank_payment(bx_order_id) THEN -- физ. лицо, не м.б. Банковский перевод
@@ -150,7 +150,7 @@ BEGIN
 
         IF new_emp THEN
             RAISE NOTICE 'get_emp: Создаём Работника bx_order_id=% для FirmCode=%', bx_order_id, FirmCode;
-            SELECT * FROM create_emp(bx_order_id, FirmCode) AS fileds("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
+            SELECT * FROM create_emp(bx_order_id, FirmCode) AS fields("КодРаботника" integer, "Код" integer, "ЕАдрес" varchar) INTO emp;
 
         END IF;
     -- ELSIF (INN IS NULL) AND (KPP IS not NULL) THEN -- юр. лицо, неполная информация
