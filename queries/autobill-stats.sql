@@ -4,7 +4,9 @@
 select 'Автосчёт не создан: ' || count(*)
 FROM arc_energo.bx_order bo
 where
-bo.billcreated not in (select * from vw_autobill_created) -- (1,2,6,7,10) -- прочее, ошибки
+bo.billcreated not in (select * from vw_autobill_created) -- (1,2,6,7,10) -- а прочее, ошибки
+-- and bo.billcreated < 10000000  -- повторно принятый заказ с сайта
+and bo.billcreated < 99  -- 99 - не kipspb, пропускаем
 and dt_insert > now()- '1 day'::INTERVAL;
 
 select 'Создан частичный автосчёт: ' || count(*) 
@@ -46,7 +48,9 @@ order by 1) aub_rep;
 select 'Автосчёт не создан: ' || count(*)
 FROM arc_energo.bx_order bo
 where
-bo.billcreated not in (select * from vw_autobill_created) -- (1,2,6,7,10) -- прочее, ошибки
+bo.billcreated not in (select * from vw_autobill_created) -- (1,2,6,7,10) -- а прочее, ошибки
+-- and bo.billcreated < 10000000  -- повторно принятый заказ с сайта
+and bo.billcreated < 99  -- 99 - не kipspb, пропускаем
 and dt_insert > now()- '1 day'::INTERVAL;
 
 \t off
@@ -55,6 +59,7 @@ SELECT bx_order_no AS "Заказ", format('%s: %s', descr, abr.ab_reason) AS "�
             left join autobill_reason abr on abr.ab_code = res_code
             where 
             res_code NOT IN (select * from vw_autobill_created)  -- (1,2,6,7,10) 
+            and res_code < 99  -- 99 - не kipspb, пропускаем
             AND mod_id = '-1' AND dt_insert > now()- '1 day'::interval
             and not exists (SELECT 1 FROM aub_log al1
                                      where aub_log.bx_order_no = al1.bx_order_no 
