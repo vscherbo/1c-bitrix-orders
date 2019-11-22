@@ -296,7 +296,7 @@ IF FOUND THEN
                 IF is_payment_method_fiscal(bx_order_no) THEN -- Яндекс.Касса
                     loc_item_name := he_decode( substring (
                                                 format('%s %s', COALESCE(fiscal_name(item.oi_mod_id), item.oi_name), item.oi_modificators)
-                                                from 1 for 128)
+                                                from 1 for 127)
                                               );
                     RAISE NOTICE 'loc_bill_no=%, FISCAL loc_item_name=%', bill."№ счета", loc_item_name;
                     loc_1C_article := get_code1c4artikul(loc_kp);
