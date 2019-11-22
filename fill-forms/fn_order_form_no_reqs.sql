@@ -14,10 +14,12 @@ import plpy
 import locale
 from os.path import expanduser
 
+#, "Наименование" pg_pos_name
+
 order_items_query = """
 SELECT
 c."ПозицияСчета"::VARCHAR pg_position
-, "Наименование" pg_pos_name
+, concat_ws(', Арт: ', "Наименование", (SELECT art_id FROM devmod.modifications m WHERE m."КодСодержания" = c."КодСодержания" AND m.version_num =1)) pg_pos_name
 ,"Ед Изм" pg_mes_unit
 ,to_char("Кол-во", '999 999D9') pg_qnt
 ,to_char("ЦенаНДС", '999 999D99') pg_price
