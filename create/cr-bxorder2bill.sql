@@ -99,6 +99,7 @@ IF of_Site_found AND is_kipspb THEN
                     loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
                 loc_exception_txt = format(E'%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
 --                 loc_exception_txt = format('fnCreateAutoBillMessage RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+                RAISE NOTICE 'ERROR in fnCreateAutoBillNotification: %', loc_exception_txt;
             END; -- создание сообщения менеджеру
 
             IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
