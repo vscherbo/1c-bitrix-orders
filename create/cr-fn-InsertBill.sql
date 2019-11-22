@@ -20,7 +20,6 @@ $BODY$ DECLARE
   DeliveryService VARCHAR;
   BillInfo VARCHAR = 'Автосчёт' ; -- инфо
  -- Дополнительно
-  -- ExtraInfo VARCHAR = ' Отгрузка со склада после поступления денег на расчетный счет.'; -- пока только так
   ExtraInfo VARCHAR = ' после поступления денег на расчетный счет.'; -- пока только так
   exInfo_truncated VARCHAR;
   inet_bill_owner integer;
@@ -97,14 +96,13 @@ BEGIN
     IF locDealerFlag OR locAutobillFlag THEN -- или дилерский, или возможен автосчёт
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
         IF inet_bill_owner IS NULL THEN
-            inet_bill_owner :=  inetbill_mgr();
-            inet_bill_owner :=  inetbill_mgr();
+            inet_bill_owner := inetbill_mgr();
             loc_aub_msg := format(E'не удалось выбрать хозяина счёта, вызывали inetbill_mgr=%s', inet_bill_owner);
             RAISE NOTICE '%', loc_aub_msg;
             INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no, -1, loc_aub_msg);
         END IF;
     ELSE -- или не дилерский, или невозможен автосчёт
-        inet_bill_owner :=  inetbill_mgr();
+        inet_bill_owner := inetbill_mgr();
 
         IF loc_in_stock THEN -- всё в наличии, но не автосчёт. Протоколируем причину
             loc_no_aub_reason := E'';
