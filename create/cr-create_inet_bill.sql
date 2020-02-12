@@ -58,6 +58,7 @@ loc_count_qnt  numeric;
 loc_wrong_qnt  numeric;
 wh_free numeric;
 ctr_qnt numeric;
+loc_ExtraInfo varchar;
 BEGIN
 RAISE NOTICE '##################### Начало create_inet_bill, заказ=%', bx_order_no;
 INSERT INTO aub_log(bx_order_no, descr, mod_id) VALUES(bx_order_no, 'Начало обработки заказа', -1);
@@ -388,6 +389,15 @@ IF FOUND THEN
                     END IF; -- loc_no_autobill_item
                 END IF; -- locKS IS NOT NULL
             END LOOP; -- позиции счёта
+            IF loc_delivery_qnt_flag THEN -- есть срок-доставка, меняем Дополнительно в Счёте
+                IF bill."Отгрузка" = 'Самовывоз' THEN
+                    -- loc_ExtraInfo := 'Ожидаемая поставка через 100 дней. ' || bill."Дополнительно";
+                    loc_ExtraInfo := 'Отгрузка через 100 дней. ' || bill."Дополнительно";
+                ELSE
+                    loc_ExtraInfo := REPLACE(bill."Дополнительно", '1...3 рабочих дня', '100 дней');
+                END IF;
+                UPDATE "Счета" SET "Дополнительно" = loc_ExtraInfo WHERE "№ счета" = bill."№ счета";
+            END IF;
             IF CreateResult = 7 THEN
                 loc_aub_msg := format('Автосчёт {%s} создан, но не удалось поставить все резервы', bill."№ счета");
             ELSE
