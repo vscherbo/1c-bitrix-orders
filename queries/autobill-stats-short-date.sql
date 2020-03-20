@@ -1,3 +1,5 @@
+-- USAGE:
+-- psql -h vm-pg -U arc_energo -v aub_date=\'2020-03-16\' -f autobill-stats-short-date.sql
 \set QUIET on
 \t on
 -- summary
