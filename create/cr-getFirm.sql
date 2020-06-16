@@ -32,7 +32,8 @@ ELSIF aCode = 223719 THEN -- физ. лицо
 ELSE 
     SELECT INTO flgDealer exists(select 1 from vwДилеры WHERE "Код"= aCode);
     IF flgDealer THEN
-       ourFirm = 'ТД3';
+       -- before 2020-06-01 ourFirm = 'ТД3';
+       ourFirm = 'ЭТК';
     ELSIF flgOwen THEN
         ourFirm = 'ОСЗ';
     ELSE
@@ -54,7 +55,8 @@ END IF;
 -- IF 'ТД2' = ourFirm THEN -- Patch
 -- IF ourFirm NOT IN ('АРКОМ', 'КИПСПБ', 'ОСЗ', 'ЭТК') THEN -- Patch
 -- IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ЭТК', 'ТД3') THEN -- Patch
-IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ТД3', 'ИПБ', 'КЭС') THEN -- Patch
+-- before 2020-06-01 IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ТД3', 'ИПБ', 'КЭС') THEN -- Patch
+IF ourFirm NOT IN ('АРКОМ', 'ОСЗ', 'ИПБ', 'КЭС', 'ЭТК') THEN -- Patch
     ourFirm = mainFirm;
 END IF;
 
