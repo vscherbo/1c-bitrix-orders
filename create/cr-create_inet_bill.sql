@@ -119,6 +119,12 @@ UNION
         INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, loc_aub_msg, CreateResult);
         RAISE NOTICE 'В заказе % % с mod_id=%', bx_order_no, loc_aub_msg, oi.mod_id;
     ELSE
+        /**/
+        loc_no_autobill_item := no_autobill_item(loc_KS); -- не для автосчёта (стопХ)
+        IF loc_no_autobill_item THEN -- не для автосчёта (стопХ)
+            CreateResult := 11; -- имеет флаг СТОП
+        END IF;
+        /**/
        -- если Овен, "Поставщик" = 30049
        -- TODO вынести из цикла, написать один SELECT ANY или EXISTS
        IF 30049 = vendor_id AND NOT skipCheckOwen THEN
@@ -257,7 +263,7 @@ IF FOUND THEN
                 loc_suspend_bill_msg_flag := False;
                 loc_count_qnt := 0;
                 loc_wrong_qnt := 0;
-                RAISE NOTICE 'bx_order_no=%, tmp_order_items=%', bx_order_no, item;
+                RAISE NOTICE 'обработка строки заказа bx_order_no=%, tmp_order_items=%', bx_order_no, item;
                 IF item.oi_delivery_qnt IS NOT NULL AND item.oi_delivery_qnt <> '' THEN
                     loc_delivery_qnt_flag := True;
                     if NOT bill."Дилерский" then
