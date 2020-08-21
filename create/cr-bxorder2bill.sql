@@ -61,7 +61,7 @@ IF of_Site_found AND is_kipspb THEN
                     loc_PG_EXCEPTION_HINT = PG_EXCEPTION_HINT,
                     loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
                 loc_exception_txt = format(E'%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
---                 loc_exception_txt = format('fnCreateAutoBillMessage RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+                RAISE NOTICE 'ERROR in %: %', loc_func_name, loc_exception_txt;
             END; -- создание сообщения клиенту
 
             IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
@@ -75,7 +75,32 @@ IF of_Site_found AND is_kipspb THEN
             ELSE
                 RAISE NOTICE 'не создано сообщение клиенту для заказа=%, loc_msg_id=%', arg_bx_order_no, quote_nullable(loc_msg_id);
             END IF;
+        ELSE -- частичный автосчёт
+            RAISE NOTICE 'Создаём сообщение клиенту о частичном автосчёте для заказа=%', arg_bx_order_no;
+            BEGIN -- клиенту
+                loc_func_name := 'partly_autobill_message';
+                loc_msg_id := partly_autobill_message(arg_bx_order_no);
+                RAISE NOTICE 'Создано сообщение %, id=% для заказа=%', loc_func_name, loc_msg_id, arg_bx_order_no;
+            EXCEPTION WHEN OTHERS THEN
+                loc_msg_id := -11;
+                GET STACKED DIAGNOSTICS
+                    loc_RETURNED_SQLSTATE = RETURNED_SQLSTATE,
+                    loc_MESSAGE_TEXT = MESSAGE_TEXT,
+                    loc_PG_EXCEPTION_DETAIL = PG_EXCEPTION_DETAIL,
+                    loc_PG_EXCEPTION_HINT = PG_EXCEPTION_HINT,
+                    loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
+                loc_exception_txt = format(E'%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
+                RAISE NOTICE 'ERROR in %: %', loc_func_name, loc_exception_txt;
+            END; -- создание сообщения клиенту
+
+            RAISE NOTICE 'Отправляем сообщение id=% для заказа=%', loc_msg_id, arg_bx_order_no;
+            IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
+                PERFORM sendbillsinglemsg(loc_msg_id);
+            ELSE
+                RAISE NOTICE 'не создано сообщение клиенту о частичном автосчёте для заказа=%, loc_msg_id=%', arg_bx_order_no, quote_nullable(loc_msg_id);
+            END IF;
         END IF; -- 1 = loc_cr_bill_result
+
         -- менеджеру 
         -- IF loc_cr_bill_result IN (1,2,6,7,10,11) THEN -- включая частичный автосчёт
         PERFORM 1 FROM vw_autobill_created WHERE ab_code = loc_cr_bill_result;
@@ -99,7 +124,7 @@ IF of_Site_found AND is_kipspb THEN
                     loc_PG_EXCEPTION_CONTEXT = PG_EXCEPTION_CONTEXT ;
                 loc_exception_txt = format(E'%s RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s,\nPG_EXCEPTION_DETAIL=%s,\nPG_EXCEPTION_HINT=%s,\nPG_EXCEPTION_CONTEXT=%s', loc_func_name, loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
 --                 loc_exception_txt = format('fnCreateAutoBillMessage RETURNED_SQLSTATE=%s, MESSAGE_TEXT=%s, PG_EXCEPTION_DETAIL=%s, PG_EXCEPTION_HINT=%s, PG_EXCEPTION_CONTEXT=%s', loc_RETURNED_SQLSTATE, loc_MESSAGE_TEXT, loc_PG_EXCEPTION_DETAIL, loc_PG_EXCEPTION_HINT, loc_PG_EXCEPTION_CONTEXT);
-                RAISE NOTICE 'ERROR in fnCreateAutoBillNotification: %', loc_exception_txt;
+                RAISE NOTICE 'ERROR in %: %', loc_func_name, loc_exception_txt;
             END; -- создание сообщения менеджеру
 
             IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
