@@ -20,7 +20,7 @@ BEGIN
 SELECT "Счет", "Дата", "Время", billcreated INTO loc_bill_no, ord_date, ord_time, loc_billcreated FROM bx_order WHERE "Номер" = order_id;
 SELECT "Код", "Хозяин" INTO enterprise_code, loc_mgr_owner FROM "Счета" WHERE "№ счета" = loc_bill_no;
 IF loc_billcreated IN (SELECT ab_code FROM arc_energo.vw_autobill_partly) 
-    AND loc_mgr_owner in (38, 55)
+   -- AND loc_mgr_owner in (38, 55)
 THEN
     loc_msg_type := 8; -- заказ с сайта получен
     RAISE NOTICE 'Частичный автосчёт по заказу %, формируем сообщение клиенту', order_id;
