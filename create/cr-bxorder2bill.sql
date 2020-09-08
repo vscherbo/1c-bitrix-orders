@@ -9,6 +9,7 @@ $BODY$ DECLARE
   loc_bill_no INTEGER;
   loc_cr_bill_result INTEGER;
   loc_msg_id INTEGER;
+  loc_part_msg_id INTEGER;
   loc_RETURNED_SQLSTATE TEXT;
   loc_MESSAGE_TEXT TEXT;
   loc_PG_EXCEPTION_DETAIL TEXT;
@@ -79,10 +80,10 @@ IF of_Site_found AND is_kipspb THEN
             RAISE NOTICE 'Создаём сообщение клиенту о частичном автосчёте для заказа=%', arg_bx_order_no;
             BEGIN -- клиенту
                 loc_func_name := 'partly_autobill_message';
-                loc_msg_id := partly_autobill_message(arg_bx_order_no);
-                RAISE NOTICE 'Создано сообщение %, id=% для заказа=%', loc_func_name, loc_msg_id, arg_bx_order_no;
+                loc_part_msg_id := partly_autobill_message(arg_bx_order_no);
+                RAISE NOTICE 'Создано сообщение %, id=% для заказа=%', loc_func_name, loc_part_msg_id, arg_bx_order_no;
             EXCEPTION WHEN OTHERS THEN
-                loc_msg_id := -11;
+                loc_part_msg_id := -11;
                 GET STACKED DIAGNOSTICS
                     loc_RETURNED_SQLSTATE = RETURNED_SQLSTATE,
                     loc_MESSAGE_TEXT = MESSAGE_TEXT,
