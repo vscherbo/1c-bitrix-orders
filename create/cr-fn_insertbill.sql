@@ -1,17 +1,7 @@
--- Function: fn_insertbill(integer, numeric, integer, integer, integer, boolean)
-
--- DROP FUNCTION fn_insertbill(integer, numeric, integer, integer, integer, boolean, boolean);
-
-CREATE OR REPLACE FUNCTION fn_insertbill(
-    arg_createresult integer,
-    sum numeric,
-    bx_order_no integer,
-    acode integer,
-    aempcode integer,
-    flgowen boolean,
-    flg_delivery_qnt boolean)
-  RETURNS record AS
-$BODY$ DECLARE
+CREATE OR REPLACE FUNCTION arc_energo.fn_insertbill(arg_createresult integer, sum numeric, bx_order_no integer, acode integer, aempcode integer, flgowen boolean, flg_delivery_qnt boolean)
+ RETURNS record
+ LANGUAGE plpgsql
+AS $function$ DECLARE
   ret_bill RECORD;
   BuyerComment VARCHAR = '';
   DeliveryMode VARCHAR;
@@ -37,12 +27,12 @@ loc_payment_method varchar;
 loc_comment BOOLEAN;
 loc_in_stock BOOLEAN;
 loc_courier BOOLEAN;
-loc_set_bill_owner TEXT;
 loc_aub_msg text;
 loc_no_aub_reason text;
 loc_reason_code integer := 100;
 BEGIN
-    loc_in_stock := (1 = arg_createresult); -- всё доступно, м.б. в т.ч. из идущих
+    RAISE NOTICE 'start fn_insertbill, arg_createresult=%', arg_createresult;
+    loc_in_stock := (1 = arg_createresult); -- всё доступно, для дилера м.б. в т.ч. из идущих 
     SELECT fvalue INTO PaymentGuarantee FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_no AND fname = 'Гарантия оплаты дилером';
     IF found THEN BillInfo := BillInfo || ', ' ||PaymentGuarantee; END IF;
     SELECT fvalue INTO BuyerComment FROM bx_order_feature WHERE "bx_order_Номер" = bx_order_no AND fname = 'Комментарии покупателя';
@@ -92,7 +82,6 @@ BEGIN
                        AND NOT flg_delivery_qnt; -- нет разбивки срок-количество
 
     RAISE NOTICE 'bx_order_no=%, locDealerFlag=%,  locAutobillFlag=%', bx_order_no, locDealerFlag, locAutobillFlag;
-   -- loc_no_aub_reason, loc_set_bill_owner;
     IF locDealerFlag OR locAutobillFlag THEN -- или дилерский, или возможен автосчёт
         inet_bill_owner := get_bill_owner_by_entcode(aCode);
         IF inet_bill_owner IS NULL THEN
@@ -102,11 +91,14 @@ BEGIN
             INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no, -1, loc_aub_msg);
         END IF;
     ELSE -- или не дилерский, или невозможен автосчёт
-        inet_bill_owner := inetbill_mgr();
+        -- inet_bill_owner := inetbill_mgr();
 
-        IF loc_in_stock THEN -- всё в наличии, но не автосчёт. Протоколируем причину
-            loc_no_aub_reason := E'';
-            loc_set_bill_owner := format(E'автосчёт создан от менеджера %s', inet_bill_owner);
+        loc_no_aub_reason := E'';
+        IF loc_in_stock THEN -- всё в наличии, но не можем отправить автосчёт. Протоколируем причину
+            inet_bill_owner := 41;
+            loc_aub_msg := format(E'Всё в наличии, явно задаём хозяина счёта %s', inet_bill_owner);
+            RAISE NOTICE '%', loc_aub_msg;
+            INSERT INTO aub_log(bx_order_no, mod_id, descr) VALUES(bx_order_no, -1, loc_aub_msg);
             IF loc_comment THEN
                 loc_no_aub_reason := format(E'Заказ с комментарием: %s', BuyerComment);
                 loc_reason_code := loc_reason_code + 1;
@@ -118,15 +110,17 @@ BEGIN
             END IF;
 
             IF flg_delivery_qnt THEN -- разбивка срок-количество для НЕ-дилера
+                inet_bill_owner := inetbill_mgr();
                 loc_no_aub_reason := concat_ws('/', loc_no_aub_reason, E'есть разбивка срок-количество');
                 loc_reason_code := loc_reason_code + 8;
             END IF;
 
-            -- loc_no_aub_reason := concat_ws('/', loc_no_aub_reason, loc_set_bill_owner);
-            RAISE NOTICE '% %', loc_no_aub_reason, loc_set_bill_owner;
-            INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, -1, loc_no_aub_reason, loc_reason_code);
+        ELSE -- не всё в наличии, значит менеджеру-человеку
+            inet_bill_owner := inetbill_mgr();
         END IF;
     END IF;
+    RAISE NOTICE '% %', loc_no_aub_reason, format(E'автосчёт создан от менеджера %s', inet_bill_owner);
+    INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, -1, loc_no_aub_reason, loc_reason_code);
 
     loc_bill_no := fn_GetNewBillNo(inet_bill_owner);
     ourFirm := getFirm(acode, flgOwen, loc_payment_method);
@@ -141,6 +135,12 @@ BEGIN
     RETURNING * 
     )
     SELECT * INTO ret_bill FROM inserted;
+    IF loc_in_stock AND loc_reason_code > 100 THEN -- всё в наличии, но не можем отправить автосчёт. Регистрируем для отчётности
+        INSERT INTO aub_in_stock (bill_no, reason_code, no_aub_reason)
+        VALUES (ret_bill."№ счета", loc_reason_code, loc_no_aub_reason)
+        ON CONFLICT (bill_no) DO 
+        UPDATE SET reason_code = excluded.reason_code, no_aub_reason = excluded.no_aub_reason;
+    END IF;
 
     /**
     locVAT := getVAT(acode);
@@ -152,6 +152,6 @@ BEGIN
 
     RETURN ret_bill;
 END
-$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
+$function$
+;
+
