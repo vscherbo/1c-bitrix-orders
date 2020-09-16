@@ -94,11 +94,11 @@ IF of_Site_found AND is_kipspb THEN
                 RAISE NOTICE 'ERROR in %: %', loc_func_name, loc_exception_txt;
             END; -- создание сообщения клиенту
 
-            RAISE NOTICE 'Отправляем сообщение id=% для заказа=%', loc_msg_id, arg_bx_order_no;
-            IF loc_msg_id IS NOT NULL AND loc_msg_id > 0 THEN
-                PERFORM sendbillsinglemsg(loc_msg_id);
+            RAISE NOTICE 'Отправляем сообщение id=% для заказа=%', loc_part_msg_id, arg_bx_order_no;
+            IF loc_part_msg_id IS NOT NULL AND loc_part_msg_id > 0 THEN
+                PERFORM sendbillsinglemsg(loc_part_msg_id);
             ELSE
-                RAISE NOTICE 'не создано сообщение клиенту о частичном автосчёте для заказа=%, loc_msg_id=%', arg_bx_order_no, quote_nullable(loc_msg_id);
+                RAISE NOTICE 'не создано сообщение клиенту о частичном автосчёте для заказа=%, loc_part_msg_id=%', arg_bx_order_no, quote_nullable(loc_part_msg_id);
             END IF;
         END IF; -- 1 = loc_cr_bill_result
 
