@@ -83,7 +83,7 @@ CREATE temporary TABLE IF NOT EXISTS qnt_in_stock (ks INTEGER, whid INTEGER, whq
 TRUNCATE qnt_in_stock; -- if exists
 
 flgOwen := False;
-skipCheckOwen := FALSE;
+skipCheckOwen := False;
 
 FOR oi in (SELECT bx_order_item.*
                 , lpad(bx_order_item_feature.fvalue::VARCHAR, 12, '0')  as mod_id
@@ -227,10 +227,6 @@ IF (loc_sum <> bx_sum) AND (1 = CreateResult) THEN
 END IF;
 PERFORM 1 FROM vw_autobill_created WHERE ab_code = CreateResult; -- включая частичный автосчёт
 IF FOUND THEN
--- IF (CreateResult IN (1,2,6) ) THEN -- включая частичный автосчёт
-    -- TODO delete
-    -- INSERT INTO aub_qnt_in_stock(bx_order_no, ks, whid, whqnt) SELECT bx_order_no, * FROM qnt_in_stock; -- DEBUG
-
     loc_firm_code := find_firm(bx_order_no);
     IF loc_firm_code > 0 THEN
         loc_emp_code := find_emp(bx_order_no, loc_firm_code);
@@ -343,6 +339,7 @@ IF FOUND THEN
                 -- SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
 
                 IF item.ks IS NOT NULL THEN -- далее только для товаров с КС
+                    -- убрать проверку на СТОП, т.к. уже сделана выше
                     loc_no_autobill_item := no_autobill_item(item.ks); -- не для автосчёта (стопХ)
                     IF loc_no_autobill_item THEN -- не для автосчёта (стопХ)
                         CreateResult := 11; -- имеет флаг СТОП
@@ -422,12 +419,16 @@ IF FOUND THEN
         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, '' || loc_aub_msg, CreateResult, -1);
         RAISE NOTICE '%. CreateResult=%', loc_aub_msg, CreateResult;
     END IF;
-ELSE -- NOT CreateResult IN (1,2,6)
+ELSE -- CreateResult NOT IN vw_autobill_created 
     -- -8 пустой состав заказа с сайта
     INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, 'Автосчёт не создан:' || COALESCE(loc_aub_msg, ''), CreateResult, -1);
 END IF; -- CreateResult IN (1,2,6)
 
 UPDATE bx_order SET billcreated = CreateResult, "Счет" = loc_bill_no WHERE "Номер" = bx_order_no ;
+
+if CreateResult <> 1 then
+    UPDATE aub_in_stock SET bill_no = -1 * bill_no where bill_no = loc_bill_no;
+end if;
 
 TRUNCATE tmp_order_items;
 
