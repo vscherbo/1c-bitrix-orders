@@ -119,12 +119,6 @@ UNION
         INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, oi.mod_id, loc_aub_msg, CreateResult);
         RAISE NOTICE 'В заказе % % с mod_id=%', bx_order_no, loc_aub_msg, oi.mod_id;
     ELSE
-        /**/
-        loc_no_autobill_item := no_autobill_item(loc_KS); -- не для автосчёта (стопХ)
-        IF loc_no_autobill_item THEN -- не для автосчёта (стопХ)
-            CreateResult := 11; -- имеет флаг СТОП
-        END IF;
-        /**/
        -- если Овен, "Поставщик" = 30049
        -- TODO вынести из цикла, написать один SELECT ANY или EXISTS
        IF 30049 = vendor_id AND NOT skipCheckOwen THEN
@@ -160,6 +154,12 @@ UNION
           ), 1 );
 
        ELSE -- недостаточно Ясная+Выставка
+           /**/
+           loc_no_autobill_item := no_autobill_item(loc_KS); -- не для автосчёта (стопХ)
+           IF loc_no_autobill_item THEN -- не для автосчёта (стопХ)
+               CreateResult := 11; -- имеет флаг СТОП
+           END IF;
+           /**/
           loc_delivery_quantity := get_delivery_quantity(bx_order_no, oi."Ид");
           IF loc_delivery_quantity IS NOT NULL AND loc_delivery_quantity <> '' THEN
               CreateResult := GREATEST(1, CreateResult); -- если есть разбивка сроки-количество, создаём автосчёт
