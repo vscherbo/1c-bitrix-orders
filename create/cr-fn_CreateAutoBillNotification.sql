@@ -32,7 +32,7 @@ BEGIN
         loc_str := E'Счёт требует ручной доработки:\n' || loc_str;                            
     END IF;
     mstr := mstr || loc_str || E'\nПроверьте его, пожалуйста!';
-    loc_str := '';
+    -- 2020-09-08 loc_str := '';
 
     IF a_reason = -1 THEN
        loc_str := E'\nЗаказ с комментарием покупателя.';
