@@ -158,6 +158,10 @@ UNION
            loc_no_autobill_item := no_autobill_item(loc_KS); -- не для автосчёта (стопХ)
            IF loc_no_autobill_item THEN -- не для автосчёта (стопХ)
                CreateResult := 11; -- имеет флаг СТОП
+               loc_lack_reason := format('заказ=%s, %s(KS=%s) при нехватке количества имеет флаг СТОП, автосчёт не будет отправлен клиенту',
+                       bx_order_no, oi.Наименование, loc_KS);
+               INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(loc_KS));
+               --TODO PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
            END IF;
            /**/
           loc_delivery_quantity := get_delivery_quantity(bx_order_no, oi."Ид");
@@ -339,57 +343,53 @@ IF FOUND THEN
                 -- SELECT "Номер" INTO our_emp_id FROM "Сотрудники" WHERE bill."Хозяин" = "Менеджер";
 
                 IF item.ks IS NOT NULL THEN -- далее только для товаров с КС
-                    -- убрать проверку на СТОП, т.к. уже сделана выше
-                    loc_no_autobill_item := no_autobill_item(item.ks); -- не для автосчёта (стопХ)
-                    IF loc_no_autobill_item THEN -- не для автосчёта (стопХ)
-                        CreateResult := 11; -- имеет флаг СТОП
+                    IF CreateResult = 11  THEN -- не для автосчёта (стопХ) пишем в Вестник
                         loc_lack_reason := format('№ счёта=%s, %s(KS=%s) имеет флаг СТОП, автосчёт не будет отправлен клиенту',
                                loc_bill_no, item.oi_name, item.ks);
+                        PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
+                    END IF;
+
+                    IF loc_delivery_qnt_flag THEN -- разбивка сроки-количество
+                        IF loc_suspend_bill_msg_flag THEN
+                           INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id, format(
+                              '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
+                             ), CreateResult );
+                        END IF;
+                        SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
+                        RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
+                        loc_count_qnt := count_time_qnt(item.oi_delivery_qnt);
+                        loc_wrong_qnt := item.oi_quantity - loc_count_qnt;
+                        if loc_wrong_qnt != 0 then -- некорректная разбивка сроки-количество
+                            CreateResult := 13; -- некорректная разбивка сроки-количество
+                            loc_aub_msg := format('%s(KS=%s) кол-во в разбивке срок-количество=%s[%s] отличается от заказанного=[%s] на {%s}',
+                                  item.oi_name, item.ks, loc_count_qnt, item.oi_delivery_qnt, item.oi_quantity, loc_wrong_qnt);
+                            INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id,
+                            loc_aub_msg, CreateResult);
+                            RAISE NOTICE '%. CreateResult=%', loc_aub_msg, CreateResult;
+                        end if;
+
+                        IF loc_lack_reserve = 0 AND loc_wrong_qnt = 0 THEN
+                            -- TODO заменить на Рез.склада, ЖДЁМ. АБ/ВВ не д.б. для loc_lack_reserve = 0
+                            loc_where_buy := regexp_replace(item.oi_delivery_qnt, E'со склада', E'Рез.склада');
+                            loc_where_buy := regexp_replace(loc_where_buy, E'к ', E'ЖДЁМ ', 'g'); -- global
+                        END IF;
+                    ELSE -- без разбивки сроки-количество
+                        -- loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
+                        loc_lack_reserve := ctr_reserve2(loc_bill_no, item.ks, item.oi_quantity);
+                        loc_lack_reason := NULL;
+                        loc_where_buy := 'Рез.склада';
+                        RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
+                    END IF;
+
+                    -- Извещение о неудачном резерве
+                    IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
+                        -- TODO рассмотреть: CreateResult := GREATEST(7, CreateResult);
+                        CreateResult := 7; -- не удалось создать резерв
+                        loc_lack_reason := format('№ счёта=%s, %s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
+                               loc_bill_no, item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
                         INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
                         PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
-                    ELSE
-                        IF loc_delivery_qnt_flag THEN -- разбивка сроки-количество
-                            IF loc_suspend_bill_msg_flag THEN
-                               INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id, format(
-                                  '%s(KS=%s) для НЕ-дилера обрабатываем срок-количество=[%s], но не отправляем автосчёт', item.oi_name, item.ks, item.oi_delivery_qnt
-                                 ), CreateResult );
-                            END IF;
-                            SELECT * INTO loc_lack_reserve, loc_lack_reason FROM reserve_partly(item.oi_delivery_qnt, loc_bill_no, item.ks);
-                            RAISE NOTICE 'разбивка сроки-количество: % loc_lack_reserve: %', item.oi_delivery_qnt, loc_lack_reserve;
-                            loc_count_qnt := count_time_qnt(item.oi_delivery_qnt);
-                            loc_wrong_qnt := item.oi_quantity - loc_count_qnt;
-                            if loc_wrong_qnt != 0 then -- некорректная разбивка сроки-количество
-                                CreateResult := 13; -- некорректная разбивка сроки-количество
-                                loc_aub_msg := format('%s(KS=%s) кол-во в разбивке срок-количество=%s[%s] отличается от заказанного=[%s] на {%s}',
-                                      item.oi_name, item.ks, loc_count_qnt, item.oi_delivery_qnt, item.oi_quantity, loc_wrong_qnt);
-                                INSERT INTO aub_log(bx_order_no, mod_id, descr, res_code) VALUES(bx_order_no, item.oi_mod_id,
-                                loc_aub_msg, CreateResult);
-                                RAISE NOTICE '%. CreateResult=%', loc_aub_msg, CreateResult;
-                            end if;
-
-                            IF loc_lack_reserve = 0 AND loc_wrong_qnt = 0 THEN
-                                -- TODO заменить на Рез.склада, ЖДЁМ. АБ/ВВ не д.б. для loc_lack_reserve = 0
-                                loc_where_buy := regexp_replace(item.oi_delivery_qnt, E'со склада', E'Рез.склада');
-                                loc_where_buy := regexp_replace(loc_where_buy, E'к ', E'ЖДЁМ ', 'g'); -- global
-                            END IF;
-                        ELSE -- без разбивки сроки-количество
-                            -- loc_lack_reserve := setup_reserve(loc_bill_no, item.ks, item.oi_quantity);
-                            loc_lack_reserve := ctr_reserve2(loc_bill_no, item.ks, item.oi_quantity);
-                            loc_lack_reason := NULL;
-                            loc_where_buy := 'Рез.склада';
-                            RAISE NOTICE 'без разбивки сроки-количество, loc_lack_reserve: %', loc_lack_reserve;
-                        END IF;
-
-                        -- Извещение о неудачном резерве
-                        IF loc_lack_reserve <> 0 THEN -- ВН может вернуть -1
-                            -- TODO рассмотреть: CreateResult := GREATEST(7, CreateResult);
-                            CreateResult := 7; -- не удалось создать резерв
-                            loc_lack_reason := format('№ счёта=%s, %s(KS=%s) не удалось поставить в резерв %s из %s, причина: %s',
-                                   loc_bill_no, item.oi_name, item.ks, loc_lack_reserve, item.oi_quantity, COALESCE(loc_lack_reason, 'нет в наличии') );
-                            INSERT INTO aub_log(bx_order_no, descr, res_code, mod_id) VALUES(bx_order_no, loc_lack_reason, CreateResult, get_mod_id(item.ks));
-                            PERFORM push_arc_article(bill."Хозяин", loc_lack_reason, importance := 1);
-                        END IF; -- loc_lack_reserve <> 0
-                    END IF; -- loc_no_autobill_item
+                    END IF; -- loc_lack_reserve <> 0
                 END IF; -- locKS IS NOT NULL
             END LOOP; -- позиции счёта
             IF loc_delivery_qnt_flag THEN -- есть срок-доставка, меняем Дополнительно в Счёте
@@ -433,6 +433,6 @@ end if;
 TRUNCATE tmp_order_items;
 
 RETURN CreateResult;
-END;$BODY$
-  LANGUAGE plpgsql VOLATILE
-  COST 100;
+END;$function$
+;
+
